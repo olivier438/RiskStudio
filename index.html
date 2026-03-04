@@ -231,17 +231,20 @@
         updateStats();
     }
 
-    function filterRisks() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        const type = document.getElementById('filterType').value;
-        const filtered = allRisks.filter(r => {
-            const mTerm = (r.titre + r.scenario + r.cat + r.menace).toLowerCase().includes(term);
-            const ot = checkIfOT(r);
-            const mType = type === "" || (type === "OT" ? ot : !ot);
-            return mTerm && mType;
-        });
-        render(filtered);
-    }
+   function filterRisks() {
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    const type = document.getElementById('filterType').value;
+    
+    const filtered = allRisks.filter(r => {
+        // Recherche étendue à la conformité
+        const content = (r.titre + r.scenario + r.cat + r.menace + r.iso + r.dora + r.nis2).toLowerCase();
+        const mTerm = content.includes(term);
+        const ot = checkIfOT(r);
+        const mType = type === "" || (type === "OT" ? ot : !ot);
+        return mTerm && mType;
+    });
+    render(filtered);
+}
 
     function exportExcel() {
         let csv = "\ufeffID;Titre;Scenario;Mesures;Impact\n";
@@ -256,5 +259,6 @@
 </script>
 </body>
 </html>
+
 
 
