@@ -2,58 +2,66 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Proposer un Risque | Risk Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soumission de Risque | Risk Studio</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: #2563eb; margin-top: 0; }
-        label { display: block; margin-top: 15px; font-size: 13px; font-weight: bold; color: #64748b; }
-        input, textarea, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
-        .btn-send { background: #2563eb; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.2s; }
-        .btn-send:hover { background: #1d4ed8; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f8fafc; 
+            overflow: hidden; /* Empêche le double scroll */
+        }
+        .header { 
+            background: white; 
+            padding: 15px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .header h2 { margin: 0; color: #2563eb; font-size: 18px; }
+        .btn-back { 
+            text-decoration: none; 
+            color: #64748b; 
+            font-size: 14px; 
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .btn-back:hover { background: #f1f5f9; color: #1e293b; }
+        
+        /* Conteneur de l'iframe */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 60px); /* Hauteur totale moins le header */
+        }
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>➕ Nouveau Risque</h2>
-        <p style="font-size: 13px; color: #94a3b8;">Votre proposition sera envoyée pour validation.</p>
-        
-        <label>Titre du risque</label>
-        <input type="text" id="titre" placeholder="ex: Usurpation de compte administrateur">
-        
-        <label>Scénario de menace</label>
-        <textarea id="scenario" rows="3" placeholder="Décrivez comment le risque se réalise..."></textarea>
-        
-        <label>Impact estimé</label>
-        <select id="impact">
-            <option value="1">1 - Négligeable</option>
-            <option value="2">2 - Limité</option>
-            <option value="3">3 - Important</option>
-            <option value="4">4 - Critique</option>
-            <option value="5">5 - Désastreux</option>
-        </select>
 
-        <button class="btn-send" onclick="submitToGithub()">Envoyer la proposition</button>
+    <div class="header">
+        <h2>🛡️ Risk Studio <span style="font-weight:normal; color:#94a3b8; font-size:14px;">| Soumission</span></h2>
+        <a href="index.html" class="btn-back">← Retour au Dashboard</a>
     </div>
 
-    <script>
-        function submitToGithub() {
-            const t = document.getElementById('titre').value;
-            const s = document.getElementById('scenario').value;
-            const i = document.getElementById('impact').value;
+    <div class="iframe-container">
+        <iframe 
+            data-tally-src="https://tally.so/embed/vGN86v?hideTitle=1&transparentBackground=1&dynamicHeight=1" 
+            loading="lazy" 
+            title="Nouveau Risque">
+        </iframe>
+    </div>
 
-            if(!t || !s) return alert("Merci de remplir le titre et le scénario.");
+    <script async src="https://tally.so/widgets/embed.js"></script>
 
-            // Construction du corps du ticket
-            const body = `### 📝 Détails du risque proposé\n\n**Titre :** ${t}\n**Scénario :** ${s}\n**Impact :** ${i}/5\n\n--- \n*Action : Copier cette ligne dans le CSV après validation :*\n\`ID-TEMP;${t};Catégorie;Secteur;Menace; ;ISO;DORA;NIS2;${i};${s.replace(/\n/g, ' ')};Mesures à définir\``;
-
-            // LIEN VERS TON GITHUB (À personnaliser)
-            const repoOwner = "olivier438"; 
-            const repoName = "RiskStudio";
-            const url = `https://github.com/${repoOwner}/${repoName}/issues/new?title=[PROPO] : ${t}&body=${encodeURIComponent(body)}`;
-
-            window.open(url, '_blank');
-        }
-    </script>
 </body>
 </html>
