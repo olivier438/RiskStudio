@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Risk Studio v3.5 | Dashboard & GRC | By One Circle IT Solutions srl</title>
+    <title>Risk Studio v3.7 | Dashboard & GRC</title>
     <style>
         :root { --primary: #2563eb; --ot-color: #f59e0b; --it-color: #3b82f6; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
@@ -11,7 +11,6 @@
         /* Header */
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
         .app-title h1 { margin: 0; font-size: 24px; color: var(--primary); line-height: 1; }
-        .app-title span { font-size: 12px; color: #64748b; font-weight: normal; }
         .meta-info { font-size: 11px; color: #64748b; margin-top: 8px; line-height: 1.4; }
         .meta-info b { color: #475569; }
 
@@ -25,9 +24,10 @@
         .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
         
-        .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; text-decoration: none; }
         .btn-edit { background: #f1f5f9; color: #475569; }
         .btn-edit.active { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+        .btn-propo { background: #e0f2fe; color: #0369a1; }
         .btn-pdf { background: var(--primary); color: white; }
         .btn-excel { background: #107c10; color: white; }
         .btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
@@ -37,7 +37,7 @@
         .risk-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); text-transform: uppercase; }
         .risk-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
         
-        /* Edit Mode Styles */
+        /* Edit Mode */
         .editable[contenteditable="true"] { background: #fffbeb; padding: 2px; border-radius: 3px; outline: 1px dashed #f59e0b; cursor: text; }
         .selected-row { background: #eff6ff !important; }
 
@@ -48,7 +48,6 @@
             tr:not(.selected-row) { display: none !important; }
             body { background: white; padding: 0; }
             .container { max-width: 100%; }
-            .risk-table { border: 1px solid #eee; }
             .selected-row { display: table-row !important; background: white !important; }
         }
     </style>
@@ -58,16 +57,17 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🛡️ Risk Studio <span>v3.5</span> By One Circle IT Solutions srl</h1>
+            <h1>🛡️ Risk Studio <span>v3.7</span></h1>
             <div class="meta-info">
                 Moteur : <b>04/03/2026</b><br>
-                Base de données : <b id="db-date">Synchronisation...</b>
+                Base : <b id="db-date">Synchro...</b>
             </div>
         </div>
         <div style="display:flex; gap:10px;">
+            <a href="proposer.html" class="btn btn-propo">➕ Proposer un risque</a>
             <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Lecture</button>
-            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 Rapport PDF</button>
-            <button class="btn btn-excel" id="excelBtn" onclick="exportExcel()" disabled>📊 Export Excel</button>
+            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 PDF</button>
+            <button class="btn btn-excel" id="excelBtn" onclick="exportExcel()" disabled>📊 Excel</button>
         </div>
     </div>
 
@@ -79,7 +79,7 @@
     </div>
 
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher un risque, une menace, un scénario..." oninput="filterRisks()">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Chercher par mot-clé, menace, ou conformité (ex: ISO, DORA, NIS2)..." oninput="filterRisks()">
         <select id="filterType" onchange="filterRisks()" style="padding:10px; border-radius:6px; border:1px solid var(--border); cursor:pointer;">
             <option value="">Tous les environnements</option>
             <option value="IT">💻 Environnement IT</option>
@@ -105,42 +105,35 @@
 <script>
     let allRisks = [];
     let selectedIds = new Set();
-    
     const urlParams = new URLSearchParams(window.location.search);
     let isEditMode = urlParams.has('admin');
 
     window.onload = () => {
-    const btn = document.getElementById('editToggle');
-    
-    if (isEditMode) {
-        // On est en admin : le bouton permet de SORTIR de ce mode
-        btn.innerText = "🔓 Quitter le Mode Édition";
-        btn.classList.add('active');
-        btn.style.cursor = "pointer";
-    } else {
-        // Mode normal : le bouton est juste un indicateur passif, il ne fait rien
-        btn.innerText = "🔒 Mode Lecture";
-        btn.classList.remove('active');
-        btn.style.cursor = "default";
-        btn.onclick = null; // On désactive le clic
-    }
+        const btn = document.getElementById('editToggle');
+        if (isEditMode) {
+            btn.innerText = "🔓 Quitter Mode Édition";
+            btn.classList.add('active');
+            btn.style.cursor = "pointer";
+        } else {
+            btn.onclick = null;
+            btn.style.cursor = "default";
+        }
 
-    // Suite du chargement (Fetch CSV...)
-    fetch('risques.csv?v=' + Date.now())
-        .then(response => {
-            const lastMod = response.headers.get('Last-Modified');
-            if (lastMod) {
-                const d = new Date(lastMod);
-                document.getElementById('db-date').innerText = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-            }
-            return response.arrayBuffer();
-        })
-        .then(buf => {
-            let txt = new TextDecoder('utf-8').decode(buf);
-            if(txt.includes('Ã')) txt = new TextDecoder('windows-1252').decode(buf);
-            process(txt);
-        });
-};
+        fetch('risques.csv?v=' + Date.now())
+            .then(res => {
+                const lastMod = res.headers.get('Last-Modified');
+                if (lastMod) {
+                    const d = new Date(lastMod);
+                    document.getElementById('db-date').innerText = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+                }
+                return res.arrayBuffer();
+            })
+            .then(buf => {
+                let txt = new TextDecoder('utf-8').decode(buf);
+                if(txt.includes('Ã')) txt = new TextDecoder('windows-1252').decode(buf);
+                process(txt);
+            });
+    };
 
     function process(text) {
         const rows = text.split(/\r?\n/);
@@ -169,7 +162,7 @@
 
     function checkIfOT(r) {
         const t = (r.cat + r.titre + r.scenario).toUpperCase();
-        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL", "CAPTEUR", "ROBOT"].some(k => t.includes(k)) || /\bOT\b/.test(t);
+        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL", "CAPTEUR"].some(k => t.includes(k)) || /\bOT\b/.test(t);
     }
 
     function render(data) {
@@ -178,7 +171,7 @@
             const ot = checkIfOT(r);
             return `
             <tr class="${selectedIds.has(r.id) ? 'selected-row' : ''}">
-                <td class="no-print"><input type="checkbox" class="risk-check" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
+                <td class="no-print"><input type="checkbox" class="risk-check" ${selectedIds.has(r.id) ? 'checked' : ''} data-id="${r.id}" onclick="toggleSelect('${r.id}', this)"></td>
                 <td>
                     <span class="tag" style="background:${ot?'#fef3c7':'#dbeafe'};color:${ot?'#92400e':'#1e40af'}">${ot?'⚙️ OT':'💻 IT'}</span>
                     <div style="font-weight:bold; margin-top:5px;" class="editable" onblur="updateVal('${r.id}','titre',this.innerText)">${r.titre}</div>
@@ -187,7 +180,7 @@
                 </td>
                 <td><small>${r.secteurs}</small></td>
                 <td><b>${r.cat}</b><br><small>${r.menace}</small></td>
-                <td><small>ISO ${r.iso}<br>DORA ${r.dora}<br>NIS2 ${r.nis2}</small></td>
+                <td><small>ISO: ${r.iso}<br>DORA: ${r.dora}<br>NIS2: ${r.nis2}</small></td>
                 <td><b style="color:${r.impact>=4?'#dc2626':'#1e293b'}">${r.impact}/5</b></td>
             </tr>`;
         }).join('');
@@ -195,12 +188,8 @@
     }
 
     function toggleEditMode() {
-    // Cette fonction n'est appelée que si on est DEJA en admin (voir onload)
-    if (isEditMode) {
-        // On retire le paramètre admin de l'URL pour redevenir lecteur
-        window.location.href = window.location.pathname;
+        if (isEditMode) window.location.href = window.location.pathname;
     }
-}
 
     function updateVal(id, field, val) {
         const r = allRisks.find(x => x.id === id);
@@ -216,10 +205,9 @@
     function toggleAll(master) {
         document.querySelectorAll('.risk-check').forEach(cb => {
             cb.checked = master.checked;
-            const row = cb.closest('tr');
-            const id = allRisks.find(r => row.innerText.includes(r.titre)).id;
+            const id = cb.getAttribute('data-id');
             master.checked ? selectedIds.add(id) : selectedIds.delete(id);
-            row.classList.toggle('selected-row', master.checked);
+            cb.closest('tr').classList.toggle('selected-row', master.checked);
         });
         updateButtons();
     }
@@ -231,20 +219,19 @@
         updateStats();
     }
 
-   function filterRisks() {
-    const term = document.getElementById('searchInput').value.toLowerCase();
-    const type = document.getElementById('filterType').value;
-    
-    const filtered = allRisks.filter(r => {
-        // Recherche étendue à la conformité
-        const content = (r.titre + r.scenario + r.cat + r.menace + r.iso + r.dora + r.nis2).toLowerCase();
-        const mTerm = content.includes(term);
-        const ot = checkIfOT(r);
-        const mType = type === "" || (type === "OT" ? ot : !ot);
-        return mTerm && mType;
-    });
-    render(filtered);
-}
+    function filterRisks() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const type = document.getElementById('filterType').value;
+        const filtered = allRisks.filter(r => {
+            // Recherche élargie à la conformité
+            const content = (r.titre + r.scenario + r.cat + r.menace + r.iso + r.dora + r.nis2).toLowerCase();
+            const mTerm = content.includes(term);
+            const ot = checkIfOT(r);
+            const mType = type === "" || (type === "OT" ? ot : !ot);
+            return mTerm && mType;
+        });
+        render(filtered);
+    }
 
     function exportExcel() {
         let csv = "\ufeffID;Titre;Scenario;Mesures;Impact\n";
@@ -259,6 +246,3 @@
 </script>
 </body>
 </html>
-
-
-
