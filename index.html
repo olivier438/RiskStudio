@@ -110,34 +110,37 @@
     let isEditMode = urlParams.has('admin');
 
     window.onload = () => {
-        const btn = document.getElementById('editToggle');
-        if (isEditMode) {
-            btn.innerText = "🔓 Mode Édition Actif";
-            btn.classList.add('active');
-        }
+    const btn = document.getElementById('editToggle');
+    
+    if (isEditMode) {
+        // On est en admin : le bouton permet de SORTIR de ce mode
+        btn.innerText = "🔓 Quitter le Mode Édition";
+        btn.classList.add('active');
+        btn.style.cursor = "pointer";
+    } else {
+        // Mode normal : le bouton est juste un indicateur passif, il ne fait rien
+        btn.innerText = "🔒 Mode Lecture";
+        btn.classList.remove('active');
+        btn.style.cursor = "default";
+        btn.onclick = null; // On désactive le clic
+    }
 
-        // Récupération du CSV + Date de modification
-        fetch('risques.csv?v=' + Date.now())
-            .then(response => {
-                const lastMod = response.headers.get('Last-Modified');
-                if (lastMod) {
-                    const d = new Date(lastMod);
-                    document.getElementById('db-date').innerText = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-                } else {
-                    document.getElementById('db-date').innerText = "À l'instant (Live)";
-                }
-                return response.arrayBuffer();
-            })
-            .then(buf => {
-                let txt = new TextDecoder('utf-8').decode(buf);
-                if(txt.includes('Ã')) txt = new TextDecoder('windows-1252').decode(buf);
-                process(txt);
-            })
-            .catch(err => {
-                document.getElementById('db-date').innerText = "Indisponible";
-                console.error(err);
-            });
-    };
+    // Suite du chargement (Fetch CSV...)
+    fetch('risques.csv?v=' + Date.now())
+        .then(response => {
+            const lastMod = response.headers.get('Last-Modified');
+            if (lastMod) {
+                const d = new Date(lastMod);
+                document.getElementById('db-date').innerText = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+            }
+            return response.arrayBuffer();
+        })
+        .then(buf => {
+            let txt = new TextDecoder('utf-8').decode(buf);
+            if(txt.includes('Ã')) txt = new TextDecoder('windows-1252').decode(buf);
+            process(txt);
+        });
+};
 
     function process(text) {
         const rows = text.split(/\r?\n/);
@@ -192,8 +195,12 @@
     }
 
     function toggleEditMode() {
-        window.location.href = window.location.pathname + (isEditMode ? "" : "?admin=true");
+    // Cette fonction n'est appelée que si on est DEJA en admin (voir onload)
+    if (isEditMode) {
+        // On retire le paramètre admin de l'URL pour redevenir lecteur
+        window.location.href = window.location.pathname;
     }
+}
 
     function updateVal(id, field, val) {
         const r = allRisks.find(x => x.id === id);
@@ -249,3 +256,4 @@
 </script>
 </body>
 </html>
+
