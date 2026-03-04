@@ -48,8 +48,8 @@
             const body = `### 📝 Détails du risque proposé\n\n**Titre :** ${t}\n**Scénario :** ${s}\n**Impact :** ${i}/5\n\n--- \n*Action : Copier cette ligne dans le CSV après validation :*\n\`ID-TEMP;${t};Catégorie;Secteur;Menace; ;ISO;DORA;NIS2;${i};${s.replace(/\n/g, ' ')};Mesures à définir\``;
 
             // LIEN VERS TON GITHUB (À personnaliser)
-            const repoOwner = "TON_PSEUDO"; 
-            const repoName = "TON_DEPOT";
+            const repoOwner = "olivier438"; 
+            const repoName = "RiskStudio";
             const url = `https://github.com/${repoOwner}/${repoName}/issues/new?title=[PROPO] : ${t}&body=${encodeURIComponent(body)}`;
 
             window.open(url, '_blank');
