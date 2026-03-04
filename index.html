@@ -2,13 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GRC Risk Studio v3.3</title>
+    <title>Risk Studio v3.4 | Dashboard & GRC</title>
     <style>
         :root { --primary: #2563eb; --ot-color: #f59e0b; --it-color: #3b82f6; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* Header & Titre */
+        /* Header */
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
         .app-title h1 { margin: 0; font-size: 24px; color: var(--primary); }
         .app-title span { font-size: 12px; color: #64748b; font-weight: normal; }
@@ -19,9 +19,9 @@
         .stat-card h3 { margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: bold; }
 
-        /* Barre d'outils */
+        /* Toolbar */
         .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
         
         .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; }
         .btn-edit { background: #f1f5f9; color: #475569; }
@@ -30,22 +30,24 @@
         .btn-excel { background: #107c10; color: white; }
         .btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
 
-        /* Tableau */
+        /* Table */
         .risk-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
-        .risk-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); }
+        .risk-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); text-transform: uppercase; }
         .risk-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
         
-        /* Mode Edition */
-        [contenteditable="true"] { background: #fffbeb; padding: 2px; border-radius: 3px; outline: 2px solid #f59e0b; }
+        /* Edit Mode Styles */
+        .editable[contenteditable="true"] { background: #fffbeb; padding: 2px; border-radius: 3px; outline: 1px dashed #f59e0b; cursor: text; }
         .selected-row { background: #eff6ff !important; }
 
         .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
         
         @media print {
-            .toolbar, .dashboard, .btn, .no-print, .btn-edit { display: none !important; }
+            .toolbar, .dashboard, .btn, .no-print, .btn-edit, .app-header { display: none !important; }
             tr:not(.selected-row) { display: none !important; }
-            body { background: white; }
+            body { background: white; padding: 0; }
             .container { max-width: 100%; }
+            .risk-table { border: 1px solid #eee; }
+            .selected-row { display: table-row !important; background: white !important; }
         }
     </style>
 </head>
@@ -54,36 +56,36 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title">
-            <h1>🛡️ Risk Studio <span>v3.3 Premium</span></h1>
+            <h1>🛡️ Risk Studio <span>v3.4 Premium</span></h1>
         </div>
         <div style="display:flex; gap:10px;">
-            <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Édition</button>
+            <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Lecture</button>
             <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 Rapport PDF</button>
             <button class="btn btn-excel" id="excelBtn" onclick="exportExcel()" disabled>📊 Export Excel</button>
         </div>
     </div>
 
     <div class="dashboard">
-        <div class="stat-card"><h3>Total Risques</h3><p id="count-all">0</p></div>
+        <div class="stat-card"><h3>Total Catalogue</h3><p id="count-all">0</p></div>
         <div class="stat-card" style="border-top-color: var(--it-color)"><h3>Risques IT</h3><p id="count-it">0</p></div>
         <div class="stat-card" style="border-top-color: var(--ot-color)"><h3>Risques OT</h3><p id="count-ot">0</p></div>
-        <div class="stat-card" style="border-top-color: #10b981"><h3>Impact Moyen</h3><p id="avg-impact">0</p></div>
+        <div class="stat-card" style="border-top-color: #10b981"><h3>Sél. Impact Moy.</h3><p id="avg-impact">0</p></div>
     </div>
 
     <div class="toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher par mot-clé, menace, norme..." oninput="filterRisks()">
-        <select id="filterType" onchange="filterRisks()" style="padding:10px; border-radius:6px; border:1px solid var(--border);">
-            <option value="">Tous les types</option>
-            <option value="IT">💻 IT Only</option>
-            <option value="OT">⚙️ OT Only</option>
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Filtrer par mot-clé, menace, norme..." oninput="filterRisks()">
+        <select id="filterType" onchange="filterRisks()" style="padding:10px; border-radius:6px; border:1px solid var(--border); cursor:pointer;">
+            <option value="">Tous les environnements</option>
+            <option value="IT">💻 IT (Information Tech)</option>
+            <option value="OT">⚙️ OT (Operational Tech)</option>
         </select>
     </div>
 
     <table class="risk-table">
         <thead>
             <tr>
-                <th class="no-print" width="40"><input type="checkbox" onclick="toggleAll(this)"></th>
-                <th width="40%">Risque & Scénario</th>
+                <th class="no-print" width="40"><input type="checkbox" id="masterCheck" onclick="toggleAll(this)"></th>
+                <th width="45%">Risque & Scénario</th>
                 <th>Secteurs</th>
                 <th>Catégorie</th>
                 <th>Conformité</th>
@@ -97,10 +99,19 @@
 <script>
     let allRisks = [];
     let selectedIds = new Set();
-    let isEditMode = false;
-    const ADMIN_CODE = "1234"; // 💡 Ton code secret ici
+    
+    // SECURITE PAR URL : Vérifie si ?admin=true est présent
+    const urlParams = new URLSearchParams(window.location.search);
+    let isEditMode = urlParams.has('admin');
 
     window.onload = () => {
+        // Mise à jour visuelle du bouton admin
+        const btn = document.getElementById('editToggle');
+        if (isEditMode) {
+            btn.innerText = "🔓 Mode Édition Actif";
+            btn.classList.add('active');
+        }
+
         fetch('risques.csv?v=' + Date.now())
             .then(r => r.arrayBuffer())
             .then(buf => {
@@ -114,7 +125,11 @@
         const rows = text.split(/\r?\n/);
         allRisks = rows.slice(1).filter(r => r.trim()).map(r => {
             const c = r.split(';');
-            return { id:c[0], titre:c[1], cat:c[2], secteurs:c[3], menace:c[4], iso:c[6], dora:c[7], nis2:c[8], impact:parseFloat(c[9])||0, scenario:c[10], mesures:c[11]||"" };
+            return { 
+                id: c[0], titre: c[1], cat: c[2], secteurs: c[3], 
+                menace: c[4], iso: c[6], dora: c[7], nis2: c[8], 
+                impact: parseFloat(c[9])||0, scenario: c[10], mesures: c[11]||"" 
+            };
         });
         updateStats();
         render(allRisks);
@@ -122,16 +137,19 @@
 
     function updateStats() {
         document.getElementById('count-all').innerText = allRisks.length;
-        const ot = allRisks.filter(r => checkIfOT(r)).length;
-        document.getElementById('count-ot').innerText = ot;
-        document.getElementById('count-it').innerText = allRisks.length - ot;
-        const avg = allRisks.reduce((a, b) => a + b.impact, 0) / allRisks.length;
+        const otRisks = allRisks.filter(r => checkIfOT(r));
+        document.getElementById('count-ot').innerText = otRisks.length;
+        document.getElementById('count-it').innerText = allRisks.length - otRisks.length;
+        
+        // Impact moyen basé sur la sélection si existante, sinon sur le total
+        const target = selectedIds.size > 0 ? allRisks.filter(r => selectedIds.has(r.id)) : allRisks;
+        const avg = target.reduce((a, b) => a + b.impact, 0) / target.length;
         document.getElementById('avg-impact').innerText = avg.toFixed(1) + "/5";
     }
 
     function checkIfOT(r) {
         const t = (r.cat + r.titre + r.scenario).toUpperCase();
-        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL", "CAPTEUR"].some(k => t.includes(k)) || /\bOT\b/.test(t);
+        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL", "CAPTEUR", "ROBOT"].some(k => t.includes(k)) || /\bOT\b/.test(t);
     }
 
     function render(data) {
@@ -140,7 +158,7 @@
             const ot = checkIfOT(r);
             return `
             <tr class="${selectedIds.has(r.id) ? 'selected-row' : ''}">
-                <td class="no-print"><input type="checkbox" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
+                <td class="no-print"><input type="checkbox" class="risk-check" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
                 <td>
                     <span class="tag" style="background:${ot?'#fef3c7':'#dbeafe'};color:${ot?'#92400e':'#1e40af'}">${ot?'⚙️ OT':'💻 IT'}</span>
                     <div style="font-weight:bold; margin-top:5px;" class="editable" onblur="updateVal('${r.id}','titre',this.innerText)">${r.titre}</div>
@@ -149,46 +167,52 @@
                 </td>
                 <td><small>${r.secteurs}</small></td>
                 <td><b>${r.cat}</b><br><small>${r.menace}</small></td>
-                <td><small>ISO ${r.iso}<br>NIS2 ${r.nis2}</small></td>
+                <td><small>ISO ${r.iso}<br>DORA ${r.dora}<br>NIS2 ${r.nis2}</small></td>
                 <td><b style="color:${r.impact>=4?'#dc2626':'#1e293b'}">${r.impact}/5</b></td>
             </tr>`;
         }).join('');
-        applyEditState();
+        
+        // Applique l'état éditable selon le mode
+        document.querySelectorAll('.editable').forEach(el => el.contentEditable = isEditMode);
     }
 
     function toggleEditMode() {
         if (!isEditMode) {
-            const code = prompt("Entrez le code administrateur pour modifier :");
-            if (code === ADMIN_CODE) {
-                isEditMode = true;
-                document.getElementById('editToggle').innerText = "🔓 Mode Édition Actif";
-                document.getElementById('editToggle').classList.add('active');
-            } else {
-                alert("Code incorrect");
-            }
+            window.location.href = window.location.pathname + "?admin=true";
         } else {
-            isEditMode = false;
-            document.getElementById('editToggle').innerText = "🔒 Mode Édition";
-            document.getElementById('editToggle').classList.remove('active');
+            window.location.href = window.location.pathname;
         }
-        applyEditState();
-    }
-
-    function applyEditState() {
-        document.querySelectorAll('.editable').forEach(el => {
-            el.contentEditable = isEditMode;
-        });
     }
 
     function updateVal(id, field, val) {
         const r = allRisks.find(x => x.id === id);
-        if(r) r[field] = val;
+        if(r) r[field] = val.trim();
     }
 
     function toggleSelect(id, cb) {
         cb.checked ? selectedIds.add(id) : selectedIds.delete(id);
         cb.closest('tr').classList.toggle('selected-row', cb.checked);
-        document.getElementById('pdfBtn').disabled = document.getElementById('excelBtn').disabled = (selectedIds.size === 0);
+        updateButtons();
+    }
+
+    function toggleAll(master) {
+        const checks = document.querySelectorAll('.risk-check');
+        checks.forEach(cb => {
+            const row = cb.closest('tr');
+            // Extraction de l'ID (on suppose qu'il est unique, on peut l'extraire du contexte ou d'un attribut)
+            const id = allRisks.find(r => row.innerText.includes(r.titre)).id;
+            cb.checked = master.checked;
+            master.checked ? selectedIds.add(id) : selectedIds.delete(id);
+            row.classList.toggle('selected-row', master.checked);
+        });
+        updateButtons();
+    }
+
+    function updateButtons() {
+        const hasSelection = selectedIds.size > 0;
+        document.getElementById('pdfBtn').disabled = !hasSelection;
+        document.getElementById('excelBtn').disabled = !hasSelection;
+        updateStats();
     }
 
     function filterRisks() {
@@ -204,14 +228,14 @@
     }
 
     function exportExcel() {
-        let csv = "ID;Titre;Scenario;Mesures;Impact\n";
+        let csv = "\ufeffID;Titre;Scenario;Mesures;Impact\n";
         allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
             csv += `"${r.id}";"${r.titre}";"${r.scenario}";"${r.mesures}";"${r.impact}"\n`;
         });
-        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url; a.download = "export_risques.csv"; a.click();
+        a.href = url; a.download = `export_GRC_${new Date().toISOString().slice(0,10)}.csv`; a.click();
     }
 </script>
 </body>
