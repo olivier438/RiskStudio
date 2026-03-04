@@ -2,85 +2,92 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GRC Risk Studio | Dashboard</title>
+    <title>GRC Risk Studio v3.3</title>
     <style>
         :root { --primary: #2563eb; --ot-color: #f59e0b; --it-color: #3b82f6; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* Dashboard Stats */
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid var(--primary); }
-        .stat-card h3 { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
-        .stat-card p { margin: 5px 0 0; font-size: 24px; font-weight: bold; color: var(--text); }
+        /* Header & Titre */
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .app-title h1 { margin: 0; font-size: 24px; color: var(--primary); }
+        .app-title span { font-size: 12px; color: #64748b; font-weight: normal; }
+
+        /* Dashboard */
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .stat-card h3 { margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: bold; }
 
         /* Barre d'outils */
-        .search-bar { 
-            background: white; padding: 15px; border-radius: 12px; 
-            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; 
-            align-items: center; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
-        }
+        .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .search-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
         
-        input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
-        .search-input { flex-grow: 1; }
-
-        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .btn-edit { background: #f1f5f9; color: #475569; }
+        .btn-edit.active { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
         .btn-pdf { background: var(--primary); color: white; }
         .btn-excel { background: #107c10; color: white; }
-        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
 
-        /* Tableau Editable */
+        /* Tableau */
         .risk-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
-        .risk-table th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); }
-        .risk-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
-        .editable:hover { background: #fff7ed; cursor: edit; outline: 1px dashed #f59e0b; }
+        .risk-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); }
+        .risk-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+        
+        /* Mode Edition */
+        [contenteditable="true"] { background: #fffbeb; padding: 2px; border-radius: 3px; outline: 2px solid #f59e0b; }
         .selected-row { background: #eff6ff !important; }
 
-        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin: 2px; }
-        .tag-sector { background: #e0e7ff; color: #4338ca; }
-        .impact-badge { padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; }
-        .high { background: #fee2e2; color: #991b1b; }
-
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        
         @media print {
-            .search-bar, .dashboard, .btn, .no-print, #counter { display: none !important; }
+            .toolbar, .dashboard, .btn, .no-print, .btn-edit { display: none !important; }
             tr:not(.selected-row) { display: none !important; }
-            .selected-row { display: table-row !important; }
-            body { padding: 0; }
+            body { background: white; }
+            .container { max-width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="dashboard">
-        <div class="stat-card"><h3>Total Risques</h3><p id="stat-total">0</p></div>
-        <div class="stat-card" style="border-left-color: var(--it-color)"><h3>Environnement IT</h3><p id="stat-it">0</p></div>
-        <div class="stat-card" style="border-left-color: var(--ot-color)"><h3>Environnement OT</h3><p id="stat-ot">0</p></div>
-        <div class="stat-card" style="border-left-color: #ef4444"><h3>Impact Moyen</h3><p id="stat-impact">0</p></div>
-    </div>
-
-    <div class="search-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher..." oninput="filterRisks()">
-        <select id="filterType" onchange="filterRisks()">
-            <option value="">IT & OT</option>
-            <option value="IT">💻 IT</option>
-            <option value="OT">⚙️ OT</option>
-        </select>
-        <div style="display:flex; gap:5px;">
-            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 PDF</button>
-            <button class="btn btn-excel" id="excelBtn" onclick="exportToExcel()" disabled>📈 Excel</button>
+    <div class="app-header">
+        <div class="app-title">
+            <h1>🛡️ Risk Studio <span>v3.3 Premium</span></h1>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Édition</button>
+            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 Rapport PDF</button>
+            <button class="btn btn-excel" id="excelBtn" onclick="exportExcel()" disabled>📊 Export Excel</button>
         </div>
     </div>
 
-    <table class="risk-table" id="mainTable">
+    <div class="dashboard">
+        <div class="stat-card"><h3>Total Risques</h3><p id="count-all">0</p></div>
+        <div class="stat-card" style="border-top-color: var(--it-color)"><h3>Risques IT</h3><p id="count-it">0</p></div>
+        <div class="stat-card" style="border-top-color: var(--ot-color)"><h3>Risques OT</h3><p id="count-ot">0</p></div>
+        <div class="stat-card" style="border-top-color: #10b981"><h3>Impact Moyen</h3><p id="avg-impact">0</p></div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher par mot-clé, menace, norme..." oninput="filterRisks()">
+        <select id="filterType" onchange="filterRisks()" style="padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <option value="">Tous les types</option>
+            <option value="IT">💻 IT Only</option>
+            <option value="OT">⚙️ OT Only</option>
+        </select>
+    </div>
+
+    <table class="risk-table">
         <thead>
             <tr>
-                <th class="no-print"><input type="checkbox" onclick="toggleAll(this)"></th>
-                <th>Risque (Editable)</th>
+                <th class="no-print" width="40"><input type="checkbox" onclick="toggleAll(this)"></th>
+                <th width="40%">Risque & Scénario</th>
                 <th>Secteurs</th>
-                <th>Catégorie / Menace</th>
+                <th>Catégorie</th>
                 <th>Conformité</th>
-                <th>Impact</th>
+                <th width="80px">Impact</th>
             </tr>
         </thead>
         <tbody id="riskBody"></tbody>
@@ -90,118 +97,121 @@
 <script>
     let allRisks = [];
     let selectedIds = new Set();
+    let isEditMode = false;
+    const ADMIN_CODE = "1234"; // 💡 Ton code secret ici
 
-    window.onload = function() {
+    window.onload = () => {
         fetch('risques.csv?v=' + Date.now())
-            .then(res => res.arrayBuffer())
-            .then(buffer => {
-                let text = new TextDecoder('utf-8').decode(buffer);
-                if (text.includes('Ã')) text = new TextDecoder('windows-1252').decode(buffer);
-                processData(text);
+            .then(r => r.arrayBuffer())
+            .then(buf => {
+                let txt = new TextDecoder('utf-8').decode(buf);
+                if(txt.includes('Ã')) txt = new TextDecoder('windows-1252').decode(buf);
+                process(txt);
             });
     };
 
-    function processData(text) {
+    function process(text) {
         const rows = text.split(/\r?\n/);
-        allRisks = [];
-        for (let i = 1; i < rows.length; i++) {
-            const cols = rows[i].split(';');
-            if (cols.length >= 10) {
-                allRisks.push({
-                    id: cols[0], titre: cols[1], cat: cols[2], 
-                    secteurs: cols[3].split(','), menace: cols[4], 
-                    iso: cols[6], dora: cols[7], nis2: cols[8], 
-                    impact: parseFloat(cols[9]) || 0, scenario: cols[10], 
-                    mesures: cols[11] || ""
-                });
-            }
-        }
-        updateDashboard(allRisks);
-        displayRisks(allRisks);
+        allRisks = rows.slice(1).filter(r => r.trim()).map(r => {
+            const c = r.split(';');
+            return { id:c[0], titre:c[1], cat:c[2], secteurs:c[3], menace:c[4], iso:c[6], dora:c[7], nis2:c[8], impact:parseFloat(c[9])||0, scenario:c[10], mesures:c[11]||"" };
+        });
+        updateStats();
+        render(allRisks);
     }
 
-    function updateDashboard(data) {
-        document.getElementById('stat-total').innerText = data.length;
-        const otCount = data.filter(r => checkIfOT(r)).length;
-        document.getElementById('stat-ot').innerText = otCount;
-        document.getElementById('stat-it').innerText = data.length - otCount;
-        const avg = data.reduce((acc, r) => acc + r.impact, 0) / data.length;
-        document.getElementById('stat-impact').innerText = avg.toFixed(1) + "/5";
+    function updateStats() {
+        document.getElementById('count-all').innerText = allRisks.length;
+        const ot = allRisks.filter(r => checkIfOT(r)).length;
+        document.getElementById('count-ot').innerText = ot;
+        document.getElementById('count-it').innerText = allRisks.length - ot;
+        const avg = allRisks.reduce((a, b) => a + b.impact, 0) / allRisks.length;
+        document.getElementById('avg-impact').innerText = avg.toFixed(1) + "/5";
     }
 
     function checkIfOT(r) {
-        const txt = (r.cat + r.titre + r.scenario).toUpperCase();
-        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL"].some(k => txt.includes(k)) || /\bOT\b/.test(txt);
+        const t = (r.cat + r.titre + r.scenario).toUpperCase();
+        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL", "CAPTEUR"].some(k => t.includes(k)) || /\bOT\b/.test(t);
     }
 
-    function displayRisks(risks) {
+    function render(data) {
         const body = document.getElementById('riskBody');
-        body.innerHTML = risks.map(r => {
-            const isOT = checkIfOT(r);
+        body.innerHTML = data.map(r => {
+            const ot = checkIfOT(r);
             return `
-            <tr id="row-${r.id}" class="${selectedIds.has(r.id) ? 'selected-row' : ''}">
+            <tr class="${selectedIds.has(r.id) ? 'selected-row' : ''}">
                 <td class="no-print"><input type="checkbox" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
                 <td>
-                    <span class="tag" style="background:${isOT?'#f59e0b':'#3b82f6'};color:white">${isOT?'OT':'IT'}</span>
-                    <div class="editable" contenteditable="true" onblur="updateLocalData('${r.id}', 'titre', this.innerText)"><b>${r.id} - ${r.titre}</b></div>
-                    <div class="editable" contenteditable="true" style="font-size:11px; color:gray" onblur="updateLocalData('${r.id}', 'scenario', this.innerText)">${r.scenario}</div>
-                    <div class="editable" contenteditable="true" style="color:green; font-weight:600; font-size:11px" onblur="updateLocalData('${r.id}', 'mesures', this.innerText)">✅ ${r.mesures}</div>
+                    <span class="tag" style="background:${ot?'#fef3c7':'#dbeafe'};color:${ot?'#92400e':'#1e40af'}">${ot?'⚙️ OT':'💻 IT'}</span>
+                    <div style="font-weight:bold; margin-top:5px;" class="editable" onblur="updateVal('${r.id}','titre',this.innerText)">${r.titre}</div>
+                    <div style="font-size:11px; color:#64748b; margin-top:3px;" class="editable" onblur="updateVal('${r.id}','scenario',this.innerText)">${r.scenario}</div>
+                    <div style="font-size:11px; color:#059669; font-weight:600; margin-top:5px;" class="editable" onblur="updateVal('${r.id}','mesures',this.innerText)">✅ ${r.mesures}</div>
                 </td>
-                <td>${r.secteurs.map(s => `<span class="tag tag-sector">${s}</span>`).join('')}</td>
+                <td><small>${r.secteurs}</small></td>
                 <td><b>${r.cat}</b><br><small>${r.menace}</small></td>
-                <td><small>ISO ${r.iso}<br>DORA ${r.dora}<br>NIS2 ${r.nis2}</small></td>
-                <td><span class="impact-badge ${r.impact>=4?'high':''}">${r.impact}/5</span></td>
+                <td><small>ISO ${r.iso}<br>NIS2 ${r.nis2}</small></td>
+                <td><b style="color:${r.impact>=4?'#dc2626':'#1e293b'}">${r.impact}/5</b></td>
             </tr>`;
         }).join('');
+        applyEditState();
     }
 
-    function updateLocalData(id, field, value) {
-        const risk = allRisks.find(r => r.id === id);
-        if (risk) risk[field] = value;
+    function toggleEditMode() {
+        if (!isEditMode) {
+            const code = prompt("Entrez le code administrateur pour modifier :");
+            if (code === ADMIN_CODE) {
+                isEditMode = true;
+                document.getElementById('editToggle').innerText = "🔓 Mode Édition Actif";
+                document.getElementById('editToggle').classList.add('active');
+            } else {
+                alert("Code incorrect");
+            }
+        } else {
+            isEditMode = false;
+            document.getElementById('editToggle').innerText = "🔒 Mode Édition";
+            document.getElementById('editToggle').classList.remove('active');
+        }
+        applyEditState();
+    }
+
+    function applyEditState() {
+        document.querySelectorAll('.editable').forEach(el => {
+            el.contentEditable = isEditMode;
+        });
+    }
+
+    function updateVal(id, field, val) {
+        const r = allRisks.find(x => x.id === id);
+        if(r) r[field] = val;
     }
 
     function toggleSelect(id, cb) {
         cb.checked ? selectedIds.add(id) : selectedIds.delete(id);
-        cb.closest('tr').classList.toggle('selected-row');
-        document.getElementById('pdfBtn').disabled = document.getElementById('excelBtn').disabled = selectedIds.size === 0;
-    }
-
-    function toggleAll(master) {
-        const checkboxes = document.querySelectorAll('.risk-check'); // Note: add class to inputs if needed
-        // Simpifié pour la démo:
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            if(cb !== master) {
-                cb.checked = master.checked;
-                const id = cb.closest('tr').id.replace('row-','');
-                master.checked ? selectedIds.add(id) : selectedIds.delete(id);
-                cb.closest('tr').classList.toggle('selected-row', master.checked);
-            }
-        });
-        updateUI();
+        cb.closest('tr').classList.toggle('selected-row', cb.checked);
+        document.getElementById('pdfBtn').disabled = document.getElementById('excelBtn').disabled = (selectedIds.size === 0);
     }
 
     function filterRisks() {
         const term = document.getElementById('searchInput').value.toLowerCase();
         const type = document.getElementById('filterType').value;
         const filtered = allRisks.filter(r => {
-            const matchTerm = r.titre.toLowerCase().includes(term) || r.scenario.toLowerCase().includes(term);
-            const isOT = checkIfOT(r);
-            const matchType = type === "" || (type === "OT" ? isOT : !isOT);
-            return matchTerm && matchType;
+            const mTerm = (r.titre + r.scenario + r.cat + r.menace).toLowerCase().includes(term);
+            const ot = checkIfOT(r);
+            const mType = type === "" || (type === "OT" ? ot : !ot);
+            return mTerm && mType;
         });
-        displayRisks(filtered);
+        render(filtered);
     }
 
-    function exportToExcel() {
+    function exportExcel() {
         let csv = "ID;Titre;Scenario;Mesures;Impact\n";
         allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
-            csv += `${r.id};${r.titre};${r.scenario};${r.mesures};${r.impact}\n`;
+            csv += `"${r.id}";"${r.titre}";"${r.scenario}";"${r.mesures}";"${r.impact}"\n`;
         });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "selection_risques.csv";
-        link.click();
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "export_risques.csv"; a.click();
     }
 </script>
 </body>
