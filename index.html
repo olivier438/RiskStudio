@@ -219,27 +219,22 @@
         updateStats();
     }
 
-   function filterRisks() {
-    // On récupère le terme et on le nettoie (minuscules + retrait espaces inutiles)
-    const term = document.getElementById('searchInput').value.toLowerCase().trim();
+  function filterRisks() {
+    // On récupère le terme, on vire les espaces et on met en minuscule
+    const rawTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cleanTerm = rawTerm.replace(/[\s-]/g, ''); // "nis 2" devient "nis2"
+    
     const type = document.getElementById('filterType').value;
     
     const filtered = allRisks.filter(r => {
-        // On crée une grosse chaîne qui contient TOUTES les infos de conformité et de texte
-        // On s'assure de convertir chaque champ en string pour éviter les erreurs sur les champs vides
-        const content = [
-            r.titre, 
-            r.scenario, 
-            r.cat, 
-            r.menace, 
-            r.iso, 
-            r.dora, 
-            r.nis2
-        ].join(' ').toLowerCase();
+        // On concatène les champs et on normalise aussi (virer espaces/tirets)
+        const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2];
+        const fullContent = fields.join(' ').toLowerCase();
+        const normalizedContent = fullContent.replace(/[\s-]/g, '');
 
-        const mTerm = content.includes(term);
+        // On cherche le terme brut OU le terme nettoyé
+        const mTerm = fullContent.includes(rawTerm) || normalizedContent.includes(cleanTerm);
         
-        // Filtrage IT/OT
         const ot = checkIfOT(r);
         const mType = type === "" || (type === "OT" ? ot : !ot);
         
@@ -248,7 +243,6 @@
     
     render(filtered);
 }
-
     function exportExcel() {
         let csv = "\ufeffID;Titre;Scenario;Mesures;Impact\n";
         allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
@@ -262,4 +256,5 @@
 </script>
 </body>
 </html>
+
 
