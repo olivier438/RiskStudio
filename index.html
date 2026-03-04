@@ -219,19 +219,35 @@
         updateStats();
     }
 
-    function filterRisks() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        const type = document.getElementById('filterType').value;
-        const filtered = allRisks.filter(r => {
-            // Recherche élargie à la conformité
-            const content = (r.titre + r.scenario + r.cat + r.menace + r.iso + r.dora + r.nis2).toLowerCase();
-            const mTerm = content.includes(term);
-            const ot = checkIfOT(r);
-            const mType = type === "" || (type === "OT" ? ot : !ot);
-            return mTerm && mType;
-        });
-        render(filtered);
-    }
+   function filterRisks() {
+    // On récupère le terme et on le nettoie (minuscules + retrait espaces inutiles)
+    const term = document.getElementById('searchInput').value.toLowerCase().trim();
+    const type = document.getElementById('filterType').value;
+    
+    const filtered = allRisks.filter(r => {
+        // On crée une grosse chaîne qui contient TOUTES les infos de conformité et de texte
+        // On s'assure de convertir chaque champ en string pour éviter les erreurs sur les champs vides
+        const content = [
+            r.titre, 
+            r.scenario, 
+            r.cat, 
+            r.menace, 
+            r.iso, 
+            r.dora, 
+            r.nis2
+        ].join(' ').toLowerCase();
+
+        const mTerm = content.includes(term);
+        
+        // Filtrage IT/OT
+        const ot = checkIfOT(r);
+        const mType = type === "" || (type === "OT" ? ot : !ot);
+        
+        return mTerm && mType;
+    });
+    
+    render(filtered);
+}
 
     function exportExcel() {
         let csv = "\ufeffID;Titre;Scenario;Mesures;Impact\n";
@@ -246,3 +262,4 @@
 </script>
 </body>
 </html>
+
