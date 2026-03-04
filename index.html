@@ -2,100 +2,88 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GRC Risk Studio | Catalogue Interactif</title>
+    <title>GRC Risk Studio | Dashboard</title>
     <style>
         :root { --primary: #2563eb; --ot-color: #f59e0b; --it-color: #3b82f6; --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
         
-        /* En-tête */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* Dashboard Stats */
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid var(--primary); }
+        .stat-card h3 { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 24px; font-weight: bold; color: var(--text); }
+
+        /* Barre d'outils */
         .search-bar { 
-            background: white; padding: 20px; border-radius: 12px; 
+            background: white; padding: 15px; border-radius: 12px; 
             display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; 
             align-items: center; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
         }
         
-        input, select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 14px; }
-        .search-input { flex-grow: 1; min-width: 300px; }
+        input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; outline: none; }
+        .search-input { flex-grow: 1; }
 
-        .btn { padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; }
-        .btn-import { background: #64748b; color: white; }
+        .btn { padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
         .btn-pdf { background: var(--primary); color: white; }
-        .btn-pdf:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-excel { background: #107c10; color: white; }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-        /* Tableau */
-        .risk-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .risk-table th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 12px; color: #64748b; border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
-        .risk-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+        /* Tableau Editable */
+        .risk-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+        .risk-table th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); }
+        .risk-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+        .editable:hover { background: #fff7ed; cursor: edit; outline: 1px dashed #f59e0b; }
         .selected-row { background: #eff6ff !important; }
 
-        /* Badges & Tags */
-        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px; border: 1px solid rgba(0,0,0,0.05); }
-        .tag-sector { background: #e0e7ff; color: #4338ca; cursor: pointer; }
-        .tag-sector:hover { background: #c7d2fe; }
-        .tag-regul { background: #f1f5f9; color: #475569; display: block; width: fit-content; margin-bottom: 3px; }
-        
-        .impact-badge { padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 11px; }
+        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin: 2px; }
+        .tag-sector { background: #e0e7ff; color: #4338ca; }
+        .impact-badge { padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px; }
         .high { background: #fee2e2; color: #991b1b; }
 
-        /* Print Settings */
         @media print {
-            .search-bar, .btn, .no-print, #counter, .header h1 { display: none !important; }
-            body { background: white; padding: 0; }
+            .search-bar, .dashboard, .btn, .no-print, #counter { display: none !important; }
             tr:not(.selected-row) { display: none !important; }
-            .selected-row { display: table-row !important; background: white !important; border: 1px solid #eee; }
-            .risk-table { border: none; width: 100%; }
-            .tag { border: 1px solid #ddd; }
+            .selected-row { display: table-row !important; }
+            body { padding: 0; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>🛡️ GRC Risk Studio <small style="font-size: 12px; color: #94a3b8;">v3.2 Online</small></h1>
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <div id="counter" style="font-size: 14px; color: #64748b; font-weight: 500;">0 risques sélectionnés</div>
-            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 Générer PDF</button>
-        </div>
+    <div class="dashboard">
+        <div class="stat-card"><h3>Total Risques</h3><p id="stat-total">0</p></div>
+        <div class="stat-card" style="border-left-color: var(--it-color)"><h3>Environnement IT</h3><p id="stat-it">0</p></div>
+        <div class="stat-card" style="border-left-color: var(--ot-color)"><h3>Environnement OT</h3><p id="stat-ot">0</p></div>
+        <div class="stat-card" style="border-left-color: #ef4444"><h3>Impact Moyen</h3><p id="stat-impact">0</p></div>
     </div>
 
     <div class="search-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher (MFA, DORA, Santé, Scada...)" oninput="filterRisks()">
-        
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Rechercher..." oninput="filterRisks()">
         <select id="filterType" onchange="filterRisks()">
-            <option value="">Tout (IT & OT)</option>
-            <option value="IT">💻 Environnement IT</option>
-            <option value="OT">⚙️ Environnement OT</option>
+            <option value="">IT & OT</option>
+            <option value="IT">💻 IT</option>
+            <option value="OT">⚙️ OT</option>
         </select>
-
-        <select id="filterSecteur" onchange="filterRisks()">
-            <option value="">Tous les Secteurs</option>
-            <option value="Finance">Finance</option>
-            <option value="Industrie">Industrie</option>
-            <option value="Santé">Santé</option>
-            <option value="Énergie">Énergie</option>
-        </select>
-
-        <button class="btn btn-import" onclick="document.getElementById('csvInput').click()" title="Charger un fichier local">📂 Charger CSV</button>
-        <input type="file" id="csvInput" style="display:none" accept=".csv" onchange="handleManualCSV(this)">
+        <div style="display:flex; gap:5px;">
+            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 PDF</button>
+            <button class="btn btn-excel" id="excelBtn" onclick="exportToExcel()" disabled>📈 Excel</button>
+        </div>
     </div>
 
-    <table class="risk-table">
+    <table class="risk-table" id="mainTable">
         <thead>
             <tr>
-                <th class="no-print" width="40"><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
-                <th width="35%">Risque & Scénario</th>
-                <th width="15%">Secteurs</th>
-                <th width="15%">Catégorie</th>
-                <th width="20%">Conformité</th>
-                <th width="5%">Impact</th>
+                <th class="no-print"><input type="checkbox" onclick="toggleAll(this)"></th>
+                <th>Risque (Editable)</th>
+                <th>Secteurs</th>
+                <th>Catégorie / Menace</th>
+                <th>Conformité</th>
+                <th>Impact</th>
             </tr>
         </thead>
-        <tbody id="riskBody">
-            <tr><td colspan="6" style="text-align:center; padding:50px; color: #94a3b8;">Chargement des données en cours...</td></tr>
-        </tbody>
+        <tbody id="riskBody"></tbody>
     </table>
 </div>
 
@@ -103,138 +91,117 @@
     let allRisks = [];
     let selectedIds = new Set();
 
-    // 1. CHARGEMENT AUTOMATIQUE AU DÉMARRAGE
     window.onload = function() {
         fetch('risques.csv?v=' + Date.now())
-            .then(response => {
-                if (!response.ok) throw new Error("Fichier non trouvé");
-                return response.arrayBuffer();
-            })
+            .then(res => res.arrayBuffer())
             .then(buffer => {
-                const decoder = new TextDecoder('utf-8');
-                let text = decoder.decode(buffer);
-                
-                // Correction auto des accents (Ã© -> é)
-                if (text.includes('Ã')) {
-                    const ansiDecoder = new TextDecoder('windows-1252');
-                    text = ansiDecoder.decode(buffer);
-                }
+                let text = new TextDecoder('utf-8').decode(buffer);
+                if (text.includes('Ã')) text = new TextDecoder('windows-1252').decode(buffer);
                 processData(text);
-            })
-            .catch(err => {
-                console.warn("Chargement auto désactivé (Local ou fichier manquant)");
-                document.getElementById('riskBody').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;">Veuillez utiliser le bouton <b>Charger CSV</b> pour importer vos risques.</td></tr>';
             });
     };
 
-    function handleManualCSV(input) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => processData(e.target.result);
-        reader.readAsText(file, 'UTF-8');
-    }
-
     function processData(text) {
-        // Nettoyage des caractères Excel bizarres
-        const corrections = {'Ã©': 'é', 'Ã ': 'à', 'Ã¨': 'è', 'Ã«': 'ë', 'Ãª': 'ê', 'Ã§': 'ç', 'Â°': '°'};
-        for (const [m, b] of Object.entries(corrections)) { text = text.split(m).join(b); }
-
         const rows = text.split(/\r?\n/);
         allRisks = [];
         for (let i = 1; i < rows.length; i++) {
-            if (!rows[i].trim()) continue;
-            const cols = rows[i].split(';'); 
+            const cols = rows[i].split(';');
             if (cols.length >= 10) {
                 allRisks.push({
-                    id: cols[0].trim(), titre: cols[1].trim(), cat: cols[2].trim(),
-                    secteurs: cols[3].split(',').map(s => s.trim()),
-                    menace: cols[4].trim(), dic: cols[5].trim(), iso: cols[6].trim(),
-                    dora: cols[7].trim(), nis2: cols[8].trim(), impact: cols[9].trim(),
-                    scenario: cols[10].trim(), mesures: cols[11] ? cols[11].trim() : "",
-                    fullText: rows[i].toLowerCase()
+                    id: cols[0], titre: cols[1], cat: cols[2], 
+                    secteurs: cols[3].split(','), menace: cols[4], 
+                    iso: cols[6], dora: cols[7], nis2: cols[8], 
+                    impact: parseFloat(cols[9]) || 0, scenario: cols[10], 
+                    mesures: cols[11] || ""
                 });
             }
         }
+        updateDashboard(allRisks);
         displayRisks(allRisks);
     }
 
+    function updateDashboard(data) {
+        document.getElementById('stat-total').innerText = data.length;
+        const otCount = data.filter(r => checkIfOT(r)).length;
+        document.getElementById('stat-ot').innerText = otCount;
+        document.getElementById('stat-it').innerText = data.length - otCount;
+        const avg = data.reduce((acc, r) => acc + r.impact, 0) / data.length;
+        document.getElementById('stat-impact').innerText = avg.toFixed(1) + "/5";
+    }
+
     function checkIfOT(r) {
-        const text = (r.cat + " " + r.titre + " " + r.scenario).toUpperCase();
-        const keywordsOT = ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "USINE", "CAPTEUR", "BIOMÉDICAL", "MODBUS", "PROFINET"];
-        return keywordsOT.some(word => text.includes(word)) || /\bOT\b/.test(text);
+        const txt = (r.cat + r.titre + r.scenario).toUpperCase();
+        return ["SCADA", "PLC", "AUTOMATE", "INDUSTRIEL", "BIOMÉDICAL"].some(k => txt.includes(k)) || /\bOT\b/.test(txt);
     }
 
     function displayRisks(risks) {
         const body = document.getElementById('riskBody');
-        body.innerHTML = '';
-        risks.forEach(r => {
-            const isSelected = selectedIds.has(r.id);
+        body.innerHTML = risks.map(r => {
             const isOT = checkIfOT(r);
-            const row = document.createElement('tr');
-            if (isSelected) row.classList.add('selected-row');
+            return `
+            <tr id="row-${r.id}" class="${selectedIds.has(r.id) ? 'selected-row' : ''}">
+                <td class="no-print"><input type="checkbox" ${selectedIds.has(r.id) ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
+                <td>
+                    <span class="tag" style="background:${isOT?'#f59e0b':'#3b82f6'};color:white">${isOT?'OT':'IT'}</span>
+                    <div class="editable" contenteditable="true" onblur="updateLocalData('${r.id}', 'titre', this.innerText)"><b>${r.id} - ${r.titre}</b></div>
+                    <div class="editable" contenteditable="true" style="font-size:11px; color:gray" onblur="updateLocalData('${r.id}', 'scenario', this.innerText)">${r.scenario}</div>
+                    <div class="editable" contenteditable="true" style="color:green; font-weight:600; font-size:11px" onblur="updateLocalData('${r.id}', 'mesures', this.innerText)">✅ ${r.mesures}</div>
+                </td>
+                <td>${r.secteurs.map(s => `<span class="tag tag-sector">${s}</span>`).join('')}</td>
+                <td><b>${r.cat}</b><br><small>${r.menace}</small></td>
+                <td><small>ISO ${r.iso}<br>DORA ${r.dora}<br>NIS2 ${r.nis2}</small></td>
+                <td><span class="impact-badge ${r.impact>=4?'high':''}">${r.impact}/5</span></td>
+            </tr>`;
+        }).join('');
+    }
 
-            row.innerHTML = `
-                <td class="no-print"><input type="checkbox" class="risk-check" ${isSelected ? 'checked' : ''} onclick="toggleSelect('${r.id}', this)"></td>
-                <td>
-                    <span class="tag" style="background:${isOT?'#f59e0b':'#3b82f6'}; color:white; font-size:9px;">${isOT?'⚙️ OT':'💻 IT'}</span>
-                    <div style="font-weight: bold; margin-top:4px; font-size:14px;">${r.id} - ${r.titre}</div>
-                    <div style="color: #64748b; font-size: 11px; margin-top:4px;">${r.scenario}</div>
-                    <div style="margin-top:8px; color: #059669; font-weight: 600; font-size:11px;">✅ ${r.mesures}</div>
-                </td>
-                <td>${r.secteurs.map(s => `<span class="tag tag-sector" onclick="quickFilterSector('${s}')">${s}</span>`).join('')}</td>
-                <td><strong>${r.cat}</strong><br><small style="color:#94a3b8">${r.menace}</small></td>
-                <td>
-                    <span class="tag tag-regul">ISO ${r.iso}</span>
-                    <span class="tag tag-regul">DORA ${r.dora}</span>
-                    <span class="tag tag-regul">NIS2 ${r.nis2}</span>
-                </td>
-                <td><span class="impact-badge ${r.impact >= 4 ? 'high' : ''}">${r.impact}/5</span></td>
-            `;
-            body.appendChild(row);
-        });
+    function updateLocalData(id, field, value) {
+        const risk = allRisks.find(r => r.id === id);
+        if (risk) risk[field] = value;
     }
 
     function toggleSelect(id, cb) {
         cb.checked ? selectedIds.add(id) : selectedIds.delete(id);
         cb.closest('tr').classList.toggle('selected-row');
-        updateUI();
+        document.getElementById('pdfBtn').disabled = document.getElementById('excelBtn').disabled = selectedIds.size === 0;
     }
 
     function toggleAll(master) {
-        const visibleChecks = document.querySelectorAll('.risk-check');
-        visibleChecks.forEach(cb => {
-            const row = cb.closest('tr');
-            const id = row.querySelector('div').innerText.split(' - ')[0];
-            cb.checked = master.checked;
-            master.checked ? selectedIds.add(id) : selectedIds.delete(id);
-            row.classList.toggle('selected-row', master.checked);
+        const checkboxes = document.querySelectorAll('.risk-check'); // Note: add class to inputs if needed
+        // Simpifié pour la démo:
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if(cb !== master) {
+                cb.checked = master.checked;
+                const id = cb.closest('tr').id.replace('row-','');
+                master.checked ? selectedIds.add(id) : selectedIds.delete(id);
+                cb.closest('tr').classList.toggle('selected-row', master.checked);
+            }
         });
         updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById('counter').innerText = `${selectedIds.size} sélectionnés`;
-        document.getElementById('pdfBtn').disabled = selectedIds.size === 0;
-    }
-
-    function quickFilterSector(s) {
-        document.getElementById('filterSecteur').value = s;
-        filterRisks();
     }
 
     function filterRisks() {
         const term = document.getElementById('searchInput').value.toLowerCase();
-        const sector = document.getElementById('filterSecteur').value.toLowerCase();
         const type = document.getElementById('filterType').value;
-
         const filtered = allRisks.filter(r => {
-            const matchTerm = r.fullText.includes(term);
-            const matchSector = sector === "" || r.secteurs.some(s => s.toLowerCase().includes(sector));
+            const matchTerm = r.titre.toLowerCase().includes(term) || r.scenario.toLowerCase().includes(term);
             const isOT = checkIfOT(r);
             const matchType = type === "" || (type === "OT" ? isOT : !isOT);
-            return matchTerm && matchSector && matchType;
+            return matchTerm && matchType;
         });
         displayRisks(filtered);
+    }
+
+    function exportToExcel() {
+        let csv = "ID;Titre;Scenario;Mesures;Impact\n";
+        allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
+            csv += `${r.id};${r.titre};${r.scenario};${r.mesures};${r.impact}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "selection_risques.csv";
+        link.click();
     }
 </script>
 </body>
