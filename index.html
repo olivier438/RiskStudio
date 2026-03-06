@@ -252,6 +252,16 @@
                 <li>➕ <strong>Contribuez</strong> en proposant de nouveaux risques via le formulaire</li>
             </ul>
 
+            <h3>Veille cyber en quasi temps réel</h3>
+            <p>Un agent IA tourne en continu en arrière-plan. Toutes les 10 minutes, il ingère les flux de <strong>10 sources spécialisées</strong> — The Hacker News, BleepingComputer, Krebs on Security, Dark Reading, SecurityWeek, CISA, NVD NIST, CERT-FR, CERT-BE et ENISA — et soumet chaque article à une analyse IA pour extraction et structuration automatique du risque.</p>
+            <p>Chaque article est classé selon un système de triage à trois niveaux :</p>
+            <ul>
+                <li>🔥 <strong>Critical</strong> — zero-day actif, CVSS &ge; 9 avec exploitation confirmée, ransomware en cours, attaque d'infrastructure critique. <strong>Publication immédiate</strong>, sans validation éditoriale.</li>
+                <li>⚡ <strong>Significant</strong> — vulnérabilité importante, campagne ciblée, CVSS 7-8. Soumis à validation éditoriale avant publication.</li>
+                <li>🔇 <strong>Noise</strong> — article marketing, tendance générique, pas de menace concrète. Ignoré automatiquement.</li>
+            </ul>
+            <p>Les alertes critiques sont immédiatement visibles dans l'onglet <strong>Cyberrisques</strong> avec un bandeau rouge et un badge 🔥 CRITICAL.</p>
+
             <h3>Frameworks couverts</h3>
             <div>
                 <span class="modal-tag">ISO/IEC 27001:2022</span>
@@ -263,12 +273,8 @@
 
             <h3>Architecture</h3>
             <p>Risk Studio est une application <strong>100% statique côté client</strong>, sans backend applicatif. Le frontend (HTML/CSS/JS vanilla, zéro dépendance) est hébergé sur <strong>GitHub Pages</strong> et consomme directement l'API REST de <strong>Supabase</strong> (PostgreSQL managé).</p>
-            <p>Le schéma de données est normalisé en 3NF : table <code>risks</code> reliée par junction tables à <code>categories</code>, <code>sectors</code>, <code>frameworks</code> et <code>risk_compliance</code>. Un audit log (<code>risk_audit_log</code>) trace chaque changement de statut.</p>
+            <p>L'agent de veille tourne sur <strong>Cloudflare Workers</strong> (cron toutes les 10 minutes) et utilise <strong>Groq API</strong> (LLaMA 3.1) pour l'analyse et la classification des risques. Le schéma de données est normalisé : table <code>risks</code> reliée par junction tables à <code>categories</code>, <code>sectors</code>, <code>frameworks</code> et <code>risk_compliance</code>.</p>
             <p>La sécurité repose sur le <strong>Row Level Security (RLS)</strong> de Supabase : la clé publique <code>anon</code> exposée côté client ne donne accès qu'aux risques au statut <code>published</code>. Les insertions sont réservées au <code>service_role</code> (agent IA), les validations à un utilisateur <code>authenticated</code>. Aucune donnée sensible n'est accessible depuis le browser.</p>
-            <p>La roadmap prévoit un <strong>Cloudflare Worker</strong> (cron toutes les minutes) qui ingère des flux RSS/CERT, soumet les articles à <strong>Claude API</strong> pour extraction et structuration du risque, puis insère en base avec statut <code>pending</code>. Supabase Realtime (websockets) propulsera les nouveaux risques validés en direct chez tous les utilisateurs connectés.</p>
-
-            <h3>À venir</h3>
-            <p>Un agent IA surveille en continu l'actualité cyber et propose automatiquement de nouveaux risques, soumis à validation éditoriale avant publication. Risk Studio devient un catalogue vivant, mis à jour en temps réel.</p>
 
         </div>
         <div class="modal-footer">
