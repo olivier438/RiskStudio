@@ -2,66 +2,359 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soumission de Risque | Risk Studio</title>
+    <title>Risk Studio — Proposer un risque</title>
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f8fafc; 
-            overflow: hidden; /* Empêche le double scroll */
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #dc2626;
         }
-        .header { 
-            background: white; 
-            padding: 15px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; min-height: 100vh; }
+        .container { max-width: 720px; margin: 0 auto; }
+
+        .page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--border); }
+        .back-link { color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        h1 { margin: 0; font-size: 22px; color: var(--primary); }
+        .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        .form-card { background: white; border-radius: 14px; padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .form-card h2 { margin: 0 0 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        label .required { color: var(--error); margin-left: 3px; }
+        label .optional { color: #94a3b8; font-weight: normal; font-size: 11px; margin-left: 6px; }
+
+        input[type="text"], input[type="email"], textarea, select {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 13px; font-family: inherit;
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fafafa; color: var(--text);
         }
-        .header h2 { margin: 0; color: #2563eb; font-size: 18px; }
-        .btn-back { 
-            text-decoration: none; 
-            color: #64748b; 
-            font-size: 14px; 
-            font-weight: 600;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background 0.2s;
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            background: white;
         }
-        .btn-back:hover { background: #f1f5f9; color: #1e293b; }
-        
-        /* Conteneur de l'iframe */
-        .iframe-container {
-            width: 100%;
-            height: calc(100vh - 60px); /* Hauteur totale moins le header */
+        textarea { resize: vertical; min-height: 80px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* Impact selector */
+        .impact-group { display: flex; gap: 8px; }
+        .impact-btn {
+            flex: 1; padding: 10px; border: 2px solid var(--border); border-radius: 8px;
+            background: white; cursor: pointer; font-size: 13px; font-weight: 600;
+            text-align: center; transition: all 0.15s;
         }
-        iframe {
-            display: block;
-            width: 100%;
-            height: 100%;
-            border: none;
+        .impact-btn:hover { border-color: #94a3b8; }
+        .impact-btn.selected { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+        .impact-btn[data-val="5"].selected { border-color: var(--error); background: #fef2f2; color: var(--error); }
+        .impact-btn[data-val="4"].selected { border-color: #ea580c; background: #fff7ed; color: #ea580c; }
+
+        /* DIC checkboxes */
+        .dic-group { display: flex; gap: 10px; }
+        .dic-check { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.15s; }
+        .dic-check input { display: none; }
+        .dic-check.checked-d { border-color: #1e40af; background: #dbeafe; color: #1e40af; }
+        .dic-check.checked-i { border-color: #166534; background: #dcfce7; color: #166534; }
+        .dic-check.checked-c { border-color: #9d174d; background: #fce7f3; color: #9d174d; }
+
+        /* Submit */
+        .btn-submit {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 10px; font-size: 15px; font-weight: bold;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-submit:hover { background: #1d4ed8; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* Feedback */
+        .feedback { display: none; padding: 16px 20px; border-radius: 10px; font-size: 14px; margin-top: 20px; }
+        .feedback.success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+        .feedback.error   { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+
+        .char-count { font-size: 11px; color: #94a3b8; text-align: right; margin-top: 3px; }
+
+        .disclaimer { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 16px; line-height: 1.6; }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .impact-group { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
+<div class="container">
 
-    <div class="header">
-        <h2>🛡️ Risk Studio <span style="font-weight:normal; color:#94a3b8; font-size:14px;">| Soumission</span></h2>
-        <a href="index.html" class="btn-back">← Retour au Dashboard</a>
+    <div class="page-header">
+        <a href="index.html" class="back-link">← Retour au catalogue</a>
+        <div>
+            <h1>➕ Proposer un risque</h1>
+            <div class="subtitle">Contribuez au catalogue communautaire — chaque soumission est relue avant publication.</div>
+        </div>
     </div>
 
-    <div class="iframe-container">
-        <iframe 
-            data-tally-src="https://tally.so/embed/vGN86v?hideTitle=1&transparentBackground=1&dynamicHeight=1" 
-            loading="lazy" 
-            title="Nouveau Risque">
-        </iframe>
+    <!-- Champs obligatoires -->
+    <div class="form-card">
+        <h2>📋 Informations essentielles <span style="color:var(--error)">*</span></h2>
+
+        <div class="form-group">
+            <label>Titre du risque <span class="required">*</span></label>
+            <input type="text" id="titre" placeholder="Ex: Absence de chiffrement des données en transit" maxlength="120">
+            <div class="char-count"><span id="titreCount">0</span>/120</div>
+        </div>
+
+        <div class="form-group">
+            <label>Scénario de risque <span class="required">*</span>
+                <span class="optional">Décrivez concrètement comment ce risque se matérialise</span>
+            </label>
+            <textarea id="scenario" placeholder="Ex: Un attaquant intercepte les communications réseau et accède aux données sensibles échangées entre le serveur et les clients." maxlength="500"></textarea>
+            <div class="char-count"><span id="scenarioCount">0</span>/500</div>
+        </div>
+
+        <div class="form-group">
+            <label>Mesures de sécurité <span class="required">*</span>
+                <span class="optional">Recommandations pour traiter ce risque</span>
+            </label>
+            <textarea id="mesures" placeholder="Ex: Activer TLS 1.2 minimum sur tous les endpoints. Désactiver les protocoles obsolètes (SSLv3, TLS 1.0). Mettre en place un certificat valide." maxlength="500"></textarea>
+            <div class="char-count"><span id="mesuresCount">0</span>/500</div>
+        </div>
+
+        <div class="form-group">
+            <label>Niveau d'impact <span class="required">*</span></label>
+            <div class="impact-group" id="impactGroup">
+                <button class="impact-btn" data-val="1" onclick="selectImpact(1)">1<br><small>Négligeable</small></button>
+                <button class="impact-btn" data-val="2" onclick="selectImpact(2)">2<br><small>Faible</small></button>
+                <button class="impact-btn" data-val="3" onclick="selectImpact(3)">3<br><small>Moyen</small></button>
+                <button class="impact-btn" data-val="4" onclick="selectImpact(4)">4<br><small>Élevé</small></button>
+                <button class="impact-btn" data-val="5" onclick="selectImpact(5)">5<br><small>Critique</small></button>
+            </div>
+            <input type="hidden" id="impact" value="">
+        </div>
     </div>
 
-    <script async src="https://tally.so/widgets/embed.js"></script>
+    <!-- Champs optionnels -->
+    <div class="form-card">
+        <h2>🏷️ Informations complémentaires <span style="color:#94a3b8; font-weight:normal; font-size:12px;">(optionnel mais utile)</span></h2>
 
+        <div class="form-row">
+            <div class="form-group">
+                <label>Catégorie <span class="optional">optionnel</span></label>
+                <select id="categorie">
+                    <option value="">— Choisir —</option>
+                    <option>Accès</option><option>Continuité</option><option>Crise</option>
+                    <option>Données</option><option>Développement</option><option>Gouvernance</option>
+                    <option>IA</option><option>IAM</option><option>Infrastructure</option>
+                    <option>Juridique</option><option>OT</option><option>Opérations</option>
+                    <option>Physique</option><option>RH</option><option>Santé</option>
+                    <option>Supply Chain</option><option>Technique</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Secteur(s) <span class="optional">optionnel</span></label>
+                <input type="text" id="secteurs" placeholder="Finance, Santé, Tous...">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Type de menace <span class="optional">optionnel</span></label>
+                <input type="text" id="menace" placeholder="Ex: Attaque externe, Erreur humaine...">
+            </div>
+            <div class="form-group">
+                <label>DIC <span class="optional">optionnel</span></label>
+                <div class="dic-group">
+                    <label class="dic-check" id="dic-d-label" onclick="toggleDic('d')">
+                        <input type="checkbox" id="dic-d"> D
+                    </label>
+                    <label class="dic-check" id="dic-i-label" onclick="toggleDic('i')">
+                        <input type="checkbox" id="dic-i"> I
+                    </label>
+                    <label class="dic-check" id="dic-c-label" onclick="toggleDic('c')">
+                        <input type="checkbox" id="dic-c"> C
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Référence ISO 27001 <span class="optional">optionnel</span></label>
+                <input type="text" id="iso27001" placeholder="Ex: A.8.24, 8.7...">
+            </div>
+            <div class="form-group">
+                <label>Référence NIS2 <span class="optional">optionnel</span></label>
+                <input type="text" id="nis2" placeholder="Ex: Gestion des risques">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Référence DORA <span class="optional">optionnel</span></label>
+            <input type="text" id="dora" placeholder="Ex: Art. 9, Art. 10...">
+        </div>
+    </div>
+
+    <!-- Contributeur -->
+    <div class="form-card">
+        <h2>👤 À propos de vous <span style="color:#94a3b8; font-weight:normal; font-size:12px;">(optionnel)</span></h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nom / pseudo <span class="optional">optionnel</span></label>
+                <input type="text" id="contributeur" placeholder="Ex: Jean D., CISOwatcher...">
+            </div>
+            <div class="form-group">
+                <label>Email <span class="optional">non publié, pour suivi uniquement</span></label>
+                <input type="email" id="email" placeholder="votre@email.com">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Commentaire libre <span class="optional">contexte, source, remarque...</span></label>
+            <textarea id="commentaire" placeholder="Une source, un contexte, une remarque pour l'équipe de modération..." style="min-height:60px;" maxlength="300"></textarea>
+        </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitProposal()">
+        ➕ Soumettre ma proposition
+    </button>
+
+    <div class="feedback" id="feedbackBox"></div>
+
+    <p class="disclaimer">
+        Votre proposition sera relue par l'équipe Risk Studio avant publication.<br>
+        Les soumissions de mauvaise qualité ou hors sujet seront rejetées sans notification.<br>
+        En soumettant, vous acceptez que votre contribution soit publiée sous licence CC BY-SA 4.0.
+    </p>
+
+</div>
+
+<script>
+    // ============================================
+    // CONFIGURATION SUPABASE
+    // ============================================
+    const SUPABASE_URL  = 'https://VOTRE_PROJECT_ID.supabase.co';
+    const SUPABASE_ANON = 'VOTRE_ANON_PUBLIC_KEY';
+    // ============================================
+
+    let selectedImpact = null;
+    const dicState = { d: false, i: false, c: false };
+
+    // Char counters
+    ['titre', 'scenario', 'mesures'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => {
+            document.getElementById(id + 'Count').innerText = el.value.length;
+        });
+    });
+
+    function selectImpact(val) {
+        selectedImpact = val;
+        document.getElementById('impact').value = val;
+        document.querySelectorAll('.impact-btn').forEach(btn => {
+            btn.classList.toggle('selected', parseInt(btn.dataset.val) === val);
+        });
+    }
+
+    function toggleDic(letter) {
+        dicState[letter] = !dicState[letter];
+        const label = document.getElementById(`dic-${letter}-label`);
+        label.classList.toggle(`checked-${letter}`, dicState[letter]);
+        document.getElementById(`dic-${letter}`).checked = dicState[letter];
+        // Prevent default label click double-toggle
+        event.preventDefault();
+    }
+
+    function getDicString() {
+        return ['D','I','C'].filter((l,i) => dicState[['d','i','c'][i]]).join('') || null;
+    }
+
+    function validate() {
+        const titre    = document.getElementById('titre').value.trim();
+        const scenario = document.getElementById('scenario').value.trim();
+        const mesures  = document.getElementById('mesures').value.trim();
+
+        if (!titre)    { showError('Le titre est obligatoire.'); return false; }
+        if (titre.length < 10) { showError('Le titre est trop court (10 caractères minimum).'); return false; }
+        if (!scenario) { showError('Le scénario est obligatoire.'); return false; }
+        if (!mesures)  { showError('Les mesures sont obligatoires.'); return false; }
+        if (!selectedImpact) { showError('Veuillez sélectionner un niveau d\'impact.'); return false; }
+        return true;
+    }
+
+    async function submitProposal() {
+        if (!validate()) return;
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = '⏳ Envoi en cours...';
+
+        const payload = {
+            titre:        document.getElementById('titre').value.trim(),
+            scenario:     document.getElementById('scenario').value.trim(),
+            mesures:      document.getElementById('mesures').value.trim(),
+            impact:       selectedImpact,
+            categorie:    document.getElementById('categorie').value || null,
+            secteurs:     document.getElementById('secteurs').value.trim() || null,
+            menace:       document.getElementById('menace').value.trim() || null,
+            dic:          getDicString(),
+            iso27001:     document.getElementById('iso27001').value.trim() || null,
+            dora:         document.getElementById('dora').value.trim() || null,
+            nis2:         document.getElementById('nis2').value.trim() || null,
+            contributeur: document.getElementById('contributeur').value.trim() || null,
+            email:        document.getElementById('email').value.trim() || null,
+            commentaire:  document.getElementById('commentaire').value.trim() || null,
+            status:       'pending'
+        };
+
+        try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/proposals`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_ANON,
+                    'Authorization': `Bearer ${SUPABASE_ANON}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+
+            showSuccess(`✅ Merci ! Votre proposition a bien été soumise.<br>
+                Elle sera relue par l'équipe Risk Studio et publiée si elle répond aux critères qualité.`);
+            document.getElementById('submitBtn').style.display = 'none';
+
+        } catch (err) {
+            console.error(err);
+            showError('Une erreur est survenue lors de l\'envoi. Veuillez réessayer.');
+            btn.disabled = false;
+            btn.innerText = '➕ Soumettre ma proposition';
+        }
+    }
+
+    function showSuccess(msg) {
+        const box = document.getElementById('feedbackBox');
+        box.className = 'feedback success';
+        box.innerHTML = msg;
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showError(msg) {
+        const box = document.getElementById('feedbackBox');
+        box.className = 'feedback error';
+        box.innerHTML = '⚠️ ' + msg;
+        box.style.display = 'block';
+        box.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
 </body>
 </html>
