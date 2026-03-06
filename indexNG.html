@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Risk Studio v4.0 | Dashboard & GRC</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --ot-color: #f59e0b;
+            --it-color: #3b82f6;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .app-title h1 { margin: 0; font-size: 24px; color: var(--primary); line-height: 1; }
+        .meta-info { font-size: 11px; color: #64748b; margin-top: 8px; line-height: 1.4; }
+        .meta-info b { color: #475569; }
+
+        /* Dashboard */
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--primary); }
+        .stat-card h3 { margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card p { margin: 8px 0 0; font-size: 22px; font-weight: bold; }
+
+        /* Toolbar */
+        .toolbar { background: white; padding: 15px; border-radius: 12px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .search-input { flex-grow: 1; min-width: 200px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 13px; }
+        select { padding: 10px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; }
+
+        .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 13px; text-decoration: none; white-space: nowrap; }
+        .btn-edit { background: #f1f5f9; color: #475569; }
+        .btn-edit.active { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+        .btn-propo { background: #e0f2fe; color: #0369a1; }
+        .btn-pdf { background: var(--primary); color: white; }
+        .btn-excel { background: #107c10; color: white; }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 40px; color: #64748b; font-size: 14px; }
+        .loading-spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Error */
+        .error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; }
+
+        /* Table */
+        .table-wrapper { border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .risk-table { width: 100%; border-collapse: collapse; background: white; }
+        .risk-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 11px; color: #64748b; border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+        .risk-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+        .risk-table tr:last-child td { border-bottom: none; }
+        .risk-table tr:hover td { background: #f8fafc; }
+
+        /* Edit Mode */
+        .editable[contenteditable="true"] { background: #fffbeb; padding: 2px; border-radius: 3px; outline: 1px dashed #f59e0b; cursor: text; }
+        .selected-row td { background: #eff6ff !important; }
+
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .sector-tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; background: #f1f5f9; color: #475569; margin: 1px; }
+
+        /* DIC badges */
+        .dic-badge { display: inline-block; padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; margin: 1px; }
+        .dic-d { background: #dbeafe; color: #1e40af; }
+        .dic-i { background: #dcfce7; color: #166534; }
+        .dic-c { background: #fce7f3; color: #9d174d; }
+
+        /* Pending badge */
+        .pending-indicator { position: fixed; top: 20px; right: 20px; background: #f59e0b; color: white; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; cursor: pointer; z-index: 100; }
+
+        @media print {
+            .toolbar, .dashboard, .btn, .no-print, .app-header { display: none !important; }
+            tr:not(.selected-row) { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { max-width: 100%; }
+            .selected-row { display: table-row !important; background: white !important; }
+            .selected-row td { background: white !important; }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: repeat(2, 1fr); }
+            .toolbar { flex-direction: column; }
+            .search-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Pending notification (admin only) -->
+<div class="pending-indicator" id="pendingBadge" onclick="window.location.href='?admin&tab=pending'">
+    ⏳ <span id="pendingCount">0</span> risques en attente
+</div>
+
+<div class="container">
+    <div class="app-header">
+        <div class="app-title">
+            <h1>🛡️ Risk Studio <span>v4.0</span></h1>
+            <div class="meta-info">
+                Moteur : <b>04/03/2026</b><br>
+                Base : <b id="db-sync">Chargement...</b>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="proposer.html" class="btn btn-propo">➕ Proposer un risque</a>
+            <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Lecture</button>
+            <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 PDF</button>
+            <button class="btn btn-excel" id="excelBtn" onclick="exportExcel()" disabled>📊 Excel</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="stat-card"><h3>Total Catalogue</h3><p id="count-all">—</p></div>
+        <div class="stat-card" style="border-top-color: var(--it-color)"><h3>Risques IT</h3><p id="count-it">—</p></div>
+        <div class="stat-card" style="border-top-color: var(--ot-color)"><h3>Risques OT</h3><p id="count-ot">—</p></div>
+        <div class="stat-card" style="border-top-color: #10b981"><h3>Sél. Impact Moy.</h3><p id="avg-impact">—</p></div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="searchInput" class="search-input"
+            placeholder="🔍 Chercher par mot-clé, menace, ISO, DORA, NIS2..."
+            oninput="filterRisks()">
+        <select id="filterEnv" onchange="filterRisks()">
+            <option value="">Tous les environnements</option>
+            <option value="IT">💻 Environnement IT</option>
+            <option value="OT">⚙️ Environnement OT</option>
+        </select>
+        <select id="filterCat" onchange="filterRisks()">
+            <option value="">Toutes les catégories</option>
+        </select>
+        <select id="filterImpact" onchange="filterRisks()">
+            <option value="">Tous les impacts</option>
+            <option value="5">Impact 5 — Critique</option>
+            <option value="4">Impact 4 — Élevé</option>
+            <option value="3">Impact 3 — Moyen</option>
+            <option value="2">Impact 2 — Faible</option>
+        </select>
+    </div>
+
+    <div id="loadingArea" class="loading">
+        <span class="loading-spinner"></span> Connexion à la base de données...
+    </div>
+    <div id="errorArea" class="error-msg" style="display:none;"></div>
+
+    <div class="table-wrapper" id="tableWrapper" style="display:none;">
+        <table class="risk-table">
+            <thead>
+                <tr>
+                    <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+                    <th width="40%">Risque & Scénario</th>
+                    <th>Secteurs</th>
+                    <th>Catégorie</th>
+                    <th>Conformité</th>
+                    <th width="90px">DIC</th>
+                    <th width="80px">Impact</th>
+                </tr>
+            </thead>
+            <tbody id="riskBody"></tbody>
+        </table>
+    </div>
+    <div id="noResults" style="display:none; text-align:center; padding:40px; color:#64748b; background:white; border-radius:12px;">
+        🔍 Aucun risque ne correspond à vos critères.
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // CONFIGURATION SUPABASE
+    // Remplace ces deux valeurs par tes infos
+    // Supabase Dashboard → Settings → API
+    // ============================================
+    const SUPABASE_URL  = 'https://xzbcmpsabbjmlbathdpl.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_c0pZ8a5R9TadUNxyopIFEA_5M6_5R5C';
+    // ============================================
+
+    let allRisks    = [];
+    let filteredRisks = [];
+    let selectedIds = new Set();
+    const urlParams = new URLSearchParams(window.location.search);
+    let isEditMode  = urlParams.has('admin');
+
+    // ============================================
+    // INIT
+    // ============================================
+    window.onload = async () => {
+        setupEditMode();
+        await loadRisks();
+        if (isEditMode) await checkPending();
+    };
+
+    function setupEditMode() {
+        const btn = document.getElementById('editToggle');
+        if (isEditMode) {
+            btn.innerText = "🔓 Quitter Mode Édition";
+            btn.classList.add('active');
+        } else {
+            btn.style.cursor = "default";
+            btn.onclick = null;
+        }
+    }
+
+    // ============================================
+    // FETCH DEPUIS SUPABASE
+    // ============================================
+    async function loadRisks() {
+        try {
+            // Jointure complète : risks + categories + sectors + compliance/frameworks
+            const query = `
+                id,titre,menace,disponibilite,integrite,confidentialite,
+                impact,scenario,mesures,created_at,
+                categories(name),
+                risk_sectors(sectors(name)),
+                risk_compliance(reference,frameworks(code))
+            `.replace(/\s+/g, '');
+
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/risks?select=${encodeURIComponent(query)}&status=eq.published&order=id.asc`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_ANON,
+                        'Authorization': `Bearer ${SUPABASE_ANON}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (!res.ok) throw new Error(`Erreur HTTP ${res.status} — Vérifie ton URL et ta clé Supabase.`);
+
+            const data = await res.json();
+
+            // Normalisation vers le format interne
+            allRisks = data.map(r => ({
+                id:      r.id,
+                titre:   r.titre,
+                cat:     r.categories?.name || '—',
+                secteurs: (r.risk_sectors || []).map(rs => rs.sectors?.name).filter(Boolean),
+                menace:  r.menace,
+                dic: {
+                    d: r.disponibilite,
+                    i: r.integrite,
+                    c: r.confidentialite
+                },
+                iso:     getCompliance(r, 'ISO27001'),
+                dora:    getCompliance(r, 'DORA'),
+                nis2:    getCompliance(r, 'NIS2'),
+                impact:  r.impact || 0,
+                scenario: r.scenario,
+                mesures: r.mesures || '',
+                createdAt: r.created_at
+            }));
+
+            // Sync date = date du risque le plus récent
+            if (allRisks.length > 0) {
+                const latest = allRisks
+                    .map(r => new Date(r.createdAt))
+                    .sort((a,b) => b-a)[0];
+                document.getElementById('db-sync').innerText =
+                    latest.toLocaleDateString('fr-FR') + ' ' +
+                    latest.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+            }
+
+            populateFilters();
+            document.getElementById('loadingArea').style.display = 'none';
+            document.getElementById('tableWrapper').style.display = 'block';
+
+            filterRisks();
+
+        } catch (err) {
+            document.getElementById('loadingArea').style.display = 'none';
+            const errEl = document.getElementById('errorArea');
+            errEl.style.display = 'block';
+            errEl.innerHTML = `❌ <b>Impossible de charger les données :</b> ${err.message}<br>
+                <small>Vérifie que SUPABASE_URL et SUPABASE_ANON sont correctement configurés dans le HTML.</small>`;
+        }
+    }
+
+    function getCompliance(risk, fwCode) {
+        if (!risk.risk_compliance) return '—';
+        const entry = risk.risk_compliance.find(rc => rc.frameworks?.code === fwCode);
+        return entry ? entry.reference : '—';
+    }
+
+    // Admin : check risques pending
+    async function checkPending() {
+        try {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/risks?select=id&status=eq.pending`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_ANON,
+                        'Authorization': `Bearer ${SUPABASE_ANON}`
+                    }
+                }
+            );
+            const data = await res.json();
+            if (data.length > 0) {
+                document.getElementById('pendingCount').innerText = data.length;
+                document.getElementById('pendingBadge').style.display = 'block';
+            }
+        } catch(e) { /* silencieux */ }
+    }
+
+    // ============================================
+    // FILTRES
+    // ============================================
+    function populateFilters() {
+        const cats = [...new Set(allRisks.map(r => r.cat))].sort();
+        const sel = document.getElementById('filterCat');
+        cats.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c; o.text = c;
+            sel.appendChild(o);
+        });
+    }
+
+    function filterRisks() {
+        const rawTerm   = document.getElementById('searchInput').value.toLowerCase();
+        const cleanTerm = rawTerm.replace(/[\s\-]/g, '');
+        const envFilter = document.getElementById('filterEnv').value;
+        const catFilter = document.getElementById('filterCat').value;
+        const impFilter = document.getElementById('filterImpact').value;
+
+        filteredRisks = allRisks.filter(r => {
+            const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, ...r.secteurs].join(' ').toLowerCase();
+            const norm   = fields.replace(/[\s\-]/g, '');
+            const mTerm  = !rawTerm || fields.includes(rawTerm) || norm.includes(cleanTerm);
+
+            const isOT   = checkIfOT(r);
+            const mEnv   = !envFilter || (envFilter === 'OT' ? isOT : !isOT);
+            const mCat   = !catFilter || r.cat === catFilter;
+            const mImp   = !impFilter || r.impact === parseInt(impFilter);
+
+            return mTerm && mEnv && mCat && mImp;
+        });
+
+        render(filteredRisks);
+        updateStats(filteredRisks);
+    }
+
+    function checkIfOT(r) {
+        const t = (r.cat + r.titre + r.scenario).toUpperCase();
+        return ["SCADA","PLC","AUTOMATE","INDUSTRIEL","BIOMÉDICAL","CAPTEUR"].some(k => t.includes(k))
+            || /\bOT\b/.test(t)
+            || r.secteurs.some(s => s.toUpperCase().includes('INDUSTRIE') || s.toUpperCase().includes('ÉNERGIE'));
+    }
+
+    // ============================================
+    // RENDU
+    // ============================================
+    function render(data) {
+        const body = document.getElementById('riskBody');
+        const noRes = document.getElementById('noResults');
+
+        if (data.length === 0) {
+            body.innerHTML = '';
+            noRes.style.display = 'block';
+            return;
+        }
+        noRes.style.display = 'none';
+
+        body.innerHTML = data.map(r => {
+            const ot      = checkIfOT(r);
+            const envTag  = ot
+                ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
+                : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
+            const sectTags = r.secteurs.map(s => `<span class="sector-tag">${s}</span>`).join('');
+            const dicHtml  = [
+                r.dic.d ? '<span class="dic-badge dic-d">D</span>' : '',
+                r.dic.i ? '<span class="dic-badge dic-i">I</span>' : '',
+                r.dic.c ? '<span class="dic-badge dic-c">C</span>' : ''
+            ].join('');
+            const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
+            const sel      = selectedIds.has(r.id);
+
+            return `
+            <tr class="${sel ? 'selected-row' : ''}">
+                <td class="no-print">
+                    <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
+                        data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
+                </td>
+                <td>
+                    ${envTag}
+                    <div style="font-weight:bold; margin-top:5px;" class="editable"
+                        onblur="updateVal('${r.id}','titre',this.innerText)">${escHtml(r.titre)}</div>
+                    <div style="font-size:11px; color:#64748b; margin-top:3px;" class="editable"
+                        onblur="updateVal('${r.id}','scenario',this.innerText)">${escHtml(r.scenario)}</div>
+                    <div style="font-size:11px; color:#059669; font-weight:600; margin-top:5px;" class="editable"
+                        onblur="updateVal('${r.id}','mesures',this.innerText)">✅ ${escHtml(r.mesures)}</div>
+                </td>
+                <td>${sectTags || '<small style="color:#94a3b8">Tous</small>'}</td>
+                <td><b>${escHtml(r.cat)}</b><br><small style="color:#64748b">${escHtml(r.menace)}</small></td>
+                <td style="font-size:11px; line-height:1.8;">
+                    ${r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
+                    ${r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
+                    ${r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
+                </td>
+                <td>${dicHtml}</td>
+                <td><b style="color:${impColor}; font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
+            </tr>`;
+        }).join('');
+
+        document.querySelectorAll('.editable').forEach(el => {
+            el.contentEditable = isEditMode;
+        });
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ============================================
+    // STATS
+    // ============================================
+    function updateStats(data) {
+        const src    = data || allRisks;
+        const otList = src.filter(r => checkIfOT(r));
+        document.getElementById('count-all').innerText = allRisks.length;
+        document.getElementById('count-it').innerText  = allRisks.filter(r => !checkIfOT(r)).length;
+        document.getElementById('count-ot').innerText  = allRisks.filter(r => checkIfOT(r)).length;
+
+        const target = selectedIds.size > 0 ? allRisks.filter(r => selectedIds.has(r.id)) : src;
+        const avg    = target.reduce((a,b) => a + b.impact, 0) / (target.length || 1);
+        document.getElementById('avg-impact').innerText = avg.toFixed(1) + '/5';
+    }
+
+    // ============================================
+    // SELECTION
+    // ============================================
+    function toggleSelect(id, cb) {
+        cb.checked ? selectedIds.add(id) : selectedIds.delete(id);
+        cb.closest('tr').classList.toggle('selected-row', cb.checked);
+        updateButtons();
+        updateStats();
+    }
+
+    function toggleAll(master) {
+        document.querySelectorAll('.risk-check').forEach(cb => {
+            cb.checked = master.checked;
+            const id = cb.getAttribute('data-id');
+            master.checked ? selectedIds.add(id) : selectedIds.delete(id);
+            cb.closest('tr').classList.toggle('selected-row', master.checked);
+        });
+        updateButtons();
+        updateStats();
+    }
+
+    function updateButtons() {
+        const has = selectedIds.size > 0;
+        document.getElementById('pdfBtn').disabled   = !has;
+        document.getElementById('excelBtn').disabled = !has;
+    }
+
+    // ============================================
+    // EDIT MODE
+    // ============================================
+    function toggleEditMode() {
+        if (isEditMode) window.location.href = window.location.pathname;
+    }
+
+    function updateVal(id, field, val) {
+        const r = allRisks.find(x => x.id === id);
+        if (r) r[field] = val.trim();
+        // TODO: PATCH vers Supabase (phase suivante)
+    }
+
+    // ============================================
+    // EXPORT EXCEL
+    // ============================================
+    function exportExcel() {
+        let csv = '\ufeffID;Titre;Catégorie;Secteurs;Menace;D;I;C;ISO27001;DORA;NIS2;Impact;Scénario;Mesures\n';
+        allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
+            csv += [
+                r.id, r.titre, r.cat,
+                r.secteurs.join(' | '),
+                r.menace,
+                r.dic.d?'OUI':'NON', r.dic.i?'OUI':'NON', r.dic.c?'OUI':'NON',
+                r.iso, r.dora, r.nis2,
+                r.impact, r.scenario, r.mesures
+            ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';') + '\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = `RiskStudio_export_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+    }
+</script>
+</body>
+</html>
