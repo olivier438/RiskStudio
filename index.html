@@ -92,6 +92,26 @@
         .modal-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #dbeafe; color: #1e40af; margin: 2px; }
         .modal-footer { padding: 16px 28px; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 16px 16px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
 
+        /* Toggle GRC / Cyber */
+        .mode-toggle { display: flex; background: #f1f5f9; border-radius: 10px; padding: 4px; gap: 4px; }
+        .mode-btn { padding: 8px 18px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; background: transparent; color: #64748b; }
+        .mode-btn.active-grc { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(37,99,235,0.3); }
+        .mode-btn.active-cyber { background: #dc2626; color: white; box-shadow: 0 2px 6px rgba(220,38,38,0.3); }
+
+        /* Cyber-specific */
+        .cvss-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .cvss-critical { background: #fef2f2; color: #dc2626; }
+        .cvss-high     { background: #fff7ed; color: #ea580c; }
+        .cvss-medium   { background: #fefce8; color: #ca8a04; }
+        .cvss-low      { background: #f0fdf4; color: #16a34a; }
+        .patch-badge   { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .patch-yes { background: #f0fdf4; color: #16a34a; }
+        .patch-no  { background: #fef2f2; color: #dc2626; }
+
+        /* Cyber mode header accent */
+        body.cyber-mode .app-title h1 { color: #dc2626; }
+        body.cyber-mode .stat-card    { border-top-color: #dc2626; }
+
         @media print {
             .toolbar, .dashboard, .btn, .no-print, .app-header { display: none !important; }
             tr:not(.selected-row) { display: none !important; }
@@ -125,7 +145,11 @@
                 <span class="about-link" onclick="document.getElementById('aboutModal').classList.add('open')">ℹ️ À propos de Risk Studio</span>
             </div>
         </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div class="mode-toggle">
+                <button class="mode-btn active-grc" id="btnGRC"   onclick="switchMode('grc')">🛡️ GRC</button>
+                <button class="mode-btn"             id="btnCyber" onclick="switchMode('cyber')">⚡ Cyberrisques</button>
+            </div>
             <a href="proposer.html" class="btn btn-propo">➕ Proposer un risque</a>
             <button id="editToggle" class="btn btn-edit" onclick="toggleEditMode()">🔒 Mode Lecture</button>
             <button class="btn btn-pdf" id="pdfBtn" onclick="window.print()" disabled>📄 PDF</button>
@@ -174,7 +198,8 @@
                     <th width="40%">Risque & Scénario</th>
                     <th>Secteurs</th>
                     <th>Catégorie</th>
-                    <th>Conformité</th>
+                    <th id="th-compliance">Conformité</th>
+                    <th id="th-cyber" style="display:none">CVE / CVSS</th>
                     <th width="90px">DIC</th>
                     <th width="80px">Impact</th>
                 </tr>
@@ -201,24 +226,17 @@
             <h3>Ce qu'est Risk Studio</h3>
             <p>Risk Studio est un <strong>catalogue GRC collaboratif et gratuit</strong>, conçu pour les professionnels de la cybersécurité : consultants, CISOs, risk managers, auditeurs. Une base vivante de risques structurés, filtrables et exportables — sans abonnement, sans friction.</p>
 
-            <h3>Pourquoi construire cet outil ? </h3>
-            <p>Chaque nouvel audit, on repart de zéro ou presque (merci notre mémoire). Les catalogues de risques sont soit payants, soit trop génériques, soit périmés. Risk Studio est né d'une conviction simple : les professionnels GRC méritent un outil commun, maintenu par la communauté, aligné sur les vrais référentiels du terrain.</p>
+            <h3>Pourquoi on l'a construit</h3>
+            <p>Chaque nouvelle mission repart de zéro. Les catalogues de risques sont soit verrouillés derrière des paywalls, soit trop génériques, soit périmés. Risk Studio est né d'une conviction simple : les professionnels GRC méritent un outil commun, maintenu par la communauté, aligné sur les vrais référentiels du terrain.</p>
 
             <h3>Comment ça fonctionne</h3>
             <ul>
                 <li>🔍 <strong>Cherchez</strong> par mot-clé, menace, référentiel (ISO, NIS2, DORA) ou catégorie</li>
                 <li>🏷️ <strong>Filtrez</strong> par environnement IT / OT, catégorie et niveau d'impact</li>
                 <li>☑️ <strong>Sélectionnez</strong> les risques pertinents pour votre mission</li>
-                <li>📊 <strong>Exportez</strong> en CSV/Excel ou PDF en un clic</li>
+                <li>📊 <strong>Exportez</strong> en CSV/Excel en un clic</li>
                 <li>➕ <strong>Contribuez</strong> en proposant de nouveaux risques via le formulaire</li>
             </ul>
-
-            <h3>Architecture</h3>
-            <p>Risk Studio est une application <strong>100% statique côté client</strong>, sans backend applicatif. Le frontend (HTML/CSS/JS vanilla, zéro dépendance) est hébergé sur <strong>GitHub Pages</strong> et consomme directement l'API REST de <strong>Supabase</strong> (PostgreSQL managé).</p>
-            <p>Le schéma de données est normalisé en 3NF : table <code>risks</code> reliée par junction tables à <code>categories</code>, <code>sectors</code>, <code>frameworks</code> et <code>risk_compliance</code>. Un audit log (<code>risk_audit_log</code>) trace chaque changement de statut.</p>
-            <p>La sécurité repose sur le <strong>Row Level Security (RLS)</strong> de Supabase : la clé publique <code>anon</code> exposée côté client ne donne accès qu'aux risques au statut <code>published</code>. Les insertions sont réservées au <code>service_role</code> (agent IA), les validations à un utilisateur <code>authenticated</code>. Aucune donnée sensible n'est accessible depuis le browser.</p>
-            <p>La roadmap prévoit un <strong>Cloudflare Worker</strong> (cron toutes les minutes) qui ingère des flux RSS/CERT, soumet les articles à <strong>Claude API</strong> pour extraction et structuration du risque, puis insère en base avec statut <code>pending</code>. Supabase Realtime (websockets) propulsera les nouveaux risques validés en direct chez tous les utilisateurs connectés.</p>
-
 
             <h3>Frameworks couverts</h3>
             <div>
@@ -228,6 +246,12 @@
                 <span class="modal-tag" style="background:#dcfce7;color:#166534">CyFun (bientôt)</span>
                 <span class="modal-tag" style="background:#fce7f3;color:#9d174d">NIST CSF 2.0 (bientôt)</span>
             </div>
+
+            <h3>Architecture</h3>
+            <p>Risk Studio est une application <strong>100% statique côté client</strong>, sans backend applicatif. Le frontend (HTML/CSS/JS vanilla, zéro dépendance) est hébergé sur <strong>GitHub Pages</strong> et consomme directement l'API REST de <strong>Supabase</strong> (PostgreSQL managé).</p>
+            <p>Le schéma de données est normalisé en 3NF : table <code>risks</code> reliée par junction tables à <code>categories</code>, <code>sectors</code>, <code>frameworks</code> et <code>risk_compliance</code>. Un audit log (<code>risk_audit_log</code>) trace chaque changement de statut.</p>
+            <p>La sécurité repose sur le <strong>Row Level Security (RLS)</strong> de Supabase : la clé publique <code>anon</code> exposée côté client ne donne accès qu'aux risques au statut <code>published</code>. Les insertions sont réservées au <code>service_role</code> (agent IA), les validations à un utilisateur <code>authenticated</code>. Aucune donnée sensible n'est accessible depuis le browser.</p>
+            <p>La roadmap prévoit un <strong>Cloudflare Worker</strong> (cron toutes les minutes) qui ingère des flux RSS/CERT, soumet les articles à <strong>Claude API</strong> pour extraction et structuration du risque, puis insère en base avec statut <code>pending</code>. Supabase Realtime (websockets) propulsera les nouveaux risques validés en direct chez tous les utilisateurs connectés.</p>
 
             <h3>À venir</h3>
             <p>Un agent IA surveille en continu l'actualité cyber et propose automatiquement de nouveaux risques, soumis à validation éditoriale avant publication. Risk Studio devient un catalogue vivant, mis à jour en temps réel.</p>
@@ -255,15 +279,37 @@
     // Remplace ces deux valeurs par tes infos
     // Supabase Dashboard → Settings → API
     // ============================================
-    const SUPABASE_URL  = 'https://xzbcmpsabbjmlbathdpl.supabase.co';
-    const SUPABASE_ANON = 'sb_publishable_c0pZ8a5R9TadUNxyopIFEA_5M6_5R5C';
+    const SUPABASE_URL  = 'https://VOTRE_PROJECT_ID.supabase.co';
+    const SUPABASE_ANON = 'VOTRE_ANON_PUBLIC_KEY';
     // ============================================
 
     let allRisks    = [];
     let filteredRisks = [];
     let selectedIds = new Set();
+    let currentMode = 'grc'; // 'grc' | 'cyber'
     const urlParams = new URLSearchParams(window.location.search);
     let isEditMode  = urlParams.has('admin');
+
+    function switchMode(mode) {
+        currentMode = mode;
+        document.body.classList.toggle('cyber-mode', mode === 'cyber');
+
+        // Toggle buttons
+        document.getElementById('btnGRC').className   = 'mode-btn' + (mode === 'grc'   ? ' active-grc'   : '');
+        document.getElementById('btnCyber').className = 'mode-btn' + (mode === 'cyber' ? ' active-cyber' : '');
+
+        // Toggle colonnes
+        document.getElementById('th-compliance').style.display = mode === 'grc'   ? '' : 'none';
+        document.getElementById('th-cyber').style.display      = mode === 'cyber' ? '' : 'none';
+
+        // Titre
+        document.querySelector('.app-title h1').innerHTML =
+            mode === 'grc'
+            ? '🛡️ Risk Studio <span>v4.2</span>'
+            : '⚡ Risk Studio <span>Cyber</span>';
+
+        filterRisks();
+    }
 
     // ============================================
     // INIT
@@ -332,6 +378,13 @@
                 impact:  r.impact || 0,
                 scenario: r.scenario,
                 mesures: r.mesures || '',
+                type:    r.type || 'grc',
+                // Champs cyber
+                cve_id:     r.cve_id     || null,
+                cvss_score: r.cvss_score || null,
+                produits:   r.produits   || [],
+                patch_dispo: r.patch_dispo ?? null,
+                source_url:  r.source_url || null,
                 createdAt: r.created_at
             }));
 
@@ -407,7 +460,7 @@
         const impFilter = document.getElementById('filterImpact').value;
 
         filteredRisks = allRisks.filter(r => {
-            const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, ...r.secteurs].join(' ').toLowerCase();
+            const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, r.cve_id, ...(r.produits||[]), ...r.secteurs].join(' ').toLowerCase();
             const norm   = fields.replace(/[\s\-]/g, '');
             const mTerm  = !rawTerm || fields.includes(rawTerm) || norm.includes(cleanTerm);
 
@@ -415,8 +468,9 @@
             const mEnv   = !envFilter || (envFilter === 'OT' ? isOT : !isOT);
             const mCat   = !catFilter || r.cat === catFilter;
             const mImp   = !impFilter || r.impact === parseInt(impFilter);
+            const mType  = r.type === currentMode;
 
-            return mTerm && mEnv && mCat && mImp;
+            return mTerm && mEnv && mCat && mImp && mType;
         });
 
         render(filteredRisks);
@@ -458,6 +512,37 @@
             const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
             const sel      = selectedIds.has(r.id);
 
+            const cvssHtml = () => {
+                if (currentMode !== 'cyber') return '';
+                let html = '';
+                if (r.cve_id) html += `<div style="font-weight:600;font-size:12px;">${escHtml(r.cve_id)}</div>`;
+                if (r.cvss_score) {
+                    const cls = r.cvss_score >= 9 ? 'cvss-critical' : r.cvss_score >= 7 ? 'cvss-high' : r.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low';
+                    html += `<span class="cvss-badge ${cls}">CVSS ${r.cvss_score}</span> `;
+                }
+                if (r.patch_dispo !== null) {
+                    html += r.patch_dispo
+                        ? `<span class="patch-badge patch-yes">✅ Patch dispo</span>`
+                        : `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
+                }
+                if (r.produits?.length) {
+                    html += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
+                }
+                if (r.source_url) {
+                    html += `<div style="margin-top:4px;"><a href="${escHtml(r.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
+                }
+                return html;
+            };
+
+            const complianceHtml = () => {
+                if (currentMode !== 'grc') return '';
+                return `
+                    ${r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
+                    ${r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
+                    ${r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
+                `;
+            };
+
             return `
             <tr class="${sel ? 'selected-row' : ''}">
                 <td class="no-print">
@@ -475,11 +560,8 @@
                 </td>
                 <td>${sectTags || '<small style="color:#94a3b8">Tous</small>'}</td>
                 <td><b>${escHtml(r.cat)}</b><br><small style="color:#64748b">${escHtml(r.menace)}</small></td>
-                <td style="font-size:11px; line-height:1.8;">
-                    ${r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
-                    ${r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
-                    ${r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
-                </td>
+                <td style="font-size:11px; line-height:1.8; display:${currentMode==='grc'?'':'none'}">${complianceHtml()}</td>
+                <td style="font-size:11px; display:${currentMode==='cyber'?'':'none'}">${cvssHtml()}</td>
                 <td>${dicHtml}</td>
                 <td><b style="color:${impColor}; font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
             </tr>`;
