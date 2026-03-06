@@ -72,6 +72,26 @@
         /* Pending badge */
         .pending-indicator { position: fixed; top: 20px; right: 20px; background: #f59e0b; color: white; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; cursor: pointer; z-index: 100; }
 
+        /* About popup */
+        .about-link { font-size: 11px; color: #94a3b8; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
+        .about-link:hover { color: var(--primary); }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 1000; backdrop-filter: blur(3px); align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: white; border-radius: 16px; max-width: 640px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.25); animation: modalIn 0.2s ease; }
+        @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+        .modal-header h2 { margin: 0; font-size: 20px; color: var(--primary); }
+        .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #94a3b8; padding: 0; line-height: 1; }
+        .modal-close:hover { color: #1e293b; }
+        .modal-body { padding: 20px 28px 28px; font-size: 14px; line-height: 1.7; color: #334155; }
+        .modal-body h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin: 20px 0 8px; }
+        .modal-body p { margin: 0 0 12px; }
+        .modal-body ul { margin: 0 0 12px; padding-left: 20px; }
+        .modal-body ul li { margin-bottom: 4px; }
+        .modal-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #dbeafe; color: #1e40af; margin: 2px; }
+        .modal-footer { padding: 16px 28px; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 16px 16px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; }
+
         @media print {
             .toolbar, .dashboard, .btn, .no-print, .app-header { display: none !important; }
             tr:not(.selected-row) { display: none !important; }
@@ -101,7 +121,8 @@
             <h1>🛡️ Risk Studio <span>v4.0</span></h1>
             <div class="meta-info">
                 Moteur : <b>04/03/2026</b><br>
-                Base : <b id="db-sync">Chargement...</b>
+                Base : <b id="db-sync">Chargement...</b><br>
+                <span class="about-link" onclick="document.getElementById('aboutModal').classList.add('open')">ℹ️ À propos de Risk Studio</span>
             </div>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -166,14 +187,69 @@
     </div>
 </div>
 
+<!-- ============================================ -->
+<!-- MODAL : À PROPOS DE RISK STUDIO             -->
+<!-- ============================================ -->
+<div class="modal-overlay" id="aboutModal" onclick="closeAboutIfOutside(event)">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>🛡️ Risk Studio</h2>
+            <button class="modal-close" onclick="document.getElementById('aboutModal').classList.remove('open')">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <h3>Ce qu'est Risk Studio</h3>
+            <p>Risk Studio est un <strong>catalogue GRC collaboratif et gratuit</strong>, conçu pour les professionnels de la cybersécurité : consultants, CISOs, risk managers, auditeurs. Une base vivante de risques structurés, filtrables et exportables — sans abonnement, sans friction.</p>
+
+            <h3>Pourquoi on l'a construit</h3>
+            <p>Chaque nouvelle mission repart de zéro. Les catalogues de risques sont soit verrouillés derrière des paywalls, soit trop génériques, soit périmés. Risk Studio est né d'une conviction simple : les professionnels GRC méritent un outil commun, maintenu par la communauté, aligné sur les vrais référentiels du terrain.</p>
+
+            <h3>Comment ça fonctionne</h3>
+            <ul>
+                <li>🔍 <strong>Cherchez</strong> par mot-clé, menace, référentiel (ISO, NIS2, DORA) ou catégorie</li>
+                <li>🏷️ <strong>Filtrez</strong> par environnement IT / OT, catégorie et niveau d'impact</li>
+                <li>☑️ <strong>Sélectionnez</strong> les risques pertinents pour votre mission</li>
+                <li>📊 <strong>Exportez</strong> en CSV/Excel en un clic</li>
+                <li>➕ <strong>Contribuez</strong> en proposant de nouveaux risques via le formulaire</li>
+            </ul>
+
+            <h3>Frameworks couverts</h3>
+            <div>
+                <span class="modal-tag">ISO/IEC 27001:2022</span>
+                <span class="modal-tag">NIS2</span>
+                <span class="modal-tag">DORA</span>
+                <span class="modal-tag" style="background:#dcfce7;color:#166534">CyFun (bientôt)</span>
+                <span class="modal-tag" style="background:#fce7f3;color:#9d174d">NIST CSF 2.0 (bientôt)</span>
+            </div>
+
+            <h3>À venir</h3>
+            <p>Un agent IA surveille en continu l'actualité cyber et propose automatiquement de nouveaux risques, soumis à validation éditoriale avant publication. Risk Studio devient un catalogue vivant, mis à jour en temps réel.</p>
+
+        </div>
+        <div class="modal-footer">
+            <span>Construit par <strong>ONE CIRCLE IT SOLUTIONS</strong> · Licence CC BY-SA 4.0</span>
+            <a href="https://github.com/olivier438/RiskStudio" target="_blank"
+               style="color:var(--primary); font-weight:bold; font-size:12px; text-decoration:none;">
+                GitHub ↗
+            </a>
+        </div>
+    </div>
+</div>
+
 <script>
+    function closeAboutIfOutside(e) {
+        if (e.target === document.getElementById('aboutModal')) {
+            document.getElementById('aboutModal').classList.remove('open');
+        }
+    }
+
     // ============================================
     // CONFIGURATION SUPABASE
     // Remplace ces deux valeurs par tes infos
     // Supabase Dashboard → Settings → API
     // ============================================
-    const SUPABASE_URL  = 'https://xzbcmpsabbjmlbathdpl.supabase.co';
-    const SUPABASE_ANON = 'sb_publishable_c0pZ8a5R9TadUNxyopIFEA_5M6_5R5C';
+    const SUPABASE_URL  = 'https://VOTRE_PROJECT_ID.supabase.co';
+    const SUPABASE_ANON = 'VOTRE_ANON_PUBLIC_KEY';
     // ============================================
 
     let allRisks    = [];
