@@ -279,8 +279,8 @@
     // Remplace ces deux valeurs par tes infos
     // Supabase Dashboard → Settings → API
     // ============================================
-    const SUPABASE_URL  = 'https://xzbcmpsabbjmlbathdpl.supabase.co';
-    const SUPABASE_ANON = 'sb_publishable_c0pZ8a5R9TadUNxyopIFEA_5M6_5R5C';
+    const SUPABASE_URL  = 'https://VOTRE_PROJECT_ID.supabase.co';
+    const SUPABASE_ANON = 'VOTRE_ANON_PUBLIC_KEY';
     // ============================================
 
     let allRisks    = [];
@@ -339,7 +339,7 @@
             // Jointure complète : risks + categories + sectors + compliance/frameworks
             const query = `
                 id,titre,menace,disponibilite,integrite,confidentialite,
-                impact,scenario,mesures,created_at,
+                impact,scenario,mesures,created_at,type,
                 categories(name),
                 risk_sectors(sectors(name)),
                 risk_compliance(reference,frameworks(code))
