@@ -147,6 +147,18 @@
         .toast.error   { background: var(--error); color: white; }
 
         .empty-state { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+
+        /* Bulk actions */
+        .bulk-bar { display: none; background: var(--surface2); border: 1px solid var(--primary); border-radius: 10px; padding: 12px 20px; margin-bottom: 16px; align-items: center; gap: 12px; }
+        .bulk-bar.visible { display: flex; }
+        .bulk-count { font-size: 13px; color: var(--text); font-weight: 600; flex-grow: 1; }
+        .btn-bulk-approve { padding: 8px 18px; background: var(--success); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-bulk-approve:hover { background: #059669; }
+        .btn-bulk-reject { padding: 8px 18px; background: transparent; border: 1px solid var(--error); color: var(--error); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-bulk-reject:hover { background: var(--error); color: white; }
+        .btn-bulk-clear { padding: 8px 14px; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .proposal-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .proposal-header-inner { display: flex; align-items: flex-start; gap: 12px; flex-grow: 1; min-width: 0; }
         .loading { text-align: center; padding: 40px; color: var(--muted); }
         .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -201,6 +213,13 @@
 
         <!-- TAB: PENDING PROPOSALS -->
         <div class="tab-content active" id="tab-pending">
+            <div class="bulk-bar" id="bulkBar">
+                <input type="checkbox" class="proposal-checkbox" id="checkAllProposals" onclick="toggleAllProposals(this)">
+                <span class="bulk-count"><span id="bulkCount">0</span> sélectionnée(s)</span>
+                <button class="btn-bulk-approve" onclick="bulkApprove()">✅ Approuver la sélection</button>
+                <button class="btn-bulk-reject"  onclick="bulkReject()">❌ Rejeter la sélection</button>
+                <button class="btn-bulk-clear"   onclick="clearSelection()">✕ Désélectionner</button>
+            </div>
             <div id="proposalsLoading" class="loading"><span class="spinner"></span> Chargement des propositions...</div>
             <div id="proposalsList"></div>
         </div>
@@ -259,6 +278,7 @@
     let currentUser = null;
     let allProposals = [];
     let allRisksAdmin = [];
+    let selectedProposals = new Set();
 
     // ============================================
     // AUTH
@@ -381,23 +401,29 @@
         }[p.status] || '';
 
         const actions = p.status === 'pending' ? `
-            <button class="btn-approve" onclick="approveProposal(${p.id}, event)">✅ Approuver</button>
-            <button class="btn-reject"  onclick="rejectProposal(${p.id}, event)">❌ Rejeter</button>
+            <button class="btn-approve" onclick="approveProposal(${p.id}, event)">✅</button>
+            <button class="btn-reject"  onclick="rejectProposal(${p.id}, event)">❌</button>
         ` : `<span style="font-size:11px;color:var(--muted)">${p.admin_note || ''}</span>`;
 
         const impactColor = p.impact >= 4 ? 'var(--error)' : p.impact >= 3 ? 'var(--warning)' : 'var(--success)';
+        const checkbox = p.status === 'pending'
+            ? `<input type="checkbox" class="proposal-checkbox" data-id="${p.id}" onclick="toggleProposalSelect(${p.id}, this)">`
+            : `<div style="width:16px"></div>`;
 
         return `
         <div class="proposal-card ${p.status}" id="card-${p.id}">
             <div class="proposal-header" onclick="toggleBody(${p.id})">
-                <div>
-                    <div class="proposal-title">${escHtml(p.titre)}</div>
-                    <div class="proposal-meta">
-                        ${statusBadge}
-                        &nbsp;Impact: <b style="color:${impactColor}">${p.impact}/5</b>
-                        ${p.categorie ? `&nbsp;· ${p.categorie}` : ''}
-                        ${p.contributeur ? `&nbsp;· Par <b>${escHtml(p.contributeur)}</b>` : ''}
-                        &nbsp;· ${date}
+                <div class="proposal-header-inner">
+                    ${checkbox}
+                    <div style="min-width:0">
+                        <div class="proposal-title">${escHtml(p.titre)}</div>
+                        <div class="proposal-meta">
+                            ${statusBadge}
+                            &nbsp;Impact: <b style="color:${impactColor}">${p.impact}/5</b>
+                            ${p.categorie ? `&nbsp;· ${p.categorie}` : ''}
+                            ${p.contributeur ? `&nbsp;· Par <b>${escHtml(p.contributeur)}</b>` : ''}
+                            &nbsp;· ${date}
+                        </div>
                     </div>
                 </div>
                 <div class="proposal-actions">${actions}</div>
@@ -424,16 +450,14 @@
 
     async function approveProposal(id, e) {
         e.stopPropagation();
-        if (!confirm('Approuver et publier cette proposition ?')) return;
-
         const { data, error } = await db.rpc('approve_proposal', { proposal_id: id });
-
         if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
-
-        showToast('✅ Risque publié : ' + data, 'success');
+        showToast('✅ Publié : ' + data, 'success');
         const card = document.getElementById('card-' + id);
         card.className = 'proposal-card approved';
         card.querySelector('.proposal-actions').innerHTML = `<span style="font-size:11px;color:var(--success)">✅ Publié</span>`;
+        selectedProposals.delete(id);
+        updateBulkBar();
         loadStats();
     }
 
@@ -545,6 +569,84 @@
         document.getElementById('statPending').innerText  = pending  ?? '—';
         document.getElementById('statApproved').innerText = approved ?? '—';
         document.getElementById('statRejected').innerText = rejected ?? '—';
+    }
+
+    // ============================================
+    // BULK SELECTION
+    // ============================================
+    function toggleProposalSelect(id, cb) {
+        cb.checked ? selectedProposals.add(id) : selectedProposals.delete(id);
+        updateBulkBar();
+    }
+
+    function toggleAllProposals(master) {
+        document.querySelectorAll('.proposal-checkbox[data-id]').forEach(cb => {
+            const id = parseInt(cb.getAttribute('data-id'));
+            cb.checked = master.checked;
+            master.checked ? selectedProposals.add(id) : selectedProposals.delete(id);
+        });
+        updateBulkBar();
+    }
+
+    function clearSelection() {
+        selectedProposals.clear();
+        document.querySelectorAll('.proposal-checkbox').forEach(cb => cb.checked = false);
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        const bar = document.getElementById('bulkBar');
+        const count = selectedProposals.size;
+        document.getElementById('bulkCount').innerText = count;
+        bar.classList.toggle('visible', count > 0);
+    }
+
+    async function bulkApprove() {
+        if (!selectedProposals.size) return;
+        const ids = [...selectedProposals];
+        let ok = 0, fail = 0;
+        for (const id of ids) {
+            const { data, error } = await db.rpc('approve_proposal', { proposal_id: id });
+            if (error) { fail++; continue; }
+            ok++;
+            const card = document.getElementById('card-' + id);
+            if (card) {
+                card.className = 'proposal-card approved';
+                card.querySelector('.proposal-actions').innerHTML = `<span style="font-size:11px;color:var(--success)">✅ Publié</span>`;
+                const checkbox = card.querySelector('.proposal-checkbox');
+                if (checkbox) checkbox.remove();
+            }
+        }
+        selectedProposals.clear();
+        updateBulkBar();
+        loadStats();
+        showToast(`✅ ${ok} publiés${fail ? ', ' + fail + ' erreurs' : ''}`, fail ? 'error' : 'success');
+    }
+
+    async function bulkReject() {
+        if (!selectedProposals.size) return;
+        const ids = [...selectedProposals];
+        let ok = 0;
+        for (const id of ids) {
+            const { error } = await db.from('proposals').update({
+                status: 'rejected',
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: currentUser.email
+            }).eq('id', id);
+            if (error) continue;
+            ok++;
+            const card = document.getElementById('card-' + id);
+            if (card) {
+                card.className = 'proposal-card rejected';
+                card.querySelector('.proposal-actions').innerHTML = `<span style="font-size:11px;color:var(--error)">❌ Rejeté</span>`;
+                const checkbox = card.querySelector('.proposal-checkbox');
+                if (checkbox) checkbox.remove();
+            }
+        }
+        selectedProposals.clear();
+        updateBulkBar();
+        loadStats();
+        showToast(`${ok} rejetées.`, 'success');
     }
 
     // ============================================
