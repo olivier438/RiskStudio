@@ -794,6 +794,9 @@
             const impColor = l.impact >= 5 ? '#dc2626' : l.impact >= 4 ? '#ea580c' : '#1e293b';
             const date = l.created_at ? new Date(l.created_at).toLocaleDateString('fr-FR') : '—';
 
+            // Champs enrichis (worker) vs migration (NULL)
+            const hasDetails = l.organisation || l.type_donnees || l.nb_records;
+
             return `
             <tr>
                 <td class="no-print"></td>
@@ -801,18 +804,28 @@
                     <span class="tag" style="background:#f3e8ff;color:#7c3aed">💧 Leak</span>
                     <div style="font-weight:bold;margin-top:5px;">${escHtml(l.titre)}</div>
                     <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(l.scenario || '—')}</div>
-                    <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures || '—')}</div>
+                    ${l.mesures ? `<div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures)}</div>` : ''}
                     ${l.source_url ? `<div style="margin-top:4px;"><a href="${escHtml(l.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
                 </td>
-                <td><b>${escHtml(l.organisation || '—')}</b><br><small style="color:#64748b">${date}</small></td>
-                <td><small style="color:#475569">${escHtml(l.type_donnees || '—')}</small></td>
                 <td>
-                    <b style="font-size:13px;">${escHtml(l.nb_records || '—')}</b>
-                    ${l.nb_records && l.nb_records !== 'inconnu' ? `<div style="font-size:10px;color:#94a3b8">records</div>` : ''}
+                    ${l.organisation
+                        ? `<b>${escHtml(l.organisation)}</b>`
+                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">non renseigné</span>`}
+                    <br><small style="color:#94a3b8">${date}</small>
+                </td>
+                <td>
+                    ${l.type_donnees
+                        ? `<small style="color:#475569">${escHtml(l.type_donnees)}</small>`
+                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">non renseigné</span>`}
+                </td>
+                <td>
+                    ${l.nb_records && l.nb_records !== 'inconnu'
+                        ? `<b style="font-size:13px;">${escHtml(l.nb_records)}</b><div style="font-size:10px;color:#94a3b8">records</div>`
+                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">inconnu</span>`}
                 </td>
                 <td>
                     ${statusHtml}
-                    <div style="margin-top:4px;font-size:11px;color:#64748b;">${escHtml(l.source_type || '—')}</div>
+                    ${l.source_type ? `<div style="margin-top:4px;font-size:11px;color:#64748b;">${escHtml(l.source_type)}</div>` : ''}
                 </td>
                 <td><b style="color:${impColor};font-size:16px;">${l.impact || '—'}</b><span style="color:#94a3b8">/5</span></td>
             </tr>`;
