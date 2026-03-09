@@ -158,14 +158,17 @@
 
 <div class="container">
     <div class="app-header">
-        <div class="app-title">
-            <h1>🛡️ Risk Studio <span>v4.0</span></h1>
-            <div class="meta-info">
-                Moteur : <b>04/03/2026</b><br>
-                Base : <b id="db-sync">Chargement...</b><br>
-                <span class="about-link" onclick="document.getElementById('aboutModal').classList.add('open')">ℹ️ À propos de Risk Studio</span>
-                &nbsp;·&nbsp;
-                <span class="about-link" onclick="document.getElementById('changelogModal').classList.add('open')">📋 Changelog</span>
+        <div class="app-title" style="display:flex;align-items:center;gap:14px;">
+            <img src="rs.jpg" alt="Risk Studio" id="appLogo" style="height:48px;width:48px;object-fit:contain;border-radius:8px;">
+            <div>
+                <h1>🛡️ Risk Studio <span>v4.0</span></h1>
+                <div class="meta-info">
+                    Moteur : <b>04/03/2026</b><br>
+                    Base : <b id="db-sync">Chargement...</b><br>
+                    <span class="about-link" onclick="document.getElementById('aboutModal').classList.add('open')">ℹ️ À propos de Risk Studio</span>
+                    &nbsp;·&nbsp;
+                    <span class="about-link" onclick="document.getElementById('changelogModal').classList.add('open')">📋 Changelog</span>
+                </div>
             </div>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -375,9 +378,9 @@
 
         // Titre
         document.querySelector('.app-title h1').innerHTML =
-            mode === 'grc'   ? '🛡️ Risk Studio <span>v4.2</span>'  :
-            mode === 'cyber' ? '⚡ Risk Studio <span>Cyber</span>'   :
-                               '💧 Risk Studio <span>Data Leaks</span>';
+            mode === 'grc'   ? 'Risk Studio <span>v4.2</span>'  :
+            mode === 'cyber' ? 'Risk Studio <span>Cyber</span>'   :
+                               'Risk Studio <span>Data Leaks</span>';
 
         if (mode === 'leaks') {
             loadLeaks();
