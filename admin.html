@@ -367,7 +367,7 @@
     // ============================================
     const TAB_NAMES = ['grc','cyber','leaks','risks','stats'];
     const loaded    = {};   // cache par onglet
-    const selected  = { grc: new Set(), cyber: new Set() };
+    const selected  = { grc: new Set(), cyber: new Set(), dl: new Set() };
 
     function switchTab(name) {
         document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', TAB_NAMES[i] === name));
@@ -598,6 +598,48 @@
         }
 
         container.innerHTML = html;
+    }
+
+    async function transferToLeaks(proposalId, e) {
+        e.stopPropagation();
+
+        // Récupérer la proposal
+        const { data: p, error: fetchErr } = await db.from('proposals').select('*').eq('id', proposalId).single();
+        if (fetchErr) { showToast('Erreur: ' + fetchErr.message, 'error'); return; }
+
+        // Construire le payload data_leaks depuis les champs proposal
+        const payload = {
+            titre:           p.titre,
+            organisation:    null,
+            type_donnees:    p.menace || null,
+            nb_records:      'inconnu',
+            date_leak:       null,
+            date_decouverte: null,
+            source_type:     null,
+            statut:          'non_confirme',
+            triage:          'leak',
+            scenario:        p.scenario || null,
+            mesures:         p.mesures  || null,
+            source_url:      p.commentaire ? p.commentaire.replace('Source: ', '') : null,
+            impact:          p.impact   || 3,
+            status:          'published'
+        };
+
+        // INSERT dans data_leaks
+        const { error: insertErr } = await db.from('data_leaks').insert(payload);
+        if (insertErr) { showToast('Erreur insert: ' + insertErr.message, 'error'); return; }
+
+        // Marquer la proposal comme approuvée
+        await db.from('proposals').update({
+            status: 'approved',
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: currentUser.email
+        }).eq('id', proposalId);
+
+        // Retirer la card du DOM
+        document.getElementById('card-' + proposalId)?.remove();
+        showToast('💧 Transféré vers Data Leaks.', 'success');
+        loadStats();
     }
 
     async function deleteLeak(id, e) {
