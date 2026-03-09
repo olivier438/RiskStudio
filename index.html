@@ -159,7 +159,7 @@
 <div class="container">
     <div class="app-header">
         <div class="app-title" style="display:flex;align-items:center;gap:14px;">
-            <img src="rs.jpg" alt="Risk Studio" id="appLogo" style="height:110px;width:110px;object-fit:contain;border-radius:10px;">
+            <img src="rs.jpg" alt="Risk Studio" id="appLogo" style="height:72px;width:72px;object-fit:contain;border-radius:10px;">
             <div>
                 <h1>🛡️ Risk Studio <span>v4.0</span></h1>
                 <div class="meta-info">
@@ -219,15 +219,13 @@
 
     <div class="table-wrapper" id="tableWrapper" style="display:none;">
         <table class="risk-table">
-            <thead>
+            <thead id="tableHead">
                 <tr>
                     <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
                     <th width="40%">Risque & Scénario</th>
                     <th>Secteurs</th>
                     <th>Catégorie</th>
-                    <th id="th-compliance">Conformité</th>
-                    <th id="th-cyber" style="display:none">CVE / CVSS</th>
-                    <th id="th-leak"  style="display:none">Détails Leak</th>
+                    <th>Conformité</th>
                     <th width="90px">DIC</th>
                     <th width="80px">Impact</th>
                 </tr>
@@ -361,25 +359,53 @@
     const urlParams = new URLSearchParams(window.location.search);
     let isEditMode  = urlParams.has('admin');
 
+    const THEADS = {
+        grc: `<tr>
+            <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+            <th width="40%">Risque &amp; Scénario</th>
+            <th>Secteurs</th>
+            <th>Catégorie</th>
+            <th>Conformité</th>
+            <th width="90px">DIC</th>
+            <th width="80px">Impact</th>
+        </tr>`,
+        cyber: `<tr>
+            <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+            <th width="38%">Risque &amp; Scénario</th>
+            <th>Catégorie</th>
+            <th>Menace</th>
+            <th>CVE / CVSS</th>
+            <th width="90px">Triage</th>
+            <th width="80px">Impact</th>
+        </tr>`,
+        leaks: `<tr>
+            <th class="no-print" width="40"></th>
+            <th width="35%">Titre &amp; Scénario</th>
+            <th>Organisation</th>
+            <th>Type de données</th>
+            <th>Records</th>
+            <th width="110px">Statut</th>
+            <th width="80px">Impact</th>
+        </tr>`
+    };
+
     function switchMode(mode) {
         currentMode = mode;
         document.body.classList.toggle('cyber-mode', mode === 'cyber');
         document.body.classList.toggle('leaks-mode', mode === 'leaks');
 
-        // Toggle buttons
+        // Boutons
         document.getElementById('btnGRC').className   = 'mode-btn' + (mode === 'grc'   ? ' active-grc'   : '');
         document.getElementById('btnCyber').className = 'mode-btn' + (mode === 'cyber' ? ' active-cyber' : '');
         document.getElementById('btnLeaks').className = 'mode-btn' + (mode === 'leaks' ? ' active-leaks' : '');
 
-        // Toggle colonnes
-        document.getElementById('th-compliance').style.display = mode === 'grc'   ? '' : 'none';
-        document.getElementById('th-cyber').style.display      = mode === 'cyber' ? '' : 'none';
-        document.getElementById('th-leak').style.display       = mode === 'leaks' ? '' : 'none';
+        // Thead dynamique
+        document.getElementById('tableHead').innerHTML = THEADS[mode];
 
         // Titre
         document.querySelector('.app-title h1').innerHTML =
-            mode === 'grc'   ? 'Risk Studio <span>v4.2</span>'  :
-            mode === 'cyber' ? 'Risk Studio <span>Cyber</span>'   :
+            mode === 'grc'   ? 'Risk Studio <span>v4.2</span>'    :
+            mode === 'cyber' ? 'Risk Studio <span>Cyber</span>'    :
                                'Risk Studio <span>Data Leaks</span>';
 
         if (mode === 'leaks') {
@@ -565,6 +591,93 @@
         }
     }
 
+    // ── ROW GRC ──────────────────────────────────────────────
+    function renderRowGRC(r) {
+        const ot       = checkIfOT(r);
+        const envTag   = ot
+            ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
+            : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
+        const sectTags = r.secteurs.map(s => `<span class="sector-tag">${s}</span>`).join('');
+        const dicHtml  = [
+            r.dic.d ? '<span class="dic-badge dic-d">D</span>' : '',
+            r.dic.i ? '<span class="dic-badge dic-i">I</span>' : '',
+            r.dic.c ? '<span class="dic-badge dic-c">C</span>' : ''
+        ].join('');
+        const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
+        const sel      = selectedIds.has(r.id);
+
+        return `
+        <tr class="${sel ? 'selected-row' : ''}">
+            <td class="no-print">
+                <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
+                    data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
+            </td>
+            <td>
+                ${envTag}
+                <div style="font-weight:bold;margin-top:5px;" class="editable"
+                    onblur="updateVal('${r.id}','titre',this.innerText)">${escHtml(r.titre)}</div>
+                <div style="font-size:11px;color:#64748b;margin-top:3px;" class="editable"
+                    onblur="updateVal('${r.id}','scenario',this.innerText)">${escHtml(r.scenario)}</div>
+                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;" class="editable"
+                    onblur="updateVal('${r.id}','mesures',this.innerText)">✅ ${escHtml(r.mesures)}</div>
+            </td>
+            <td>${sectTags || '<small style="color:#94a3b8">Tous</small>'}</td>
+            <td><b>${escHtml(r.cat)}</b><br><small style="color:#64748b">${escHtml(r.menace)}</small></td>
+            <td style="font-size:11px;line-height:1.8;">
+                ${r.iso  && r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
+                ${r.dora && r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
+                ${r.nis2 && r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
+            </td>
+            <td>${dicHtml}</td>
+            <td><b style="color:${impColor};font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
+        </tr>`;
+    }
+
+    // ── ROW CYBER ─────────────────────────────────────────────
+    function renderRowCyber(r) {
+        const ot       = checkIfOT(r);
+        const envTag   = ot
+            ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
+            : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
+        const impColor   = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
+        const isCritical = r.triage === 'critical';
+        const sel        = selectedIds.has(r.id);
+
+        let cvssHtml = '';
+        if (r.cve_id)    cvssHtml += `<div style="font-weight:600;font-size:12px;">${escHtml(r.cve_id)}</div>`;
+        if (r.cvss_score) {
+            const cls = r.cvss_score >= 9 ? 'cvss-critical' : r.cvss_score >= 7 ? 'cvss-high' : r.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low';
+            cvssHtml += `<span class="cvss-badge ${cls}">CVSS ${r.cvss_score}</span> `;
+        }
+        if (r.patch_dispo === true)  cvssHtml += `<span class="patch-badge patch-yes">✅ Patch dispo</span>`;
+        if (r.patch_dispo === false) cvssHtml += `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
+        if (r.produits?.length) cvssHtml += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
+        if (r.source_url) cvssHtml += `<div style="margin-top:4px;"><a href="${escHtml(r.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
+
+        const triageHtml = isCritical
+            ? `<span class="badge-critical">🔥 CRITICAL</span>`
+            : `<span style="font-size:11px;color:#ea580c;font-weight:600;">⚡ significant</span>`;
+
+        return `
+        <tr class="${sel ? 'selected-row' : ''} ${isCritical ? 'row-critical' : ''}">
+            <td class="no-print">
+                <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
+                    data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
+            </td>
+            <td>
+                ${envTag}
+                <div style="font-weight:bold;margin-top:5px;">${escHtml(r.titre)}</div>
+                <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(r.scenario)}</div>
+                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(r.mesures)}</div>
+            </td>
+            <td><b>${escHtml(r.cat)}</b></td>
+            <td><small style="color:#64748b">${escHtml(r.menace || '—')}</small></td>
+            <td style="font-size:11px;">${cvssHtml || '<small style="color:#94a3b8">—</small>'}</td>
+            <td>${triageHtml}</td>
+            <td><b style="color:${impColor};font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
+        </tr>`;
+    }
+
     function checkIfOT(r) {
         const t = (r.cat + r.titre + r.scenario).toUpperCase();
         return ["SCADA","PLC","AUTOMATE","INDUSTRIEL","BIOMÉDICAL","CAPTEUR"].some(k => t.includes(k))
@@ -576,85 +689,12 @@
     // RENDU
     // ============================================
     function render(data) {
-        const body = document.getElementById('riskBody');
+        const body  = document.getElementById('riskBody');
         const noRes = document.getElementById('noResults');
-
-        if (data.length === 0) {
-            body.innerHTML = '';
-            noRes.style.display = 'block';
-            return;
-        }
+        if (!data.length) { body.innerHTML = ''; noRes.style.display = 'block'; return; }
         noRes.style.display = 'none';
 
-        body.innerHTML = data.map(r => {
-            const ot      = checkIfOT(r);
-            const envTag  = ot
-                ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
-                : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
-            const sectTags = r.secteurs.map(s => `<span class="sector-tag">${s}</span>`).join('');
-            const dicHtml  = [
-                r.dic.d ? '<span class="dic-badge dic-d">D</span>' : '',
-                r.dic.i ? '<span class="dic-badge dic-i">I</span>' : '',
-                r.dic.c ? '<span class="dic-badge dic-c">C</span>' : ''
-            ].join('');
-            const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
-            const sel      = selectedIds.has(r.id);
-            const isCritical = r.triage === 'critical';
-
-            const cvssHtml = () => {
-                if (currentMode !== 'cyber') return '';
-                let html = '';
-                if (r.cve_id) html += `<div style="font-weight:600;font-size:12px;">${escHtml(r.cve_id)}</div>`;
-                if (r.cvss_score) {
-                    const cls = r.cvss_score >= 9 ? 'cvss-critical' : r.cvss_score >= 7 ? 'cvss-high' : r.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low';
-                    html += `<span class="cvss-badge ${cls}">CVSS ${r.cvss_score}</span> `;
-                }
-                if (r.patch_dispo !== null) {
-                    html += r.patch_dispo
-                        ? `<span class="patch-badge patch-yes">✅ Patch dispo</span>`
-                        : `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
-                }
-                if (r.produits?.length) {
-                    html += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
-                }
-                if (r.source_url) {
-                    html += `<div style="margin-top:4px;"><a href="${escHtml(r.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
-                }
-                return html;
-            };
-
-            const complianceHtml = () => {
-                if (currentMode !== 'grc') return '';
-                return `
-                    ${r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
-                    ${r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
-                    ${r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
-                `;
-            };
-
-            return `
-            <tr class="${sel ? 'selected-row' : ''} ${isCritical ? 'row-critical' : ''}">
-                <td class="no-print">
-                    <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
-                        data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
-                </td>
-                <td>
-                    ${envTag}
-                    <div style="font-weight:bold; margin-top:5px;" class="editable"
-                        onblur="updateVal('${r.id}','titre',this.innerText)">${isCritical ? '<span class="badge-critical">🔥 CRITICAL</span>' : ''}${escHtml(r.titre)}</div>
-                    <div style="font-size:11px; color:#64748b; margin-top:3px;" class="editable"
-                        onblur="updateVal('${r.id}','scenario',this.innerText)">${escHtml(r.scenario)}</div>
-                    <div style="font-size:11px; color:#059669; font-weight:600; margin-top:5px;" class="editable"
-                        onblur="updateVal('${r.id}','mesures',this.innerText)">✅ ${escHtml(r.mesures)}</div>
-                </td>
-                <td>${sectTags || '<small style="color:#94a3b8">Tous</small>'}</td>
-                <td><b>${escHtml(r.cat)}</b><br><small style="color:#64748b">${escHtml(r.menace)}</small></td>
-                <td style="font-size:11px; line-height:1.8; display:${currentMode==='grc'?'':'none'}">${complianceHtml()}</td>
-                <td style="font-size:11px; display:${currentMode==='cyber'?'':'none'}">${cvssHtml()}</td>
-                <td>${dicHtml}</td>
-                <td><b style="color:${impColor}; font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
-            </tr>`;
-        }).join('');
+        body.innerHTML = (currentMode === 'cyber' ? data.map(renderRowCyber) : data.map(renderRowGRC)).join('');
 
         document.querySelectorAll('.editable').forEach(el => {
             el.contentEditable = isEditMode;
@@ -756,23 +796,24 @@
 
             return `
             <tr>
-                <td class="no-print"><input type="checkbox" class="risk-check" data-id="${l.id}" onclick="toggleSelect('${l.id}', this)"></td>
+                <td class="no-print"></td>
                 <td>
                     <span class="tag" style="background:#f3e8ff;color:#7c3aed">💧 Leak</span>
                     <div style="font-weight:bold;margin-top:5px;">${escHtml(l.titre)}</div>
-                    <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(l.scenario)}</div>
-                    <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures)}</div>
-                </td>
-                <td><b>${escHtml(l.organisation || '—')}</b><br><small style="color:#64748b">${date}</small></td>
-                <td><small style="color:#64748b">${escHtml(l.type_donnees || '—')}</small></td>
-                <td style="display:none"></td>
-                <td style="font-size:11px;">
-                    ${statusHtml}<br>
-                    <div style="margin-top:4px;color:#64748b">${escHtml(l.nb_records || '—')} records</div>
-                    <div style="margin-top:2px;color:#64748b">${escHtml(l.source_type || '—')}</div>
+                    <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(l.scenario || '—')}</div>
+                    <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures || '—')}</div>
                     ${l.source_url ? `<div style="margin-top:4px;"><a href="${escHtml(l.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
                 </td>
-                <td></td>
+                <td><b>${escHtml(l.organisation || '—')}</b><br><small style="color:#64748b">${date}</small></td>
+                <td><small style="color:#475569">${escHtml(l.type_donnees || '—')}</small></td>
+                <td>
+                    <b style="font-size:13px;">${escHtml(l.nb_records || '—')}</b>
+                    ${l.nb_records && l.nb_records !== 'inconnu' ? `<div style="font-size:10px;color:#94a3b8">records</div>` : ''}
+                </td>
+                <td>
+                    ${statusHtml}
+                    <div style="margin-top:4px;font-size:11px;color:#64748b;">${escHtml(l.source_type || '—')}</div>
+                </td>
                 <td><b style="color:${impColor};font-size:16px;">${l.impact || '—'}</b><span style="color:#94a3b8">/5</span></td>
             </tr>`;
         }).join('');
