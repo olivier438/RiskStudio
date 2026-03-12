@@ -431,7 +431,22 @@
         setupEditMode();
         await loadRisks();
         if (isEditMode) await checkPending();
+        await loadLeaksCount();
     };
+
+    async function loadLeaksCount() {
+        try {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/data_leaks?select=id&status=eq.published`,
+                { headers: { apikey: SUPABASE_ANON, 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0' } }
+            );
+            const countHeader = res.headers.get('Content-Range');
+            if (countHeader) {
+                allLeaksCount = parseInt(countHeader.split('/')[1]) || 0;
+                updateTotalCatalogue();
+            }
+        } catch(e) { /* silencieux */ }
+    }
 
     function setupEditMode() {
         // bouton editToggle supprimé en v4.2
@@ -742,13 +757,20 @@
     }
 
     function updateLastUpdate() {
-        const latest = allRisks.reduce((max, r) => {
-            const d = new Date(r.created_at || 0);
+        // Max created_at sur risks (mappé en createdAt) + leaks
+        const latestRisk = allRisks.reduce((max, r) => {
+            const d = new Date(r.createdAt || 0);
             return d > max ? d : max;
         }, new Date(0));
+        const latestLeak = allLeaks.reduce((max, l) => {
+            const d = new Date(l.created_at || 0);
+            return d > max ? d : max;
+        }, new Date(0));
+        const latest = latestRisk > latestLeak ? latestRisk : latestLeak;
         if (latest.getTime() > 0) {
             document.getElementById('last-update').innerText =
-                latest.toLocaleDateString('fr-FR') + ' ' + latest.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+                latest.toLocaleDateString('fr-FR') + ' ' +
+                latest.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
         }
     }
 
@@ -815,6 +837,7 @@
             allLeaks = await res.json();
             allLeaksCount = allLeaks.length;
             updateTotalCatalogue();
+            updateLastUpdate();
             renderLeaks(allLeaks);
         } catch(err) {
             document.getElementById('riskBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:40px">❌ Erreur chargement leaks : ${err.message}</td></tr>`;
