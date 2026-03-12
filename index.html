@@ -200,6 +200,9 @@
             <option value="IT">💻 Environnement IT</option>
             <option value="OT">⚙️ Environnement OT</option>
         </select>
+        <select id="filterSecteur" onchange="filterRisks()" style="display:none;">
+            <option value="">Tous les secteurs</option>
+        </select>
         <select id="filterCat" onchange="filterRisks()">
             <option value="">Toutes les catégories</option>
         </select>
@@ -353,6 +356,7 @@
     // ============================================
 
     let allRisks    = [];
+    let allLeaksCount = 0;
     let filteredRisks = [];
     let selectedIds = new Set();
     let currentMode = 'grc'; // 'grc' | 'cyber'
@@ -398,6 +402,10 @@
         document.getElementById('btnGRC').className   = 'mode-btn' + (mode === 'grc'   ? ' active-grc'   : '');
         document.getElementById('btnCyber').className = 'mode-btn' + (mode === 'cyber' ? ' active-cyber' : '');
         document.getElementById('btnLeaks').className = 'mode-btn' + (mode === 'leaks' ? ' active-leaks' : '');
+
+        // Filtre secteur : visible uniquement en mode GRC
+        document.getElementById('filterSecteur').style.display = mode === 'grc' ? '' : 'none';
+        if (mode !== 'grc') document.getElementById('filterSecteur').value = '';
 
         // Thead dynamique
         document.getElementById('tableHead').innerHTML = THEADS[mode];
@@ -543,19 +551,31 @@
     function populateFilters() {
         const cats = [...new Set(allRisks.map(r => r.cat))].sort();
         const sel = document.getElementById('filterCat');
+        sel.innerHTML = '<option value="">Toutes les catégories</option>';
         cats.forEach(c => {
             const o = document.createElement('option');
             o.value = c; o.text = c;
             sel.appendChild(o);
+        });
+
+        // Secteurs depuis allRisks (déjà chargés via risk_sectors)
+        const secteurs = [...new Set(allRisks.flatMap(r => r.secteurs))].sort();
+        const selS = document.getElementById('filterSecteur');
+        selS.innerHTML = '<option value="">Tous les secteurs</option>';
+        secteurs.forEach(s => {
+            const o = document.createElement('option');
+            o.value = s; o.text = s;
+            selS.appendChild(o);
         });
     }
 
     function filterRisks() {
         const rawTerm   = document.getElementById('searchInput').value.toLowerCase();
         const cleanTerm = rawTerm.replace(/[\s\-]/g, '');
-        const envFilter = document.getElementById('filterEnv').value;
-        const catFilter = document.getElementById('filterCat').value;
-        const impFilter = document.getElementById('filterImpact').value;
+        const envFilter    = document.getElementById('filterEnv').value;
+        const catFilter    = document.getElementById('filterCat').value;
+        const impFilter    = document.getElementById('filterImpact').value;
+        const sectFilter   = document.getElementById('filterSecteur').value;
 
         filteredRisks = allRisks.filter(r => {
             const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, r.cve_id, ...(r.produits||[]), ...r.secteurs].join(' ').toLowerCase();
@@ -567,8 +587,9 @@
             const mCat   = !catFilter || r.cat === catFilter;
             const mImp   = !impFilter || r.impact === parseInt(impFilter);
             const mType  = r.type === currentMode;
+            const mSect  = !sectFilter || r.secteurs.includes(sectFilter) || r.secteurs.includes('Tous');
 
-            return mTerm && mEnv && mCat && mImp && mType;
+            return mTerm && mEnv && mCat && mImp && mType && mSect;
         });
 
         render(filteredRisks);
@@ -709,10 +730,14 @@
     // ============================================
     // STATS
     // ============================================
+    function updateTotalCatalogue() {
+        document.getElementById('count-all').innerText = allRisks.length + allLeaksCount;
+    }
+
     function updateStats(data) {
         const src    = data || allRisks;
         const otList = src.filter(r => checkIfOT(r));
-        document.getElementById('count-all').innerText = allRisks.length;
+        updateTotalCatalogue();
         document.getElementById('count-it').innerText  = allRisks.filter(r => !checkIfOT(r)).length;
         document.getElementById('count-ot').innerText  = allRisks.filter(r => checkIfOT(r)).length;
 
@@ -775,6 +800,8 @@
             );
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             allLeaks = await res.json();
+            allLeaksCount = allLeaks.length;
+            updateTotalCatalogue();
             renderLeaks(allLeaks);
         } catch(err) {
             document.getElementById('riskBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:40px">❌ Erreur chargement leaks : ${err.message}</td></tr>`;
