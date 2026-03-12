@@ -185,10 +185,11 @@
     </div>
 
     <div class="dashboard">
-        <div class="stat-card"><h3>Total Catalogue</h3><p id="count-all">—</p></div>
-        <div class="stat-card" style="border-top-color: var(--it-color)"><h3>Risques IT</h3><p id="count-it">—</p></div>
-        <div class="stat-card" style="border-top-color: var(--ot-color)"><h3>Risques OT</h3><p id="count-ot">—</p></div>
-        <div class="stat-card" style="border-top-color: #10b981"><h3>Sél. Impact Moy.</h3><p id="avg-impact">—</p></div>
+        <div class="stat-card"><h3>Total Risques</h3><p id="count-all">—</p></div>
+        <div class="stat-card" style="border-top-color: var(--primary)"><h3>GRC</h3><p id="count-grc">—</p></div>
+        <div class="stat-card" style="border-top-color: #f59e0b"><h3>Cyber</h3><p id="count-cyber">—</p></div>
+        <div class="stat-card" style="border-top-color: #7c3aed"><h3>Data Leaks</h3><p id="count-leaks">—</p></div>
+        <div class="stat-card" style="border-top-color: #10b981"><h3>Dernier Update</h3><p id="last-update" style="font-size:13px;">—</p></div>
     </div>
 
     <div class="toolbar">
@@ -509,6 +510,7 @@
             document.getElementById('tableWrapper').style.display = 'block';
 
             filterRisks();
+            updateLastUpdate();
 
         } catch (err) {
             document.getElementById('loadingArea').style.display = 'none';
@@ -731,19 +733,30 @@
     // STATS
     // ============================================
     function updateTotalCatalogue() {
-        document.getElementById('count-all').innerText = allRisks.length + allLeaksCount;
+        const grcCount   = allRisks.filter(r => r.type === 'grc' || !r.type).length;
+        const cyberCount = allRisks.filter(r => r.type === 'cyber').length;
+        document.getElementById('count-all').innerText   = allRisks.length + allLeaksCount;
+        document.getElementById('count-grc').innerText   = grcCount;
+        document.getElementById('count-cyber').innerText = cyberCount;
+        document.getElementById('count-leaks').innerText = allLeaksCount;
+    }
+
+    function updateLastUpdate() {
+        const latest = allRisks.reduce((max, r) => {
+            const d = new Date(r.created_at || 0);
+            return d > max ? d : max;
+        }, new Date(0));
+        if (latest.getTime() > 0) {
+            document.getElementById('last-update').innerText =
+                latest.toLocaleDateString('fr-FR') + ' ' + latest.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+        }
     }
 
     function updateStats(data) {
-        const src    = data || allRisks;
-        const otList = src.filter(r => checkIfOT(r));
+        const src = data || allRisks;
         updateTotalCatalogue();
-        document.getElementById('count-it').innerText  = allRisks.filter(r => !checkIfOT(r)).length;
-        document.getElementById('count-ot').innerText  = allRisks.filter(r => checkIfOT(r)).length;
 
         const target = selectedIds.size > 0 ? allRisks.filter(r => selectedIds.has(r.id)) : src;
-        const avg    = target.reduce((a,b) => a + b.impact, 0) / (target.length || 1);
-        document.getElementById('avg-impact').innerText = avg.toFixed(1) + '/5';
     }
 
     // ============================================
