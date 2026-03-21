@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Policy — ONE CIRCLE IT SOLUTIONS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1A5094;
+    --blue-dark: #0f2f5a;
+    --orange: #E8641A;
+    --gold: #F0B400;
+    --charcoal: #2C2C2C;
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --border: #e2e7ef;
+    --text: #1a1f2e;
+    --text-muted: #6b7280;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 16px rgba(26,80,148,0.08);
+    --shadow-lg: 0 8px 40px rgba(26,80,148,0.14);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  header {
+    background: var(--blue-dark);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--orange);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo-icon { width: 32px; height: 32px; background: var(--orange); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; color: white; font-size: 16px; }
+  .logo-text { font-family: 'DM Serif Display', serif; color: white; font-size: 18px; }
+  .logo-text span { color: var(--orange); }
+  .header-links { display: flex; gap: 20px; }
+  .header-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .header-links a:hover { color: white; }
+
+  .hero {
+    background: var(--blue-dark);
+    padding: 60px 2rem 48px;
+    text-align: center;
+    border-bottom: 3px solid var(--orange);
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(240,180,0,0.15);
+    border: 1px solid rgba(240,180,0,0.4);
+    color: var(--gold);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 20px;
+  }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 42px; color: white; margin-bottom: 12px; }
+  .hero p { font-size: 16px; color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto; }
+
+  main { max-width: 860px; margin: 0 auto; padding: 48px 2rem; display: flex; flex-direction: column; gap: 32px; }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-header-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .icon-blue { background: #e8f0fb; }
+  .icon-orange { background: #fdf0e8; }
+  .icon-gold { background: #fef8e6; }
+  .icon-green { background: #dcfce7; }
+  .card-header h2 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .card-header p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .card-body { padding: 24px; }
+
+  .contact-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--blue-dark);
+    border-radius: var(--radius-sm);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .contact-box-left { }
+  .contact-box-label { font-size: 11px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .contact-box-email { font-family: 'DM Mono', monospace; font-size: 18px; color: white; font-weight: 500; }
+  .btn-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--orange);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-contact:hover { background: #f07840; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 16px; padding-bottom: 20px; position: relative; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-dot {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .timeline-content { flex: 1; padding-top: 4px; }
+  .timeline-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .timeline-desc { font-size: 13px; color: var(--text-muted); }
+  .timeline-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--orange);
+    background: #fdf0e8;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  .severity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .severity-item {
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+  }
+  .sev-critical { border-color: #dc2626; background: #fff5f5; }
+  .sev-high { border-color: #ea580c; background: #fff7ed; }
+  .sev-medium { border-color: #ca8a04; background: #fefce8; }
+  .sev-low { border-color: #16a34a; background: #f0fdf4; }
+  .sev-label { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .sev-critical .sev-label { color: #dc2626; }
+  .sev-high .sev-label { color: #ea580c; }
+  .sev-medium .sev-label { color: #ca8a04; }
+  .sev-low .sev-label { color: #16a34a; }
+  .sev-desc { font-size: 12px; color: var(--text-muted); }
+  .sev-time { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; margin-top: 4px; }
+
+  .doc-list { display: flex; flex-direction: column; gap: 10px; }
+  .doc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    gap: 12px;
+  }
+  .doc-ref {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--blue);
+    background: #e8f0fb;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .doc-title { font-size: 13px; color: var(--text); flex: 1; }
+  .doc-available {
+    font-size: 11px;
+    font-weight: 600;
+    color: #16a34a;
+    background: #dcfce7;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .product-card {
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+  .product-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .product-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-blue { background: var(--blue); }
+  .dot-orange { background: var(--orange); }
+  .product-name { font-weight: 700; font-size: 14px; }
+  .product-items { display: flex; flex-direction: column; gap: 4px; }
+  .product-item { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .product-item::before { content: 'v'; font-size: 10px; color: #16a34a; font-weight: 700; }
+
+  .notice-box {
+    padding: 16px 20px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  footer {
+    background: var(--blue-dark);
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    margin-top: 40px;
+  }
+  footer strong { color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">O</div>
+    <div class="logo-text">ONE <span>CIRCLE</span></div>
+  </a>
+  <div class="header-links">
+    <a href="/risk-studio">Risk Studio</a>
+    <a href="/audit-studio">Audit Studio</a>
+    <a href="mailto:security@onecircle.be">security@onecircle.be</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-badge">CRA - Regulation (EU) 2024/2847</div>
+  <h1>Security Policy</h1>
+  <p>ONE CIRCLE IT SOLUTIONS is committed to the security of Risk Studio and Audit Studio. This page documents our vulnerability disclosure policy and security contact information.</p>
+</div>
+
+<main>
+
+  <!-- CONTACT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-orange">&#128272;</div>
+      <div>
+        <h2>Report a Vulnerability</h2>
+        <p>Responsible disclosure contact for Risk Studio and Audit Studio</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="contact-box">
+        <div class="contact-box-left">
+          <div class="contact-box-label">Security Contact</div>
+          <div class="contact-box-email">security@onecircle.be</div>
+        </div>
+        <a href="mailto:security@onecircle.be?subject=Vulnerability Report - [Product]&body=Product affected:%0D%0AVersion:%0D%0ADescription:%0D%0ASteps to reproduce:%0D%0AImpact assessment:%0D%0A" class="btn-contact">
+          &#9993; Send Report
+        </a>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted)">We accept reports in English, French, or Dutch. Please include the product name, affected version, description of the issue, and steps to reproduce if available. PGP encryption available on request.</p>
+    </div>
+  </div>
+
+  <!-- DISCLOSURE TIMELINE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-blue">&#128336;</div>
+      <div>
+        <h2>Coordinated Disclosure Process</h2>
+        <p>Our commitment to responsible vulnerability handling</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">1</div>
+          <div class="timeline-content">
+            <div class="timeline-title">Report Received</div>
+            <div class="timeline-desc">Submit your report to security@onecircle.be with description and reproduction steps.</div>
+            <div class="timeline-time">Day 0</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">2</div>
+          <div class="timeline-content">
+            <div class="timeline-title">Acknowledgement</div>
+            <div class="timeline-desc">We acknowledge receipt and confirm we are investigating the report.</div>
+            <div class="timeline-time">Within 5 business days</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">3</div>
+          <div class="timeline-content">
+            <div class="timeline-title">Assessment</div>
+            <div class="timeline-desc">We assess severity (CVSS v3.1), impact, and affected components. We keep you informed of progress.</div>
+            <div class="timeline-time">Within 15 days</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">4</div>
+          <div class="timeline-content">
+            <div class="timeline-title">Remediation</div>
+            <div class="timeline-desc">We develop, test, and deploy a fix. Critical issues patched within 7 days of confirmation.</div>
+            <div class="timeline-time">7 to 90 days depending on severity</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">5</div>
+          <div class="timeline-content">
+            <div class="timeline-title">Coordinated Disclosure</div>
+            <div class="timeline-desc">After remediation, we coordinate public disclosure with you. We credit reporters who wish to be acknowledged.</div>
+            <div class="timeline-time">Max 90-day embargo</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:20px">
+        <div class="notice-box">ONE CIRCLE IT SOLUTIONS will not pursue legal action against researchers who report vulnerabilities in good faith and follow this coordinated disclosure process.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEVERITY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-gold">&#9888;</div>
+      <div>
+        <h2>Severity Classification & Response Targets</h2>
+        <p>Based on CVSS v3.1 scoring</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="severity-grid">
+        <div class="severity-item sev-critical">
+          <div class="sev-label">Critical</div>
+          <div class="sev-desc">Remote code execution, full data breach, authentication bypass. CVSS 9.0+</div>
+          <div class="sev-time" style="color:#dc2626">Patch within 7 days</div>
+        </div>
+        <div class="severity-item sev-high">
+          <div class="sev-label">High</div>
+          <div class="sev-desc">Privilege escalation, significant data exposure. CVSS 7.0-8.9</div>
+          <div class="sev-time" style="color:#ea580c">Patch within 30 days</div>
+        </div>
+        <div class="severity-item sev-medium">
+          <div class="sev-label">Medium</div>
+          <div class="sev-desc">Limited data exposure, functionality abuse. CVSS 4.0-6.9</div>
+          <div class="sev-time" style="color:#ca8a04">Patch within 90 days</div>
+        </div>
+        <div class="severity-item sev-low">
+          <div class="sev-label">Low</div>
+          <div class="sev-desc">Minor information disclosure, low-impact issues. CVSS 0.1-3.9</div>
+          <div class="sev-time" style="color:#16a34a">Patch within 180 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-blue">&#128187;</div>
+      <div>
+        <h2>Products in Scope</h2>
+        <p>This security policy covers the following products</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="products-grid">
+        <div class="product-card">
+          <div class="product-card-header">
+            <div class="product-dot dot-blue"></div>
+            <div class="product-name" style="color:var(--blue)">Risk Studio</div>
+          </div>
+          <div class="product-items">
+            <div class="product-item">GRC risk intelligence platform</div>
+            <div class="product-item">Cyber threat feed</div>
+            <div class="product-item">Data leak monitoring</div>
+            <div class="product-item">Cloudflare Worker API</div>
+            <div class="product-item">Supabase database layer</div>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-card-header">
+            <div class="product-dot dot-orange"></div>
+            <div class="product-name" style="color:var(--orange)">Audit Studio</div>
+          </div>
+          <div class="product-items">
+            <div class="product-item">AI-driven compliance audit</div>
+            <div class="product-item">NIS2/CyFun Essential engine</div>
+            <div class="product-item">Cloudflare Worker API</div>
+            <div class="product-item">Supabase session storage</div>
+            <div class="product-item">CCB self-assessment export</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRA DOCUMENTATION -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-green">&#128196;</div>
+      <div>
+        <h2>CRA Compliance Documentation</h2>
+        <p>Cyber Resilience Act - Regulation (EU) 2024/2847 - Available on request</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="doc-list">
+        <div class="doc-item">
+          <span class="doc-ref">OC-CRA-TECH-001</span>
+          <span class="doc-title">Technical Documentation - Architecture, security properties, conformity assessment</span>
+          <span class="doc-available">On request</span>
+        </div>
+        <div class="doc-item">
+          <span class="doc-ref">OC-CRA-SBOM-001</span>
+          <span class="doc-title">Software Bill of Materials (SBOM) - All components and third-party dependencies</span>
+          <span class="doc-available">On request</span>
+        </div>
+        <div class="doc-item">
+          <span class="doc-ref">OC-CRA-VULN-001</span>
+          <span class="doc-title">Vulnerability Handling Policy - Full disclosure process and regulatory notification</span>
+          <span class="doc-available">On request</span>
+        </div>
+        <div class="doc-item">
+          <span class="doc-ref">OC-CRA-SDEV-001</span>
+          <span class="doc-title">Secure Development Policy - SDL practices and security controls</span>
+          <span class="doc-available">On request</span>
+        </div>
+        <div class="doc-item">
+          <span class="doc-ref">OC-CRA-DOC-001</span>
+          <span class="doc-title">EU Declaration of Conformity - CRA Annex I essential requirements</span>
+          <span class="doc-available">On request</span>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="notice-box">To request any of the above documents, contact <strong>security@onecircle.be</strong> with the document reference. We respond within 10 business days.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGULATORY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon icon-gold">&#127466;&#127482;</div>
+      <div>
+        <h2>Regulatory Notification</h2>
+        <p>CRA Article 14 - National CSIRT notification process</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px">In accordance with CRA Article 14, ONE CIRCLE IT SOLUTIONS notifies the Belgian national CSIRT within 24 hours of becoming aware of any actively exploited vulnerability in our products.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">National CSIRT</div>
+          <div style="font-weight:600;font-size:14px">CCB - Centre for Cybersecurity Belgium</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">cert@ccb.belgium.be</div>
+        </div>
+        <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Notification Timeline</div>
+          <div style="font-weight:600;font-size:14px">Early warning: 24h</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Full report: 72h | Final: 14 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>ONE CIRCLE IT SOLUTIONS</strong> - Namur, Belgium<br>
+  Risk Studio &amp; Audit Studio - Security Policy - CRA Regulation (EU) 2024/2847<br>
+  <a href="mailto:security@onecircle.be" style="color:var(--gold)">security@onecircle.be</a>
+</footer>
+
+</body>
+</html>
