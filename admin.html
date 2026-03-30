@@ -241,14 +241,6 @@
 
         <!-- TAB: CYBER -->
         <div class="tab-content" id="tab-cyber">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap;">
-                <div style="font-size:13px;color:var(--muted);">
-                    Alertes <b>significant</b> en attente de validation. Les alertes <b>critical</b> sont publiées directement par le worker.
-                </div>
-                <button onclick="approveAllCyber()" style="padding:9px 18px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">
-                    ⚡ Tout publier (significant)
-                </button>
-            </div>
             <div class="bulk-bar" id="bulkBarCyber">
                 <input type="checkbox" class="proposal-checkbox" id="checkAllCyber" onclick="toggleAllProposals('cyber', this)">
                 <span class="bulk-count"><span id="bulkCountCyber">0</span> sélectionnée(s)</span>
@@ -581,24 +573,6 @@
 
     function toggleBody(id) {
         document.getElementById('body-' + id).classList.toggle('open');
-    }
-
-    async function approveAllCyber() {
-        const cards = document.getElementById('listCyber').querySelectorAll('.proposal-card.pending[id^="card-"]');
-        if (!cards.length) { showToast('Aucune alerte en attente.', 'success'); return; }
-        if (!confirm(`Publier les ${cards.length} alertes cyber en attente ?`)) return;
-
-        let ok = 0, fail = 0;
-        for (const card of cards) {
-            const id = parseInt(card.id.replace('card-', ''));
-            const { error } = await db.rpc('approve_proposal', { proposal_id: id });
-            if (error) { fail++; continue; }
-            card.remove();
-            ok++;
-        }
-        document.getElementById('badgeCyber').style.display = 'none';
-        loadStats();
-        showToast(`⚡ ${ok} alertes publiées${fail ? ` · ${fail} erreurs` : ''}`, fail ? 'error' : 'success');
     }
 
     async function approveProposal(id, type, e) {
