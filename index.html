@@ -76,6 +76,16 @@
         .dic-c { background: #fce7f3; color: #9d174d; }
 
 
+        /* Pagination */
+        #pagination { display: flex; justify-content: space-between; align-items: center; padding: 16px 4px; flex-wrap: wrap; gap: 8px; }
+        .pagination-info { font-size: 12px; color: #64748b; }
+        .pagination-controls { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+        .page-btn { padding: 6px 11px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); cursor: pointer; font-size: 13px; transition: 0.15s; }
+        .page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: var(--primary); }
+        .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-ellipsis { padding: 6px 4px; color: #94a3b8; font-size: 13px; }
+
         /* About popup */
         .about-link { font-size: 11px; color: #94a3b8; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
         .about-link:hover { color: var(--primary); }
@@ -270,6 +280,7 @@
     <div id="noResults" style="display:none; text-align:center; padding:40px; color:#64748b; background:white; border-radius:12px;">
         🔍 Aucun risque ne correspond à vos critères.
     </div>
+    <div id="pagination"></div>
 </div>
 
 <!-- ============================================ -->
@@ -395,6 +406,8 @@
     let filteredRisks = [];
     let selectedIds = new Set();
     let currentMode = 'grc'; // 'grc' | 'cyber'
+    let currentPage = 1;
+    const PAGE_SIZE = 50;
     const urlParams = new URLSearchParams(window.location.search);
     let isEditMode  = urlParams.has('admin');
 
@@ -624,6 +637,7 @@
         const sectFilter = document.getElementById('filterSecteur').value;
         const fwFilter  = document.getElementById('filterFramework')?.value || '';
 
+        currentPage = 1;
         filteredRisks = allRisks.filter(r => {
             const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, r.cra, r.cve_id, ...(r.produits||[]), ...r.secteurs].join(' ').toLowerCase();
             const norm   = fields.replace(/[\s\-]/g, '');
@@ -766,14 +780,54 @@
     function render(data) {
         const body  = document.getElementById('riskBody');
         const noRes = document.getElementById('noResults');
-        if (!data.length) { body.innerHTML = ''; noRes.style.display = 'block'; return; }
+        if (!data.length) { body.innerHTML = ''; noRes.style.display = 'block'; renderPagination(0); return; }
         noRes.style.display = 'none';
 
-        body.innerHTML = (currentMode === 'cyber' ? data.map(renderRowCyber) : data.map(renderRowGRC)).join('');
+        const totalPages = Math.ceil(data.length / PAGE_SIZE);
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const page  = data.slice(start, start + PAGE_SIZE);
+
+        body.innerHTML = (currentMode === 'cyber' ? page.map(renderRowCyber) : page.map(renderRowGRC)).join('');
+        renderPagination(data.length);
 
         document.querySelectorAll('.editable').forEach(el => {
             el.contentEditable = isEditMode;
         });
+    }
+
+    function renderPagination(total) {
+        const el = document.getElementById('pagination');
+        if (!el) return;
+        if (total <= PAGE_SIZE) { el.innerHTML = ''; return; }
+        const totalPages = Math.ceil(total / PAGE_SIZE);
+        const start = (currentPage - 1) * PAGE_SIZE + 1;
+        const end   = Math.min(currentPage * PAGE_SIZE, total);
+
+        let pages = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) {
+                pages += `<button class="page-btn${i === currentPage ? ' active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            } else if (Math.abs(i - currentPage) === 3) {
+                pages += `<span class="page-ellipsis">…</span>`;
+            }
+        }
+
+        el.innerHTML = `
+            <div class="pagination-info">${start}–${end} sur ${total}</div>
+            <div class="pagination-controls">
+                <button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>
+                ${pages}
+                <button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>
+            </div>`;
+    }
+
+    function goToPage(p) {
+        const totalPages = Math.ceil(filteredRisks.length / PAGE_SIZE);
+        if (p < 1 || p > totalPages) return;
+        currentPage = p;
+        render(filteredRisks);
+        document.getElementById('tableWrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function escHtml(str) {
