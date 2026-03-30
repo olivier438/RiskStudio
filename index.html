@@ -586,7 +586,7 @@
             document.getElementById('loadingArea').style.display = 'none';
             const errEl = document.getElementById('errorArea');
             errEl.style.display = 'block';
-            errEl.innerHTML = `❌ <b>Impossible de charger les données :</b> ${err.message}<br>
+            errEl.innerHTML = `❌ <b>Impossible de charger les données :</b> ${escHtml(err.message)}<br>
                 <small>Vérifie que SUPABASE_URL et SUPABASE_ANON sont correctement configurés dans le HTML.</small>`;
         }
     }
@@ -752,7 +752,8 @@
         if (r.patch_dispo === true)  cvssHtml += `<span class="patch-badge patch-yes">✅ Patch dispo</span>`;
         if (r.patch_dispo === false) cvssHtml += `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
         if (r.produits?.length) cvssHtml += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
-        if (r.source_url) cvssHtml += `<div style="margin-top:4px;"><a href="${escHtml(r.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
+        const _cyberSrc = safeUrl(r.source_url);
+        if (_cyberSrc) cvssHtml += `<div style="margin-top:4px;"><a href="${escHtml(_cyberSrc)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
 
         const triageHtml = isCritical
             ? `<span class="badge-critical">🔥 CRITICAL</span>`
@@ -804,6 +805,15 @@
     function escHtml(str) {
         if (!str) return '';
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Validation stricte des URLs — bloque javascript:, data:, vbscript: etc.
+    function safeUrl(url) {
+        if (!url) return null;
+        try {
+            const u = new URL(url);
+            return (u.protocol === 'https:' || u.protocol === 'http:') ? url : null;
+        } catch(e) { return null; }
     }
 
     // ============================================
@@ -1038,7 +1048,7 @@
             updateLastUpdate();
             renderLeaks(allLeaks);
         } catch(err) {
-            document.getElementById('riskBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:40px">❌ Erreur chargement leaks : ${err.message}</td></tr>`;
+            document.getElementById('riskBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:40px">❌ Erreur chargement leaks : ${escHtml(err.message)}</td></tr>`;
         }
     }
 
@@ -1066,7 +1076,7 @@
                     <div style="font-weight:bold;margin-top:5px;">${escHtml(l.titre)}</div>
                     <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(l.scenario || '—')}</div>
                     ${l.mesures ? `<div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures)}</div>` : ''}
-                    ${l.source_url ? `<div style="margin-top:4px;"><a href="${escHtml(l.source_url)}" target="_blank" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
+                    ${safeUrl(l.source_url) ? `<div style="margin-top:4px;"><a href="${escHtml(safeUrl(l.source_url))}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
                 </td>
                 <td>
                     ${l.organisation
