@@ -156,10 +156,6 @@ ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_commentaire_length;
 ALTER TABLE proposals ADD CONSTRAINT proposals_commentaire_length
   CHECK (commentaire IS NULL OR char_length(commentaire) <= 2000);
 
-ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_source_url_length;
-ALTER TABLE proposals ADD CONSTRAINT proposals_source_url_length
-  CHECK (source_url IS NULL OR char_length(source_url) <= 2048);
-
 ALTER TABLE proposals DROP CONSTRAINT IF EXISTS proposals_email_length;
 ALTER TABLE proposals ADD CONSTRAINT proposals_email_length
   CHECK (email IS NULL OR char_length(email) <= 254);
