@@ -70,9 +70,11 @@ export default {
       return jsonResponse(result);
     }
 
-    // /reset — token destructif dédié (différent de AGENT_TOKEN)
+    // /reset — token destructif dédié, lu dans le body JSON (jamais en query param)
     if (url.pathname === '/reset') {
-      const token = url.searchParams.get('token');
+      let body = {};
+      try { body = await request.json(); } catch(e) { /* body vide */ }
+      const token = body.token;
       if (!env.RESET_TOKEN || token !== env.RESET_TOKEN) {
         return new Response('Forbidden', { status: 403 });
       }
@@ -81,31 +83,7 @@ export default {
       return jsonResponse({ deleted: list.keys.length });
     }
 
-    if (url.pathname === '/testkey') {
-      try {
-        const res = await fetchWithTimeout(
-          'https://api.groq.com/openai/v1/chat/completions',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${env.GROQ_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'llama-3.1-8b-instant',
-              messages: [{ role: 'user', content: 'Say OK' }],
-              max_tokens: 10
-            })
-          }
-        );
-        // Ne pas exposer le body complet — juste le status
-        return jsonResponse({ groq_status: res.status, ok: res.ok });
-      } catch(e) {
-        return jsonResponse({ error: 'Groq unreachable' }, 502);
-      }
-    }
-
-    return new Response('Risk Studio Agent — use /run, /reset or /status', { status: 200 });
+    return new Response('Risk Studio Agent — use /run or /reset', { status: 200 });
   }
 };
 
@@ -157,11 +135,25 @@ function sanitizeForPrompt(str, maxLen = 500) {
   if (!str) return '';
   return str
     .substring(0, maxLen)
+    // Balises de rôle LLM
     .replace(/\[SYSTEM\]/gi, '[S]')
     .replace(/\[INST\]/gi, '[I]')
-    .replace(/ignore\s+previous\s+instructions?/gi, '[redacted]')
+    .replace(/<\s*system\s*>/gi, '[S]')
+    .replace(/<\s*\/\s*system\s*>/gi, '[/S]')
+    // Injections classiques
+    .replace(/ignore\s+(all\s+)?previous\s+instructions?/gi, '[redacted]')
+    .replace(/forget\s+(all\s+)?(previous\s+)?instructions?/gi, '[redacted]')
+    .replace(/disregard\s+(all\s+)?previous/gi, '[redacted]')
     .replace(/you\s+are\s+now/gi, '[redacted]')
+    .replace(/act\s+as\s+(if\s+you\s+are|a)/gi, '[redacted]')
+    .replace(/new\s+instructions?:/gi, '[redacted]')
+    .replace(/override\s+(previous\s+)?instructions?/gi, '[redacted]')
+    .replace(/do\s+not\s+follow\s+(your\s+)?instructions?/gi, '[redacted]')
+    // Encodages et marqueurs techniques
     .replace(/```/g, "'''")
+    .replace(/\\\\/g, '\\')
+    // Caractères de contrôle Unicode utilisés pour bypasser les filtres
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     .trim();
 }
 

@@ -8,7 +8,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; form-action 'self'; base-uri 'self';">
     <title>Risk Studio — Admin</title>
     <!-- TODO CRA compliance : épingler la version et ajouter integrity="sha384-..." crossorigin="anonymous" -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb" crossorigin="anonymous"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -417,9 +417,7 @@
         const { data, error } = await db.auth.signInWithPassword({ email, password });
 
         if (error) {
-            errEl.innerText = error.message === 'Invalid login credentials'
-                ? 'Email ou mot de passe incorrect.'
-                : error.message;
+            errEl.innerText = 'Email ou mot de passe incorrect.';
             errEl.style.display = 'block';
             btn.disabled = false;
             btn.innerText = 'Se connecter';
