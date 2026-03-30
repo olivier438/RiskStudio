@@ -75,8 +75,6 @@
         .dic-i { background: #dcfce7; color: #166534; }
         .dic-c { background: #fce7f3; color: #9d174d; }
 
-        /* Pending badge */
-        .pending-indicator { position: fixed; top: 20px; right: 20px; background: #f59e0b; color: white; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; cursor: pointer; z-index: 100; }
 
         /* About popup */
         .about-link { font-size: 11px; color: #94a3b8; cursor: pointer; text-decoration: underline; margin-top: 4px; display: inline-block; }
@@ -175,10 +173,6 @@
 <!-- Toast alertes temps réel -->
 <div class="toast-alert" id="toastAlert" onclick="this.classList.remove('visible')"></div>
 
-<!-- Pending notification (admin only) -->
-<div class="pending-indicator" id="pendingBadge" onclick="window.location.href='?admin&tab=pending'">
-    ⏳ <span id="pendingCount">0</span> risques en attente
-</div>
 
 <div class="critical-banner" id="criticalBanner">
     <span>🔥</span>
@@ -478,7 +472,6 @@
     window.onload = async () => {
         setupEditMode();
         await loadRisks();
-        if (isEditMode) await checkPending();
         await loadLeaksCount();
         subscribeRealtime();
     };
@@ -597,25 +590,6 @@
         return entry ? entry.reference : '—';
     }
 
-    // Admin : check risques pending
-    async function checkPending() {
-        try {
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/risks?select=id&status=eq.pending`,
-                {
-                    headers: {
-                        'apikey': SUPABASE_ANON,
-                        'Authorization': `Bearer ${SUPABASE_ANON}`
-                    }
-                }
-            );
-            const data = await res.json();
-            if (data.length > 0) {
-                document.getElementById('pendingCount').innerText = data.length;
-                document.getElementById('pendingBadge').style.display = 'block';
-            }
-        } catch(e) { /* silencieux */ }
-    }
 
     // ============================================
     // FILTRES
