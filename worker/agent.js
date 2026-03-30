@@ -239,8 +239,6 @@ async function runAgent(env) {
           continue;
         }
 
-        totalInserted++;
-
         // critical ET significant → publication directe (bypass proposals)
         const ok = await insertRiskDirect(risk, env, log);
         log.push(ok
@@ -248,6 +246,7 @@ async function runAgent(env) {
           : `  ⚠️ Echec insert`
         );
 
+        if (ok) totalInserted++;
         await env.SEEN_ARTICLES.put(dedupKey, '1', { expirationTtl: DEDUP_TTL_SECONDS });
       }
 
