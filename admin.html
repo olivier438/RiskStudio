@@ -2,7 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="permissions-policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- CSP admin — script 'unsafe-inline' requis (app single-file). Migrer vers nonce en production. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; form-action 'self'; base-uri 'self';">
     <title>Risk Studio — Admin</title>
+    <!-- TODO CRA compliance : épingler la version et ajouter integrity="sha384-..." crossorigin="anonymous" -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -215,6 +220,7 @@
             💧 Data Leaks <span class="tab-badge" id="badgeLeaks" style="display:none">0</span>
         </div>
         <div class="tab" onclick="switchTab('risks')">📋 Risques publiés</div>
+        <div class="tab" onclick="switchTab('cra')">🔒 CRA / ENISA</div>
         <div class="tab" onclick="switchTab('stats')">📊 Statistiques</div>
     </div>
 
@@ -274,6 +280,85 @@
                     </thead>
                     <tbody id="risksAdminBody"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- TAB: CRA / ENISA -->
+        <div class="tab-content" id="tab-cra">
+            <div style="margin-bottom:20px;padding:18px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+                <h2 style="font-size:16px;color:var(--text);margin-bottom:10px;">🔒 Conformité Cyber Resilience Act (Règlement UE 2024/2847)</h2>
+                <p style="font-size:13px;color:var(--muted);line-height:1.6;">
+                    Le CRA impose des obligations de déclaration rapide (Art. 14) : toute vulnérabilité activement exploitée doit être notifiée à <b>ENISA</b> dans les <span style="color:var(--warning);font-weight:bold;">24 heures</span> après détection, avec un rapport complet sous <span style="color:var(--error);font-weight:bold;">72 heures</span>.
+                </p>
+            </div>
+
+            <!-- Checklist CRA Art. 13 — Obligations fabricant -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <div class="section-title">Art. 13 — Obligations de sécurité (Annexe I)</div>
+                <div id="craChecklist" style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-01" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Pas de credentials par défaut</b> — Aucun mot de passe, clé ou token par défaut dans l'application (Annexe I §1.a)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-02" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Surface d'attaque minimisée</b> — Aucun port, protocole ou service non nécessaire exposé (Annexe I §1.b)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-03" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Protection contre accès non autorisé</b> — RLS Supabase activé, accès anon read-only sur données publiées (Annexe I §1.c)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-04" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Confidentialité des données</b> — Aucune donnée personnelle exposée via l'API anon (Annexe I §1.d)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-05" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Intégrité des données et commandes</b> — Workflow éditorial pending→approved avant toute publication (Annexe I §1.e)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-06" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Disponibilité des fonctions essentielles</b> — CDN GitHub Pages + Supabase managed (Annexe I §1.f)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-07" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Surface d'attaque minimisée (dépendances)</b> — Supabase JS CDN épinglé + SRI (Annexe I §1.g) — <span style="color:var(--warning)">⚠️ SRI à ajouter</span></span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-08" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Audit trail</b> — Champs reviewed_by, reviewed_at, admin_note sur chaque modération (Annexe I §1.h)</span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-09" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>SBOM disponible</b> — Software Bill of Materials publié dans le dépôt GitHub (Annexe II §1) — <span style="color:var(--warning)">⚠️ À générer</span></span>
+                    </label>
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="cra-10" style="margin-top:2px;accent-color:var(--success)">
+                        <span><b>Politique de divulgation responsable</b> — SECURITY.md publié avec processus de signalement (Art. 14 §1)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ENISA Reporting Tracker -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                <div class="section-title">Art. 14 — Tracker de signalement ENISA</div>
+                <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">
+                    Délais CRA : notification initiale ENISA <b style="color:var(--warning)">≤ 24h</b> · rapport intermédiaire <b style="color:var(--warning)">≤ 72h</b> · rapport final <b style="color:var(--muted)">≤ 1 mois</b>
+                </p>
+                <div id="enisaAlerts" class="loading"><span class="spinner"></span> Chargement des alertes critiques...</div>
+            </div>
+
+            <!-- Notes CRA -->
+            <div style="background:#1a2332;border:1px solid #2a3a50;border-radius:12px;padding:20px;">
+                <div class="section-title" style="color:#94a3b8;">📌 Actions requises pour conformité complète CRA</div>
+                <ul style="font-size:13px;color:var(--muted);line-height:2;padding-left:20px;margin-top:8px;">
+                    <li>Générer un <b>SBOM</b> (CycloneDX ou SPDX) et le publier dans le repo GitHub</li>
+                    <li>Ajouter les <b>hashes SRI</b> (<code>integrity="sha384-..."</code>) sur le script Supabase JS CDN</li>
+                    <li>Configurer les <b>headers HTTP</b> Strict-Transport-Security, X-Content-Type-Options, X-Frame-Options côté GitHub Pages (fichier <code>_headers</code>)</li>
+                    <li>Rédiger et publier la <b>déclaration de conformité UE</b> (Art. 28)</li>
+                    <li>Établir un <b>processus de gestion des CVE</b> avec délai de patch documenté</li>
+                    <li>Mapper les risques GRC existants sur les <b>articles CRA</b> dans la base Supabase (framework code = 'CRA')</li>
+                </ul>
             </div>
         </div>
 
@@ -365,7 +450,7 @@
     // ============================================
     // TABS
     // ============================================
-    const TAB_NAMES = ['grc','cyber','leaks','risks','stats'];
+    const TAB_NAMES = ['grc','cyber','leaks','risks','cra','stats'];
     const loaded    = {};   // cache par onglet
     const selected  = { grc: new Set(), cyber: new Set(), dl: new Set() };
 
@@ -378,6 +463,7 @@
         if (name === 'cyber' && !loaded.cyber)  loadPending('cyber');
         if (name === 'leaks' && !loaded.leaks)  loadLeaksAdmin();
         if (name === 'risks' && !loaded.risks)  loadRisksAdmin();
+        if (name === 'cra'   && !loaded.cra)    loadCRAEnisaAlerts();
         if (name === 'stats')                   loadStats();
     }
 
@@ -461,7 +547,7 @@
                         <div class="proposal-meta">
                             Impact: <b style="color:${impactColor}">${p.impact}/5</b>
                             ${triage ? `&nbsp;· ${triage}` : ''}
-                            ${p.categorie ? `&nbsp;· ${p.categorie}` : ''}
+                            ${p.categorie ? `&nbsp;· ${escHtml(p.categorie)}` : ''}
                             ${p.contributeur ? `&nbsp;· <b>${escHtml(p.contributeur)}</b>` : ''}
                         </div>
                     </div>
@@ -475,10 +561,10 @@
                 <div class="proposal-field"><label>Scénario</label><p>${escHtml(p.scenario)}</p></div>
                 <div class="proposal-field"><label>Mesures</label><p>${escHtml(p.mesures)}</p></div>
                 ${p.menace ? `<div class="proposal-field"><label>Menace</label><p>${escHtml(p.menace)}</p></div>` : ''}
-                ${p.dic    ? `<div class="proposal-field"><label>DIC</label><p>${p.dic}</p></div>` : ''}
+                ${p.dic    ? `<div class="proposal-field"><label>DIC</label><p>${escHtml(p.dic)}</p></div>` : ''}
                 ${p.iso27001 || p.dora || p.nis2 ? `
                 <div class="proposal-field"><label>Conformité</label>
-                    <p>${[p.iso27001&&'ISO: '+p.iso27001, p.dora&&'DORA: '+p.dora, p.nis2&&'NIS2: '+p.nis2].filter(Boolean).join(' · ')}</p>
+                    <p>${[p.iso27001&&'ISO: '+escHtml(p.iso27001), p.dora&&'DORA: '+escHtml(p.dora), p.nis2&&'NIS2: '+escHtml(p.nis2)].filter(Boolean).join(' · ')}</p>
                 </div>` : ''}
                 ${p.commentaire ? `<div class="proposal-field"><label>Source</label><p style="color:var(--muted);font-style:italic">${escHtml(p.commentaire)}</p></div>` : ''}
             </div>
@@ -592,7 +678,7 @@
                     <div class="proposal-field"><label>Type de données</label><p>${escHtml(l.type_donnees||'—')}</p></div>
                     <div class="proposal-field"><label>Scénario</label><p>${escHtml(l.scenario||'—')}</p></div>
                     <div class="proposal-field"><label>Mesures</label><p>${escHtml(l.mesures||'—')}</p></div>
-                    <div class="proposal-field"><label>Source</label><p>${escHtml(l.source_type||'—')}${l.source_url ? ` — <a href="${escHtml(l.source_url)}" target="_blank">🔗 lien</a>` : ''}</p></div>
+                    <div class="proposal-field"><label>Source</label><p>${escHtml(l.source_type||'—')}${safeUrl(l.source_url) ? ` — <a href="${escHtml(safeUrl(l.source_url))}" target="_blank" rel="noopener noreferrer">🔗 lien</a>` : ''}</p></div>
                 </div>
             </div>`).join('');
         }
@@ -813,10 +899,84 @@
     }
 
     // ============================================
+    // CRA / ENISA REPORTING
+    // ============================================
+    async function loadCRAEnisaAlerts() {
+        loaded.cra = true;
+        const { data, error } = await db
+            .from('risks')
+            .select('id, titre, triage, cve_id, cvss_score, created_at, source_url')
+            .eq('status', 'published')
+            .eq('type', 'cyber')
+            .eq('triage', 'critical')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        const container = document.getElementById('enisaAlerts');
+        if (error) { container.innerHTML = `<div style="color:var(--error);font-size:13px;">Erreur : ${escHtml(error.message)}</div>`; return; }
+
+        const list = data || [];
+        if (!list.length) { container.innerHTML = '<div class="empty-state">Aucune alerte critique publiée.</div>'; return; }
+
+        container.innerHTML = list.map(r => {
+            const detectedAt  = new Date(r.created_at);
+            const now         = new Date();
+            const diffH       = Math.round((now - detectedAt) / 3600000);
+            const notif24h    = diffH <= 24;
+            const notif72h    = diffH <= 72;
+            const deadlineColor = notif24h ? 'var(--error)' : notif72h ? 'var(--warning)' : 'var(--success)';
+            const deadlineLabel = notif24h
+                ? `⏰ Notification ENISA requise (J+24h — il y a ${diffH}h)`
+                : notif72h
+                ? `📋 Rapport intermédiaire requis (J+72h — il y a ${diffH}h)`
+                : `✅ Délais CRA écoulés (il y a ${diffH}h)`;
+
+            return `
+            <div style="border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;background:var(--surface2);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+                    <div style="min-width:0;">
+                        <div style="font-weight:600;font-size:13px;margin-bottom:4px;">🔥 ${escHtml(r.titre)}</div>
+                        <div style="font-size:11px;color:var(--muted);">
+                            ${r.cve_id ? `<b>${escHtml(r.cve_id)}</b> · ` : ''}
+                            ${r.cvss_score ? `CVSS ${r.cvss_score} · ` : ''}
+                            Détecté le ${detectedAt.toLocaleDateString('fr-FR')} à ${detectedAt.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'})}
+                        </div>
+                    </div>
+                    <div style="flex-shrink:0;">
+                        ${safeUrl(r.source_url) ? `<a href="${escHtml(safeUrl(r.source_url))}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a>` : ''}
+                    </div>
+                </div>
+                <div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:var(--bg);border-left:3px solid ${deadlineColor};font-size:12px;font-weight:600;color:${deadlineColor};">
+                    ${deadlineLabel}
+                </div>
+                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <a href="https://www.enisa.europa.eu/topics/cyber-threats/vulnerability-notification" target="_blank" rel="noopener noreferrer"
+                       style="font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;text-decoration:none;">
+                        📤 Portail ENISA ↗
+                    </a>
+                    <a href="https://euvdb.enisa.europa.eu/" target="_blank" rel="noopener noreferrer"
+                       style="font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;text-decoration:none;">
+                        🗄️ EU VDB ↗
+                    </a>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ============================================
     // HELPERS
     // ============================================
     function escHtml(s)  { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
     function escAttr(s)  { return s ? String(s).replace(/"/g,'&quot;') : ''; }
+
+    // Validation stricte des URLs — bloque javascript:, data:, vbscript: etc.
+    function safeUrl(url) {
+        if (!url) return null;
+        try {
+            const u = new URL(url);
+            return (u.protocol === 'https:' || u.protocol === 'http:') ? url : null;
+        } catch(e) { return null; }
+    }
 
     function showToast(msg, type = 'success') {
         const t = document.getElementById('toast');
