@@ -127,7 +127,7 @@ ALTER TABLE risks ADD CONSTRAINT risks_triage_check
 -- risks.type
 ALTER TABLE risks DROP CONSTRAINT IF EXISTS risks_type_check;
 ALTER TABLE risks ADD CONSTRAINT risks_type_check
-  CHECK (type IN ('cyber', 'risk', 'leak') OR type IS NULL);
+  CHECK (type IN ('cyber', 'grc', 'risk', 'leak') OR type IS NULL);
 
 -- risks text field lengths
 ALTER TABLE risks DROP CONSTRAINT IF EXISTS risks_titre_length;
