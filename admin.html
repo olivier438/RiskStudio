@@ -547,7 +547,7 @@
                         <div class="proposal-meta">
                             Impact: <b style="color:${impactColor}">${p.impact}/5</b>
                             ${triage ? `&nbsp;· ${triage}` : ''}
-                            ${p.categorie ? `&nbsp;· ${p.categorie}` : ''}
+                            ${p.categorie ? `&nbsp;· ${escHtml(p.categorie)}` : ''}
                             ${p.contributeur ? `&nbsp;· <b>${escHtml(p.contributeur)}</b>` : ''}
                         </div>
                     </div>
