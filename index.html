@@ -2,7 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Risk Studio v4.0 | Dashboard & GRC</title>
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="permissions-policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- CSP : script 'unsafe-inline' requis (app single-file). Pour production, migrer vers nonce. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; form-action 'self'; base-uri 'self';">
+    <title>Risk Studio v4.3 | Dashboard & GRC</title>
+    <!-- Supabase JS (Realtime) — épingler la version et ajouter SRI en production -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #2563eb;
@@ -142,9 +148,32 @@
             .toolbar { flex-direction: column; }
             .search-input { width: 100%; }
         }
+
+        /* Toast alertes temps réel */
+        .toast-alert {
+            position: fixed; bottom: 24px; right: 24px;
+            padding: 14px 18px; border-radius: 10px;
+            font-size: 13px; font-weight: 600; z-index: 9999;
+            max-width: 400px; line-height: 1.4;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            animation: slideUp 0.3s ease; display: none;
+            cursor: pointer;
+        }
+        .toast-alert.visible { display: block; }
+        .toast-alert.toast-critical { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
+        .toast-alert.toast-info { background: #0369a1; color: white; }
+        .toast-alert.toast-new { background: #059669; color: white; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+        /* Indicateur live */
+        .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; animation: livePulse 1.5s infinite; margin-right: 5px; vertical-align: middle; }
+        @keyframes livePulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
     </style>
 </head>
 <body>
+
+<!-- Toast alertes temps réel -->
+<div class="toast-alert" id="toastAlert" onclick="this.classList.remove('visible')"></div>
 
 <!-- Pending notification (admin only) -->
 <div class="pending-indicator" id="pendingBadge" onclick="window.location.href='?admin&tab=pending'">
@@ -164,7 +193,7 @@
                 <h1>🛡️ Risk Studio <span>v4.0</span></h1>
                 <div class="meta-info">
                     Moteur : <b>04/03/2026</b><br>
-                    Base : <b id="db-sync">Chargement...</b><br>
+                    Base : <b id="db-sync">Chargement...</b> &nbsp;<span id="liveDot" style="display:none"><span class="live-dot"></span><span style="font-size:10px;color:#10b981">LIVE</span></span><br>
                     <span class="about-link" onclick="document.getElementById('aboutModal').classList.add('open')">ℹ️ À propos de Risk Studio</span>
                     &nbsp;·&nbsp;
                     <span class="about-link" onclick="document.getElementById('changelogModal').classList.add('open')">📋 Changelog</span>
@@ -194,7 +223,7 @@
 
     <div class="toolbar">
         <input type="text" id="searchInput" class="search-input"
-            placeholder="🔍 Chercher par mot-clé, menace, ISO, DORA, NIS2..."
+            placeholder="🔍 Chercher par mot-clé, menace, ISO, DORA, NIS2, CRA..."
             oninput="filterRisks()">
         <select id="filterEnv" onchange="filterRisks()">
             <option value="">Tous les environnements</option>
@@ -206,6 +235,13 @@
         </select>
         <select id="filterCat" onchange="filterRisks()">
             <option value="">Toutes les catégories</option>
+        </select>
+        <select id="filterFramework" onchange="filterRisks()">
+            <option value="">Tous les référentiels</option>
+            <option value="ISO27001">📋 ISO 27001</option>
+            <option value="NIS2">🇪🇺 NIS2</option>
+            <option value="DORA">🏦 DORA</option>
+            <option value="CRA">🔒 CRA</option>
         </select>
         <select id="filterImpact" onchange="filterRisks()">
             <option value="">Tous les impacts</option>
@@ -283,6 +319,7 @@
                 <span class="modal-tag">ISO/IEC 27001:2022</span>
                 <span class="modal-tag">NIS2</span>
                 <span class="modal-tag">DORA</span>
+                <span class="modal-tag" style="background:#f0fdf4;color:#166534">CRA (Règlement UE 2024/2847)</span>
                 <span class="modal-tag" style="background:#dcfce7;color:#166534">CyFun (bientôt)</span>
                 <span class="modal-tag" style="background:#fce7f3;color:#9d174d">NIST CSF 2.0 (bientôt)</span>
             </div>
@@ -314,6 +351,9 @@
         </div>
         <div class="modal-body">
 
+            <h3>v4.3 — CRA &amp; Alertes temps réel <span style="font-size:11px;color:#94a3b8;font-weight:normal">Mars 2026</span></h3>
+            <p>Conformité <strong>Cyber Resilience Act (CRA — Règlement UE 2024/2847)</strong> : ajout du référentiel CRA dans le catalogue, colonne de mapping dans la vue GRC, filtre par framework, export enrichi. Automatisation des alertes cyber : abonnement Supabase Realtime (WebSocket) avec polling de secours toutes les 2 min. Notifications navigateur pour les alertes critiques. Durcissement sécurité : Content Security Policy, Referrer-Policy, Permissions-Policy sur toutes les pages.</p>
+
             <h3>v4.2 — Data Leaks <span style="font-size:11px;color:#94a3b8;font-weight:normal">Mars 2026</span></h3>
             <p>Ajout d'un module dédié aux violations de données. L'agent surveille désormais des sources spécialisées (DataBreaches.net, Troy Hunt, Privacy Affairs) et publie automatiquement les data leaks détectés avec organisation, type de données exposées, nombre de records et statut de confirmation.</p>
 
@@ -335,7 +375,7 @@
         </div>
         <div class="modal-footer">
             <span>Construit par <strong>ONE CIRCLE IT SOLUTIONS</strong></span>
-            <span style="font-size:11px;color:#94a3b8;">v4.2 · Mars 2026</span>
+            <span style="font-size:11px;color:#94a3b8;">v4.3 · Mars 2026</span>
         </div>
     </div>
 </div>
@@ -408,6 +448,14 @@
         document.getElementById('filterSecteur').style.display = mode === 'grc' ? '' : 'none';
         if (mode !== 'grc') document.getElementById('filterSecteur').value = '';
 
+        // Filtre framework : visible uniquement en mode GRC
+        const fwSel = document.getElementById('filterFramework');
+        if (fwSel) { fwSel.style.display = mode === 'grc' ? '' : 'none'; if (mode !== 'grc') fwSel.value = ''; }
+
+        // Polling cyber + notifications : activer en mode cyber
+        if (mode === 'cyber') { startCyberPolling(); requestBrowserNotif(); }
+        else stopCyberPolling();
+
         // Thead dynamique
         document.getElementById('tableHead').innerHTML = THEADS[mode];
 
@@ -432,6 +480,7 @@
         await loadRisks();
         if (isEditMode) await checkPending();
         await loadLeaksCount();
+        subscribeRealtime();
     };
 
     async function loadLeaksCount() {
@@ -450,6 +499,39 @@
 
     function setupEditMode() {
         // bouton editToggle supprimé en v4.2
+    }
+
+    // ============================================
+    // NORMALISATION RISQUE (réutilisée par loadRisks + Realtime + polling)
+    // ============================================
+    function normalizeRisk(r) {
+        return {
+            id:      r.id,
+            titre:   r.titre,
+            cat:     r.categories?.name || '—',
+            secteurs: (r.risk_sectors || []).map(rs => rs.sectors?.name).filter(Boolean),
+            menace:  r.menace,
+            dic: {
+                d: r.disponibilite,
+                i: r.integrite,
+                c: r.confidentialite
+            },
+            iso:     getCompliance(r, 'ISO27001'),
+            dora:    getCompliance(r, 'DORA'),
+            nis2:    getCompliance(r, 'NIS2'),
+            cra:     getCompliance(r, 'CRA'),
+            impact:  r.impact || 0,
+            scenario: r.scenario,
+            mesures: r.mesures || '',
+            type:    r.type || 'grc',
+            triage:  r.triage || null,
+            cve_id:     r.cve_id     || null,
+            cvss_score: r.cvss_score || null,
+            produits:   r.produits   || [],
+            patch_dispo: r.patch_dispo ?? null,
+            source_url:  r.source_url || null,
+            createdAt: r.created_at
+        };
     }
 
     // ============================================
@@ -481,34 +563,7 @@
 
             const data = await res.json();
 
-            // Normalisation vers le format interne
-            allRisks = data.map(r => ({
-                id:      r.id,
-                titre:   r.titre,
-                cat:     r.categories?.name || '—',
-                secteurs: (r.risk_sectors || []).map(rs => rs.sectors?.name).filter(Boolean),
-                menace:  r.menace,
-                dic: {
-                    d: r.disponibilite,
-                    i: r.integrite,
-                    c: r.confidentialite
-                },
-                iso:     getCompliance(r, 'ISO27001'),
-                dora:    getCompliance(r, 'DORA'),
-                nis2:    getCompliance(r, 'NIS2'),
-                impact:  r.impact || 0,
-                scenario: r.scenario,
-                mesures: r.mesures || '',
-                type:    r.type || 'grc',
-                triage:  r.triage || null,
-                // Champs cyber
-                cve_id:     r.cve_id     || null,
-                cvss_score: r.cvss_score || null,
-                produits:   r.produits   || [],
-                patch_dispo: r.patch_dispo ?? null,
-                source_url:  r.source_url || null,
-                createdAt: r.created_at
-            }));
+            allRisks = data.map(normalizeRisk);
 
             // Sync date = date du risque le plus récent
             if (allRisks.length > 0) {
@@ -589,13 +644,14 @@
     function filterRisks() {
         const rawTerm   = document.getElementById('searchInput').value.toLowerCase();
         const cleanTerm = rawTerm.replace(/[\s\-]/g, '');
-        const envFilter    = document.getElementById('filterEnv').value;
-        const catFilter    = document.getElementById('filterCat').value;
-        const impFilter    = document.getElementById('filterImpact').value;
-        const sectFilter   = document.getElementById('filterSecteur').value;
+        const envFilter = document.getElementById('filterEnv').value;
+        const catFilter = document.getElementById('filterCat').value;
+        const impFilter = document.getElementById('filterImpact').value;
+        const sectFilter = document.getElementById('filterSecteur').value;
+        const fwFilter  = document.getElementById('filterFramework')?.value || '';
 
         filteredRisks = allRisks.filter(r => {
-            const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, r.cve_id, ...(r.produits||[]), ...r.secteurs].join(' ').toLowerCase();
+            const fields = [r.titre, r.scenario, r.cat, r.menace, r.iso, r.dora, r.nis2, r.cra, r.cve_id, ...(r.produits||[]), ...r.secteurs].join(' ').toLowerCase();
             const norm   = fields.replace(/[\s\-]/g, '');
             const mTerm  = !rawTerm || fields.includes(rawTerm) || norm.includes(cleanTerm);
 
@@ -605,8 +661,13 @@
             const mImp   = !impFilter || r.impact === parseInt(impFilter);
             const mType  = r.type === currentMode;
             const mSect  = !sectFilter || r.secteurs.includes(sectFilter) || r.secteurs.includes('Tous');
+            const mFW    = !fwFilter ||
+                (fwFilter === 'ISO27001' && r.iso  && r.iso  !== '—') ||
+                (fwFilter === 'DORA'     && r.dora && r.dora !== '—') ||
+                (fwFilter === 'NIS2'     && r.nis2 && r.nis2 !== '—') ||
+                (fwFilter === 'CRA'      && r.cra  && r.cra  !== '—');
 
-            return mTerm && mEnv && mCat && mImp && mType && mSect;
+            return mTerm && mEnv && mCat && mImp && mType && mSect && mFW;
         });
 
         render(filteredRisks);
@@ -665,6 +726,7 @@
                 ${r.iso  && r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
                 ${r.dora && r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
                 ${r.nis2 && r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
+                ${r.cra  && r.cra  !== '—' ? `<div>🔒 <b>CRA:</b> ${escHtml(r.cra)}</div>`  : ''}
             </td>
             <td>${dicHtml}</td>
             <td><b style="color:${impColor};font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
@@ -742,6 +804,142 @@
     function escHtml(str) {
         if (!str) return '';
         return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ============================================
+    // ALERTES TEMPS RÉEL — Supabase Realtime + polling
+    // ============================================
+    let realtimeChannel = null;
+    let pollTimer       = null;
+    let lastPollTime    = new Date().toISOString();
+    let toastTimer      = null;
+
+    function subscribeRealtime() {
+        // Supabase JS client (chargé depuis CDN)
+        if (typeof window.supabase?.createClient !== 'function') {
+            startCyberPolling(); // fallback polling si SDK absent
+            return;
+        }
+        try {
+            const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+            realtimeChannel = sbClient
+                .channel('rs-cyber-alerts')
+                .on('postgres_changes', {
+                    event:  'INSERT',
+                    schema: 'public',
+                    table:  'risks',
+                    filter: 'status=eq.published'
+                }, payload => handleRealtimeRisk(payload.new))
+                .subscribe(status => {
+                    if (status === 'SUBSCRIBED') {
+                        document.getElementById('liveDot').style.display = 'inline';
+                    }
+                });
+        } catch(e) {
+            startCyberPolling(); // fallback si Realtime échoue
+        }
+        // Polling en parallèle comme filet de sécurité
+        startCyberPolling();
+    }
+
+    function handleRealtimeRisk(raw) {
+        if (!raw || allRisks.find(x => x.id === raw.id)) return;
+        // Realtime ne retourne pas les jointures — on re-fetche le risque complet
+        fetchAndAddRisk(raw.id, raw.triage);
+    }
+
+    async function fetchAndAddRisk(id, triage) {
+        try {
+            const q = `id,titre,menace,disponibilite,integrite,confidentialite,impact,scenario,mesures,created_at,type,triage,cve_id,cvss_score,produits,patch_dispo,source_url,categories(name),risk_sectors(sectors(name)),risk_compliance(reference,frameworks(code))`;
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/risks?select=${encodeURIComponent(q)}&id=eq.${id}&status=eq.published`,
+                { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data.length) return;
+            const r = normalizeRisk(data[0]);
+            if (allRisks.find(x => x.id === r.id)) return;
+            allRisks.unshift(r);
+            notifyNewRisk(r);
+            if (currentMode === r.type) filterRisks();
+            updateCriticalBanner();
+            updateTotalCatalogue();
+            lastPollTime = new Date().toISOString();
+        } catch(e) { /* silencieux */ }
+    }
+
+    function startCyberPolling() {
+        if (pollTimer) return;
+        pollTimer = setInterval(pollNewCyberRisks, 2 * 60 * 1000); // toutes les 2 min
+    }
+
+    function stopCyberPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    async function pollNewCyberRisks() {
+        try {
+            const q = `id,titre,menace,disponibilite,integrite,confidentialite,impact,scenario,mesures,created_at,type,triage,cve_id,cvss_score,produits,patch_dispo,source_url,categories(name),risk_sectors(sectors(name)),risk_compliance(reference,frameworks(code))`;
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/risks?select=${encodeURIComponent(q)}&status=eq.published&type=eq.cyber&created_at=gt.${encodeURIComponent(lastPollTime)}&order=created_at.desc`,
+                { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            lastPollTime = new Date().toISOString();
+            if (!data.length) return;
+
+            const newOnes = data.filter(r => !allRisks.find(x => x.id === r.id));
+            if (!newOnes.length) return;
+
+            newOnes.forEach(r => allRisks.unshift(normalizeRisk(r)));
+
+            const criticals = newOnes.filter(r => r.triage === 'critical');
+            if (criticals.length > 0) {
+                showToast(`🔥 ${criticals.length} nouvelle(s) alerte(s) CRITIQUE(S) détectée(s) !`, 'critical');
+                criticals.forEach(r => sendBrowserNotif(`🔥 Alerte critique : ${r.titre}`, 'Risk Studio — Cyberveille'));
+            } else {
+                showToast(`⚡ ${newOnes.length} nouvelle(s) alerte(s) cyber disponible(s)`, 'new');
+            }
+
+            if (currentMode === 'cyber') filterRisks();
+            updateCriticalBanner();
+            updateTotalCatalogue();
+        } catch(e) { /* silencieux */ }
+    }
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+    function notifyNewRisk(r) {
+        const isCritical = r.triage === 'critical';
+        if (isCritical) {
+            showToast(`🔥 Alerte CRITIQUE : ${r.titre}`, 'critical');
+            sendBrowserNotif(`🔥 Alerte critique : ${r.titre}`, 'Risk Studio — Cyberveille');
+        } else if (r.type === 'cyber') {
+            showToast(`⚡ Nouvelle alerte cyber : ${r.titre}`, 'new');
+        }
+    }
+
+    function showToast(msg, type = 'info') {
+        const el = document.getElementById('toastAlert');
+        el.textContent = msg;
+        el.className = `toast-alert visible toast-${type}`;
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('visible'), 6000);
+    }
+
+    function requestBrowserNotif() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    function sendBrowserNotif(body, title = 'Risk Studio') {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body, icon: 'rs.jpg' });
+        }
     }
 
     // ============================================
@@ -899,14 +1097,14 @@
     // EXPORT EXCEL
     // ============================================
     function exportExcel() {
-        let csv = '\ufeffID;Titre;Catégorie;Secteurs;Menace;D;I;C;ISO27001;DORA;NIS2;Impact;Scénario;Mesures\n';
+        let csv = '\ufeffID;Titre;Catégorie;Secteurs;Menace;D;I;C;ISO27001;DORA;NIS2;CRA;Impact;Scénario;Mesures\n';
         allRisks.filter(r => selectedIds.has(r.id)).forEach(r => {
             csv += [
                 r.id, r.titre, r.cat,
                 r.secteurs.join(' | '),
                 r.menace,
                 r.dic.d?'OUI':'NON', r.dic.i?'OUI':'NON', r.dic.c?'OUI':'NON',
-                r.iso, r.dora, r.nis2,
+                r.iso, r.dora, r.nis2, r.cra,
                 r.impact, r.scenario, r.mesures
             ].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';') + '\n';
         });

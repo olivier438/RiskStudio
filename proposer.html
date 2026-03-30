@@ -2,6 +2,9 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="permissions-policy" content="geolocation=(), microphone=(), camera=()">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; form-action 'self'; base-uri 'self';">
     <title>Risk Studio — Proposer un risque</title>
     <style>
         :root {
@@ -194,9 +197,15 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Référence DORA <span class="optional">optionnel</span></label>
-            <input type="text" id="dora" placeholder="Ex: Art. 9, Art. 10...">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Référence DORA <span class="optional">optionnel</span></label>
+                <input type="text" id="dora" placeholder="Ex: Art. 9, Art. 10...">
+            </div>
+            <div class="form-group">
+                <label>Référence CRA <span class="optional">optionnel</span></label>
+                <input type="text" id="cra" placeholder="Ex: Art. 13 §1.a, Annexe I §2...">
+            </div>
         </div>
     </div>
 
@@ -305,6 +314,7 @@
             iso27001:     document.getElementById('iso27001').value.trim() || null,
             dora:         document.getElementById('dora').value.trim() || null,
             nis2:         document.getElementById('nis2').value.trim() || null,
+            cra:          document.getElementById('cra').value.trim() || null,
             contributeur: document.getElementById('contributeur').value.trim() || null,
             email:        document.getElementById('email').value.trim() || null,
             commentaire:  document.getElementById('commentaire').value.trim() || null,
