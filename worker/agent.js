@@ -150,6 +150,23 @@ function safeUrl(url) {
 }
 
 // ============================================================
+// FETCH CATEGORIES (nom -> id) pour résoudre categorie_id
+// ============================================================
+async function fetchCategories(env) {
+  try {
+    const res = await fetchWithTimeout(`${env.SUPABASE_URL}/rest/v1/categories?select=id,name`, {
+      headers: {
+        'apikey':        env.SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`
+      }
+    });
+    if (!res.ok) return {};
+    const data = await res.json();
+    return Object.fromEntries(data.map(c => [c.name.toLowerCase(), c.id]));
+  } catch(e) { return {}; }
+}
+
+// ============================================================
 // SANITISATION ANTI-PROMPT INJECTION
 // Supprime les patterns qui pourraient manipuler le LLM
 // ============================================================
@@ -174,7 +191,9 @@ async function runAgent(env) {
   let totalSkipped  = 0;
   let goto_end      = false;
 
-  log.push(`[${new Date().toISOString()}] Agent démarré`);
+  // Charge la map categories au démarrage (nom -> id)
+  const catMap = await fetchCategories(env);
+  log.push(`[${new Date().toISOString()}] Agent démarré (${Object.keys(catMap).length} catégories chargées)`);
 
   for (const feed of FEEDS) {
     try {
@@ -224,7 +243,7 @@ async function runAgent(env) {
           continue;
         }
 
-        const { risk, rateLimited } = await extractRisk(article, articleUrl, feed, env.GROQ_API_KEY, log);
+        const { risk, rateLimited } = await extractRisk(article, articleUrl, feed, env.GROQ_API_KEY, catMap, log);
         await delay(GROQ_DELAY_MS);
 
         if (rateLimited) {
@@ -328,7 +347,7 @@ function delay(ms) {
 // EXTRACTION CYBERRISQUE VIA GROQ
 // Les données RSS sont sanitisées avant injection dans le prompt
 // ============================================================
-async function extractRisk(article, articleUrl, feed, apiKey, log = []) {
+async function extractRisk(article, articleUrl, feed, apiKey, catMap = {}, log = []) {
   // Sanitisation anti-prompt injection
   const safeTitle  = sanitizeForPrompt(article.title, 150);
   const safeDesc   = sanitizeForPrompt(article.description, 500);
@@ -388,7 +407,8 @@ Règles triage :
         scenario:   String(parsed.scenario || '').substring(0, 1000),
         mesures:    String(parsed.mesures  || '').substring(0, 1000),
         menace:     String(parsed.menace   || 'Alerte cyber').substring(0, 200),
-        categorie:  String(parsed.categorie|| 'Infrastructure').substring(0, 100),
+        categorie:    String(parsed.categorie || 'Infrastructure').substring(0, 100),
+        categorie_id: catMap[String(parsed.categorie || '').toLowerCase()] || catMap['infrastructure'] || 10,
         dic:        String(parsed.dic      || '').substring(0, 3),
         cve_id:     parsed.cve_id     ? String(parsed.cve_id).substring(0, 30) : null,
         cvss_score: typeof parsed.cvss_score === 'number' ? Math.min(10, Math.max(0, parsed.cvss_score)) : null,
@@ -433,7 +453,8 @@ async function insertRiskDirect(risk, env, log = []) {
     status:          'published',
     created_by:      'agent',
     type:            'cyber',
-    triage:          risk.triage,   // critical OU significant — valeur réelle
+    triage:          risk.triage,
+    categorie_id:    risk.categorie_id,
     cve_id:          risk.cve_id,
     cvss_score:      risk.cvss_score,
     produits:        risk.produits,

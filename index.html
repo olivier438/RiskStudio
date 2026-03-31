@@ -658,6 +658,11 @@
             return mTerm && mEnv && mCat && mImp && mType && mSect && mFW;
         });
 
+        // Cyber : plus récent en premier
+        if (currentMode === 'cyber') {
+            filteredRisks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
         render(filteredRisks);
         updateStats(filteredRisks);
         updateCriticalBanner();
@@ -747,6 +752,10 @@
             ? `<span class="badge-critical">🔥 CRITICAL</span>`
             : `<span style="font-size:11px;color:#ea580c;font-weight:600;">⚡ significant</span>`;
 
+        const dateStr = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'})
+            : '';
+
         return `
         <tr class="${sel ? 'selected-row' : ''} ${isCritical ? 'row-critical' : ''}">
             <td class="no-print">
@@ -758,6 +767,7 @@
                 <div style="font-weight:bold;margin-top:5px;">${escHtml(r.titre)}</div>
                 <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(r.scenario)}</div>
                 <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(r.mesures)}</div>
+                ${dateStr ? `<div style="font-size:10px;color:#94a3b8;margin-top:4px;">📅 ${dateStr}</div>` : ''}
             </td>
             <td><b>${escHtml(r.cat)}</b></td>
             <td><small style="color:#64748b">${escHtml(r.menace || '—')}</small></td>
