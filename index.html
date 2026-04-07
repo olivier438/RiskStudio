@@ -450,6 +450,11 @@
 
         // Thead dynamique
         document.getElementById('tableHead').innerHTML = THEADS[mode];
+        // En mode leaks, "Contexte" devient "Source"
+        if (mode === 'leaks') {
+            const ths = document.querySelectorAll('#tableHead th');
+            if (ths[4]) ths[4].textContent = 'Source';
+        }
 
         // Titre
         document.querySelector('.app-title h1').innerHTML =
