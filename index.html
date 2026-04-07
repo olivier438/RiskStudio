@@ -266,12 +266,12 @@
             <thead id="tableHead">
                 <tr>
                     <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
-                    <th width="40%">Risque & Scénario</th>
-                    <th>Secteurs</th>
-                    <th>Catégorie</th>
-                    <th>Conformité</th>
-                    <th width="90px">DIC</th>
-                    <th width="80px">Impact</th>
+                    <th width="72px">Date</th>
+                    <th width="80px">Sévérité</th>
+                    <th width="36%">Risque</th>
+                    <th>Contexte</th>
+                    <th>Refs</th>
+                    <th width="100px">Indicateurs</th>
                 </tr>
             </thead>
             <tbody id="riskBody"></tbody>
@@ -411,34 +411,20 @@
     const urlParams = new URLSearchParams(window.location.search);
     let isEditMode  = urlParams.has('admin');
 
+    const SHARED_HEAD = `<tr>
+        <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+        <th width="72px">Date</th>
+        <th width="80px">Sévérité</th>
+        <th width="36%">Risque</th>
+        <th>Contexte</th>
+        <th>Refs</th>
+        <th width="100px">Indicateurs</th>
+    </tr>`;
+
     const THEADS = {
-        grc: `<tr>
-            <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
-            <th width="40%">Risque &amp; Scénario</th>
-            <th>Secteurs</th>
-            <th>Catégorie</th>
-            <th>Conformité</th>
-            <th width="90px">DIC</th>
-            <th width="80px">Impact</th>
-        </tr>`,
-        cyber: `<tr>
-            <th class="no-print" width="40"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
-            <th width="38%">Risque &amp; Scénario</th>
-            <th>Catégorie</th>
-            <th>Menace</th>
-            <th>CVE / CVSS</th>
-            <th width="90px">Triage</th>
-            <th width="80px">Impact</th>
-        </tr>`,
-        leaks: `<tr>
-            <th class="no-print" width="40"></th>
-            <th width="35%">Titre &amp; Scénario</th>
-            <th>Organisation</th>
-            <th>Type de données</th>
-            <th>Records</th>
-            <th width="110px">Statut</th>
-            <th width="80px">Impact</th>
-        </tr>`
+        grc:   SHARED_HEAD,
+        cyber: SHARED_HEAD,
+        leaks: SHARED_HEAD
     };
 
     function switchMode(mode) {
@@ -687,18 +673,27 @@
 
     // ── ROW GRC ──────────────────────────────────────────────
     function renderRowGRC(r) {
-        const ot       = checkIfOT(r);
-        const envTag   = ot
+        const ot     = checkIfOT(r);
+        const envTag = ot
             ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
             : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
-        const sectTags = r.secteurs.map(s => `<span class="sector-tag">${s}</span>`).join('');
-        const dicHtml  = [
+        const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
+        const sel      = selectedIds.has(r.id);
+        const dateStr  = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'2-digit'})
+            : '—';
+        const dicHtml = [
             r.dic.d ? '<span class="dic-badge dic-d">D</span>' : '',
             r.dic.i ? '<span class="dic-badge dic-i">I</span>' : '',
             r.dic.c ? '<span class="dic-badge dic-c">C</span>' : ''
         ].join('');
-        const impColor = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
-        const sel      = selectedIds.has(r.id);
+        const sectTags  = r.secteurs.map(s => `<span class="sector-tag">${s}</span>`).join('');
+        const refsHtml  = [
+            r.iso  && r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : '',
+            r.dora && r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : '',
+            r.nis2 && r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : '',
+            r.cra  && r.cra  !== '—' ? `<div>🔒 <b>CRA:</b> ${escHtml(r.cra)}</div>`  : ''
+        ].join('') || '<small style="color:#94a3b8">—</small>';
 
         return `
         <tr class="${sel ? 'selected-row' : ''}">
@@ -706,49 +701,43 @@
                 <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
                     data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
             </td>
+            <td style="font-size:11px;color:#64748b;white-space:nowrap">${dateStr}</td>
+            <td style="text-align:center">
+                <b style="color:${impColor};font-size:18px;">${r.impact}</b>
+                <span style="color:#94a3b8;font-size:10px;">/5</span>
+            </td>
             <td>
                 ${envTag}
-                <div style="font-weight:bold;margin-top:5px;" class="editable"
+                ${r.source_name ? `<div style="font-size:10px;color:#6366f1;font-weight:600;margin-top:2px;">📡 ${escHtml(r.source_name)}</div>` : ''}
+                <div style="font-weight:bold;margin-top:4px;" class="editable"
                     onblur="updateVal('${r.id}','titre',this.innerText)">${escHtml(r.titre)}</div>
                 <div style="font-size:11px;color:#64748b;margin-top:3px;" class="editable"
                     onblur="updateVal('${r.id}','scenario',this.innerText)">${escHtml(r.scenario)}</div>
-                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;" class="editable"
+                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:4px;" class="editable"
                     onblur="updateVal('${r.id}','mesures',this.innerText)">✅ ${escHtml(r.mesures)}</div>
             </td>
-            <td>${sectTags || '<small style="color:#94a3b8">Tous</small>'}</td>
-            <td><b>${escHtml(r.cat)}</b><br><small style="color:#64748b">${escHtml(r.menace)}</small></td>
-            <td style="font-size:11px;line-height:1.8;">
-                ${r.iso  && r.iso  !== '—' ? `<div>📋 <b>ISO:</b> ${escHtml(r.iso)}</div>`  : ''}
-                ${r.dora && r.dora !== '—' ? `<div>🏦 <b>DORA:</b> ${escHtml(r.dora)}</div>` : ''}
-                ${r.nis2 && r.nis2 !== '—' ? `<div>🇪🇺 <b>NIS2:</b> ${escHtml(r.nis2)}</div>` : ''}
-                ${r.cra  && r.cra  !== '—' ? `<div>🔒 <b>CRA:</b> ${escHtml(r.cra)}</div>`  : ''}
+            <td>
+                ${sectTags || '<small style="color:#94a3b8">Tous</small>'}
+                <div style="margin-top:4px;"><b style="font-size:11px;">${escHtml(r.cat)}</b></div>
+                <small style="color:#64748b">${escHtml(r.menace)}</small>
             </td>
-            <td>${dicHtml}</td>
-            <td><b style="color:${impColor};font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
+            <td style="font-size:11px;line-height:1.8;">${refsHtml}</td>
+            <td style="text-align:center">${dicHtml || '<small style="color:#94a3b8">—</small>'}</td>
         </tr>`;
     }
 
     // ── ROW CYBER ─────────────────────────────────────────────
     function renderRowCyber(r) {
-        const ot       = checkIfOT(r);
-        const envTag   = ot
+        const ot         = checkIfOT(r);
+        const envTag     = ot
             ? `<span class="tag" style="background:#fef3c7;color:#92400e">⚙️ OT</span>`
             : `<span class="tag" style="background:#dbeafe;color:#1e40af">💻 IT</span>`;
         const impColor   = r.impact >= 5 ? '#dc2626' : r.impact >= 4 ? '#ea580c' : '#1e293b';
         const isCritical = r.triage === 'critical';
         const sel        = selectedIds.has(r.id);
-
-        let cvssHtml = '';
-        if (r.cve_id)    cvssHtml += `<div style="font-weight:600;font-size:12px;">${escHtml(r.cve_id)}</div>`;
-        if (r.cvss_score) {
-            const cls = r.cvss_score >= 9 ? 'cvss-critical' : r.cvss_score >= 7 ? 'cvss-high' : r.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low';
-            cvssHtml += `<span class="cvss-badge ${cls}">CVSS ${r.cvss_score}</span> `;
-        }
-        if (r.patch_dispo === true)  cvssHtml += `<span class="patch-badge patch-yes">✅ Patch dispo</span>`;
-        if (r.patch_dispo === false) cvssHtml += `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
-        if (r.produits?.length) cvssHtml += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
-        const _cyberSrc = safeUrl(r.source_url);
-        if (_cyberSrc) cvssHtml += `<div style="margin-top:4px;"><a href="${escHtml(_cyberSrc)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
+        const dateStr    = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'2-digit'})
+            : '—';
 
         const triageHtml = isCritical
             ? `<span class="badge-critical">🔥 CRITICAL</span>`
@@ -758,9 +747,24 @@
             ? `<div style="margin-top:4px;"><span style="font-size:10px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;letter-spacing:0.04em">⚠ NON VERIFIE</span></div>`
             : '';
 
-        const dateStr = r.createdAt
-            ? new Date(r.createdAt).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'})
-            : '';
+        const _cyberSrc = safeUrl(r.source_url);
+        let refsHtml = '';
+        if (r.cve_id)     refsHtml += `<div style="font-weight:600;font-size:12px;">${escHtml(r.cve_id)}</div>`;
+        if (r.cvss_score) {
+            const cls = r.cvss_score >= 9 ? 'cvss-critical' : r.cvss_score >= 7 ? 'cvss-high' : r.cvss_score >= 4 ? 'cvss-medium' : 'cvss-low';
+            refsHtml += `<span class="cvss-badge ${cls}">CVSS ${r.cvss_score}</span> `;
+        }
+        if (r.patch_dispo === true)  refsHtml += `<span class="patch-badge patch-yes">✅ Patch dispo</span>`;
+        if (r.patch_dispo === false) refsHtml += `<span class="patch-badge patch-no">❌ Pas de patch</span>`;
+        if (r.produits?.length) refsHtml += `<div style="font-size:11px;color:#64748b;margin-top:4px;">${r.produits.map(p => escHtml(p)).join(', ')}</div>`;
+        if (_cyberSrc)  refsHtml += `<div style="margin-top:4px;"><a href="${escHtml(_cyberSrc)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>`;
+        if (!refsHtml)  refsHtml  = '<small style="color:#94a3b8">—</small>';
+
+        const dicHtml = [
+            r.dic?.d ? '<span class="dic-badge dic-d">D</span>' : '',
+            r.dic?.i ? '<span class="dic-badge dic-i">I</span>' : '',
+            r.dic?.c ? '<span class="dic-badge dic-c">C</span>' : ''
+        ].join('');
 
         return `
         <tr class="${sel ? 'selected-row' : ''} ${isCritical ? 'row-critical' : ''}">
@@ -768,19 +772,28 @@
                 <input type="checkbox" class="risk-check" ${sel ? 'checked' : ''}
                     data-id="${r.id}" onclick="toggleSelect('${r.id}', this)">
             </td>
+            <td style="font-size:11px;color:#64748b;white-space:nowrap">${dateStr}</td>
+            <td style="text-align:center">
+                <b style="color:${impColor};font-size:18px;">${r.impact}</b>
+                <span style="color:#94a3b8;font-size:10px;">/5</span>
+            </td>
             <td>
                 ${envTag}
-                <div style="font-weight:bold;margin-top:5px;">${escHtml(r.titre)}</div>
-                ${r.source_name ? `<div style="font-size:10px;color:#6366f1;font-weight:600;margin-top:2px;letter-spacing:0.03em">📡 ${escHtml(r.source_name)}</div>` : ''}
+                ${r.source_name ? `<div style="font-size:10px;color:#6366f1;font-weight:600;margin-top:2px;">📡 ${escHtml(r.source_name)}</div>` : ''}
+                <div style="font-weight:bold;margin-top:4px;">${escHtml(r.titre)}</div>
+                ${unverifiedHtml}
                 <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(r.scenario)}</div>
-                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(r.mesures)}</div>
-                ${dateStr ? `<div style="font-size:10px;color:#94a3b8;margin-top:4px;">📅 ${dateStr}</div>` : ''}
+                <div style="font-size:11px;color:#059669;font-weight:600;margin-top:4px;">✅ ${escHtml(r.mesures)}</div>
             </td>
-            <td><b>${escHtml(r.cat)}</b></td>
-            <td><small style="color:#64748b">${escHtml(r.menace || '—')}</small></td>
-            <td style="font-size:11px;">${cvssHtml || '<small style="color:#94a3b8">—</small>'}</td>
-            <td>${triageHtml}${unverifiedHtml}</td>
-            <td><b style="color:${impColor};font-size:16px;">${r.impact}</b><span style="color:#94a3b8">/5</span></td>
+            <td>
+                <b style="font-size:11px;">${escHtml(r.cat)}</b>
+                <br><small style="color:#64748b">${escHtml(r.menace || '—')}</small>
+            </td>
+            <td style="font-size:11px;">${refsHtml}</td>
+            <td style="text-align:center">
+                ${triageHtml}
+                <div style="margin-top:5px;">${dicHtml || ''}</div>
+            </td>
         </tr>`;
     }
 
@@ -1104,48 +1117,54 @@
         noRes.style.display = 'none';
 
         body.innerHTML = data.map(l => {
-            const statusHtml = l.statut === 'confirme'
+            const statusHtml  = l.statut === 'confirme'
                 ? `<span class="leak-badge-status leak-confirme">🔴 Confirmé</span>`
                 : `<span class="leak-badge-status leak-non-confirme">🟡 Non confirmé</span>`;
-            const impColor = l.impact >= 5 ? '#dc2626' : l.impact >= 4 ? '#ea580c' : '#1e293b';
-            const date = l.created_at ? new Date(l.created_at).toLocaleDateString('fr-FR') : '—';
-
-            // Champs enrichis (worker) vs migration (NULL)
-            const hasDetails = l.organisation || l.type_donnees || l.nb_records;
+            const impColor    = l.impact >= 5 ? '#dc2626' : l.impact >= 4 ? '#ea580c' : '#1e293b';
+            const dateStr     = l.created_at
+                ? new Date(l.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'2-digit'})
+                : '—';
+            const unverified  = l.verified === false
+                ? `<div style="margin-top:4px;"><span style="font-size:10px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;letter-spacing:0.04em">⚠ NON VERIFIE</span></div>`
+                : '';
+            const _src        = safeUrl(l.source_url);
+            const refsHtml    = [
+                l.type_donnees
+                    ? `<div><small style="color:#475569">${escHtml(l.type_donnees)}</small></div>`
+                    : `<div><span style="font-size:11px;color:#cbd5e1;font-style:italic">type inconnu</span></div>`,
+                l.nb_records && l.nb_records !== 'inconnu'
+                    ? `<div style="margin-top:4px;"><b style="font-size:13px;">${escHtml(l.nb_records)}</b> <span style="font-size:10px;color:#94a3b8">records</span></div>`
+                    : `<div style="margin-top:4px;"><span style="font-size:11px;color:#cbd5e1;font-style:italic">nb inconnu</span></div>`
+            ].join('');
 
             return `
             <tr>
                 <td class="no-print"></td>
+                <td style="font-size:11px;color:#64748b;white-space:nowrap">${dateStr}</td>
+                <td style="text-align:center">
+                    <b style="color:${impColor};font-size:18px;">${l.impact || '—'}</b>
+                    <span style="color:#94a3b8;font-size:10px;">/5</span>
+                </td>
                 <td>
                     <span class="tag" style="background:#f3e8ff;color:#7c3aed">💧 Leak</span>
-                    <div style="font-weight:bold;margin-top:5px;">${escHtml(l.titre)}</div>
-                    ${l.source_name ? `<div style="font-size:10px;color:#6366f1;font-weight:600;margin-top:2px;letter-spacing:0.03em">📡 ${escHtml(l.source_name)}</div>` : ''}
+                    ${l.source_name ? `<div style="font-size:10px;color:#6366f1;font-weight:600;margin-top:2px;">📡 ${escHtml(l.source_name)}</div>` : ''}
+                    <div style="font-weight:bold;margin-top:4px;">${escHtml(l.titre)}</div>
+                    ${unverified}
                     <div style="font-size:11px;color:#64748b;margin-top:3px;">${escHtml(l.scenario || '—')}</div>
-                    ${l.mesures ? `<div style="font-size:11px;color:#059669;font-weight:600;margin-top:5px;">✅ ${escHtml(l.mesures)}</div>` : ''}
-                    ${safeUrl(l.source_url) ? `<div style="margin-top:4px;"><a href="${escHtml(safeUrl(l.source_url))}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
+                    ${l.mesures ? `<div style="font-size:11px;color:#059669;font-weight:600;margin-top:4px;">✅ ${escHtml(l.mesures)}</div>` : ''}
+                    ${_src ? `<div style="margin-top:4px;"><a href="${escHtml(_src)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--primary);">🔗 Source</a></div>` : ''}
                 </td>
                 <td>
                     ${l.organisation
                         ? `<b>${escHtml(l.organisation)}</b>`
-                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">non renseigné</span>`}
-                    <br><small style="color:#94a3b8">${date}</small>
+                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">—</span>`}
+                    ${l.date_leak ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Incident : ${escHtml(l.date_leak)}</div>` : ''}
                 </td>
-                <td>
-                    ${l.type_donnees
-                        ? `<small style="color:#475569">${escHtml(l.type_donnees)}</small>`
-                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">non renseigné</span>`}
-                </td>
-                <td>
-                    ${l.nb_records && l.nb_records !== 'inconnu'
-                        ? `<b style="font-size:13px;">${escHtml(l.nb_records)}</b><div style="font-size:10px;color:#94a3b8">records</div>`
-                        : `<span style="font-size:11px;color:#cbd5e1;font-style:italic">inconnu</span>`}
-                </td>
-                <td>
+                <td style="font-size:11px;">${refsHtml}</td>
+                <td style="text-align:center">
                     ${statusHtml}
-                    ${l.verified === false ? `<div style="margin-top:4px;"><span style="font-size:10px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:1px 6px;letter-spacing:0.04em">⚠ NON VERIFIE</span></div>` : ''}
                     ${l.source_type ? `<div style="margin-top:4px;font-size:11px;color:#64748b;">${escHtml(l.source_type)}</div>` : ''}
                 </td>
-                <td><b style="color:${impColor};font-size:16px;">${l.impact || '—'}</b><span style="color:#94a3b8">/5</span></td>
             </tr>`;
         }).join('');
     }
