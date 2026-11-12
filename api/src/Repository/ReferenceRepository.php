@@ -54,7 +54,7 @@ final class ReferenceRepository
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT c.ref, c.label, p.ref AS parent_ref
+            'SELECT c.ref, c.label, p.ref AS parent_ref, c.assurance_level, c.key_measure_level
              FROM framework_controls c
              LEFT JOIN framework_controls p ON p.id = c.parent_id
              WHERE c.framework_id = ?

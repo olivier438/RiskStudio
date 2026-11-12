@@ -61,7 +61,7 @@ final class PublicApiTest extends TestCase
 
         self::assertSame(200, $r['status']);
         self::assertCount(15, $r['json']['categories']);
-        self::assertSame(97, $frameworks['ISO27001_2022'], '93 Annex A controls + 4 themes');
+        self::assertSame(127, $frameworks['ISO27001_2022'], '93 Annex A controls + 4 themes + 30 clauses');
         self::assertContains('Sécurité physique', array_column($r['json']['categories'], 'name_fr'));
     }
 

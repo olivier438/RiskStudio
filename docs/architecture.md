@@ -48,9 +48,13 @@ Even with an SQL injection in the public API, `rs_read` cannot read drafts, pend
 ## Data model
 
 - **Reference:** `categories`, `sectors` (NIS2 Annex I and II + Belgian public sectors), `frameworks`, `framework_controls`, `vendors`, `products`.
-- **Catalogue:** `risks`, `risk_sectors` (no row means cross-sector), `risk_controls`.
+- **Catalogue:** `risks`, `risk_sectors` (no row means cross-sector), `risk_controls` (with `mapping_source`: `editorial` or `crosswalk`), `control_crosswalk`.
 - **Threat intelligence:** `sources`, `intel_items`, `intel_cves`, `intel_cwes`, `intel_products`, `intel_categories`, `intel_sectors`, `intel_risks`, `leaks`.
 - **Community and administration:** `proposals`, `admins`, `rate_limits`, `audit_log`, `collector_runs`.
+
+### Catalogue sources
+
+The catalogue lives in `db/catalogue/` as CSV files (risks, framework controls, crosswalk) that can be edited in a spreadsheet and are imported by `api/bin/import-catalogue.php`. Editorial mappings are expanded through the crosswalk into derived mappings, stored separately. See [db/catalogue/README.md](../db/catalogue/README.md).
 
 ### Editorial workflow
 

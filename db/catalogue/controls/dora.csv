@@ -1,0 +1,21 @@
+framework;ref;label;parent_ref;assurance_level;key_measure_level
+DORA;Art.5;Governance and organisation;;;
+DORA;Art.6;ICT risk management framework;;;
+DORA;Art.7;ICT systems, protocols and tools;;;
+DORA;Art.8;Identification;;;
+DORA;Art.9;Protection and prevention;;;
+DORA;Art.10;Detection;;;
+DORA;Art.11;Response and recovery;;;
+DORA;Art.12;Backup policies and procedures, restoration and recovery procedures and methods;;;
+DORA;Art.13;Learning and evolving;;;
+DORA;Art.14;Communication;;;
+DORA;Art.17;ICT-related incident management process;;;
+DORA;Art.18;Classification of ICT-related incidents and cyber threats;;;
+DORA;Art.19;Reporting of major ICT-related incidents and voluntary notification of significant cyber threats;;;
+DORA;Art.24;General requirements for digital operational resilience testing;;;
+DORA;Art.25;Testing of ICT tools and systems;;;
+DORA;Art.26;Advanced testing of ICT tools, systems and processes based on TLPT;;;
+DORA;Art.28;General principles of ICT third-party risk management;;;
+DORA;Art.29;Preliminary assessment of ICT concentration risk at entity level;;;
+DORA;Art.30;Key contractual provisions;;;
+DORA;Art.45;Information-sharing arrangements on cyber threat information and intelligence;;;

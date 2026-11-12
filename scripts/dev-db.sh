@@ -2,7 +2,7 @@
 # =============================================================================
 # Risk Studio v5 | Local database bootstrap
 # Creates the database and the three least-privilege users from api/.env,
-# applies migrations, grants and seeds. Safe to run again.
+# applies migrations, grants, seeds and the catalogue. Safe to run again.
 #
 #   scripts/dev-db.sh           bootstrap or upgrade
 #   scripts/dev-db.sh --reset   drop everything first
@@ -50,4 +50,6 @@ php "$ROOT/api/bin/migrate.php" --seed
 
 # Grants last: column and view grants need the objects to exist.
 sed "s/__DB__/${DB_NAME}/g" "$ROOT/db/grants.sql" | mariadb
+
+php "$ROOT/api/bin/import-catalogue.php"
 echo "Database ${DB_NAME} ready."

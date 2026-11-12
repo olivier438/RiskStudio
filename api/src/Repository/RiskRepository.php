@@ -82,11 +82,22 @@ final class RiskRepository
             $params[] = $filter->sector;
         }
         if ($filter->framework !== null) {
-            $sql[] = 'EXISTS (SELECT 1 FROM v_public_risk_controls rc
+            $editorial = $filter->editorialOnly ? "AND rc.mapping_source = 'editorial'" : '';
+            $sql[] = "EXISTS (SELECT 1 FROM v_public_risk_controls rc
                               JOIN framework_controls fc ON fc.id = rc.control_id
                               JOIN frameworks f ON f.id = fc.framework_id
-                              WHERE rc.risk_id = r.id AND f.code = ?)';
+                              WHERE rc.risk_id = r.id AND f.code = ? {$editorial})";
             $params[] = $filter->framework;
+        }
+        if ($filter->control !== null) {
+            // Matches the control and its direct children (A.8 matches A.8.8,
+            // ID.AM matches ID.AM-1). Refs are only unique within a framework.
+            $sql[] = "EXISTS (SELECT 1 FROM v_public_risk_controls rc
+                              JOIN framework_controls fc ON fc.id = rc.control_id
+                              JOIN frameworks f ON f.id = fc.framework_id
+                              LEFT JOIN framework_controls pc ON pc.id = fc.parent_id
+                              WHERE rc.risk_id = r.id AND f.code = ? AND (fc.ref = ? OR pc.ref = ?))";
+            array_push($params, $filter->framework, $filter->control, $filter->control);
         }
 
         return [$sql === [] ? '' : 'WHERE ' . implode(' AND ', $sql), $params];
@@ -116,15 +127,19 @@ final class RiskRepository
 
         $controls = [];
         $stmt = $this->pdo->prepare(
-            "SELECT rc.risk_id, f.code AS framework, fc.ref
+            "SELECT rc.risk_id, f.code AS framework, fc.ref, rc.mapping_source
              FROM v_public_risk_controls rc
              JOIN framework_controls fc ON fc.id = rc.control_id
              JOIN frameworks f ON f.id = fc.framework_id
-             WHERE rc.risk_id IN ({$in}) ORDER BY f.sort_order, fc.sort_order"
+             WHERE rc.risk_id IN ({$in}) ORDER BY f.sort_order, rc.mapping_source, fc.sort_order"
         );
         $stmt->execute($ids);
         foreach ($stmt->fetchAll() as $c) {
-            $controls[(int) $c['risk_id']][] = ['framework' => $c['framework'], 'ref' => $c['ref']];
+            $controls[(int) $c['risk_id']][] = [
+                'framework' => $c['framework'],
+                'ref' => $c['ref'],
+                'source' => $c['mapping_source'],
+            ];
         }
 
         return array_map(static function (array $r) use ($sectors, $controls): array {

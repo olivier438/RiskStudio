@@ -1,7 +1,7 @@
 # Risk Studio v5 | Developer commands
 # Requirements: PHP 8.2+ (pdo_mysql), Composer, MariaDB 10.6+, Node.js 22+ (build only).
 
-.PHONY: help setup db db-reset api web dev test check build preview
+.PHONY: help setup db db-reset catalogue api web dev test check build preview
 
 help: ## List commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-10s %s\n", $$1, $$2}'
@@ -15,6 +15,9 @@ db: ## Create or upgrade the local database (users, migrations, grants, seeds)
 
 db-reset: ## Drop and rebuild the local database
 	scripts/dev-db.sh --reset
+
+catalogue: ## Validate then import db/catalogue (risks, controls, crosswalk)
+	php api/bin/import-catalogue.php --dry-run && php api/bin/import-catalogue.php
 
 api: ## Run the PHP API on http://127.0.0.1:8080/api
 	php -S 127.0.0.1:8080 api/public/index.php

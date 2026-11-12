@@ -13,6 +13,7 @@
 	let mode = $state<Mode>('grc');
 	let health = $state<Health | null>(null);
 	let reference = $state<Reference | null>(null);
+	let risksTotal = $state<number | null>(null);
 	let error = $state<string | null>(null);
 
 	const controlsTotal = $derived(
@@ -21,7 +22,14 @@
 
 	onMount(async () => {
 		try {
-			[health, reference] = await Promise.all([api.health(), api.reference()]);
+			const [h, ref, risks] = await Promise.all([
+				api.health(),
+				api.reference(),
+				api.risks({ per_page: 1 })
+			]);
+			health = h;
+			reference = ref;
+			risksTotal = risks.meta.total;
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		}
@@ -82,17 +90,17 @@
 	<div class="loading"><span class="loading-spinner"></span> Connexion à la base de données...</div>
 {:else}
 	<section class="dashboard" aria-label="Indicateurs">
-		<div class="stat-card"><h3>Catégories</h3><p>{reference.categories.length}</p></div>
+		<div class="stat-card"><h3>Risques GRC</h3><p>{risksTotal ?? '-'}</p></div>
 		<div class="stat-card sectors"><h3>Secteurs</h3><p>{reference.sectors.length}</p></div>
 		<div class="stat-card frameworks"><h3>Référentiels</h3><p>{reference.frameworks.length}</p></div>
 		<div class="stat-card controls"><h3>Contrôles</h3><p>{controlsTotal}</p></div>
 	</section>
 
 	<section class="panel">
-		<h2>Fondations v5 en place</h2>
+		<h2>Catalogue v5 en place</h2>
 		<p>
-			Le catalogue (phase 2), la vue {MODES.find((m) => m.id === mode)?.label} (phase 3) et le
-			collecteur (phase 4) arrivent ensuite. Référentiels déjà chargés :
+			Catalogue GRC chargé. La vue {MODES.find((m) => m.id === mode)?.label} (phase 3) et le
+			collecteur (phase 4) arrivent ensuite. Référentiels disponibles :
 		</p>
 		<ul class="fw-list">
 			{#each reference.frameworks as f (f.code)}
@@ -100,7 +108,7 @@
 					<b>{f.short_name}</b>
 					{f.version ?? ''}
 					<span class="muted"
-						>{f.controls_count > 0 ? `${f.controls_count} contrôles` : 'contrôles en phase 2'}</span
+						>{f.controls_count} contrôles</span
 					>
 				</li>
 			{/each}

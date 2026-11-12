@@ -42,6 +42,7 @@ jobs:
                  GRANT ALL PRIVILEGES ON riskstudio.* TO 'rs_admin'@'%';"
           php api/bin/migrate.php --seed
           sed "s/__DB__/riskstudio/g; s/'@'localhost'/'@'%'/g" db/grants.sql | $M
+          php api/bin/import-catalogue.php
       - name: Tests
         working-directory: api
         run: vendor/bin/phpunit

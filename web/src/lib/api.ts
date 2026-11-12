@@ -51,7 +51,8 @@ export interface Risk {
 	environment: 'IT' | 'OT' | 'BOTH';
 	origin: 'catalogue' | 'community';
 	sectors: string[];
-	controls: { framework: string; ref: string }[];
+	/** `editorial`: written by an editor. `crosswalk`: derived from an editorial ISO mapping. */
+	controls: { framework: string; ref: string; source: 'editorial' | 'crosswalk' }[];
 	updated_at: string;
 	published_at: string | null;
 }
@@ -69,8 +70,21 @@ export interface RiskQuery {
 	env?: 'IT' | 'OT';
 	framework?: string;
 	impact_min?: number;
+	/** Requires `framework`. Matches the control and its direct children. */
+	control?: string;
+	mapping?: 'editorial' | 'all';
 	page?: number;
 	per_page?: number;
+}
+
+export type AssuranceLevel = 'BASIC' | 'IMPORTANT' | 'ESSENTIAL';
+
+export interface Control {
+	ref: string;
+	label: string | null;
+	parent_ref: string | null;
+	assurance_level: AssuranceLevel | null;
+	key_measure_level: AssuranceLevel | null;
 }
 
 export class ApiError extends Error {
@@ -106,6 +120,11 @@ export const api = {
 	health: (f?: typeof fetch) => request<Health>('/health', f),
 	reference: (f?: typeof fetch) => request<Reference>('/reference', f),
 	risks: (query: RiskQuery = {}, f?: typeof fetch) => request<Page<Risk>>(`/risks${toQueryString(query)}`, f),
+	controls: (framework: string, f?: typeof fetch) =>
+		request<{ framework: string; controls: Control[] }>(
+			`/frameworks/${encodeURIComponent(framework)}/controls`,
+			f
+		),
 	risk: (code: string, f?: typeof fetch) =>
 		request<{ data: Risk }>(`/risks/${encodeURIComponent(code)}`, f)
 };

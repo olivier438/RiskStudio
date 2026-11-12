@@ -19,6 +19,7 @@ GRANT SELECT ON `__DB__`.categories             TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.sectors                TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.frameworks             TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.framework_controls     TO 'rs_read'@'localhost';
+GRANT SELECT ON `__DB__`.control_crosswalk      TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.vendors                TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.products               TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.v_public_risks         TO 'rs_read'@'localhost';

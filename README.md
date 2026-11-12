@@ -29,7 +29,7 @@ Details: [docs/architecture.md](docs/architecture.md).
 ## Roadmap
 
 - [x] **Phase 1, foundations**: schema, reference data, PHP API skeleton, Svelte shell, CI
-- [ ] **Phase 2, catalogue**: v4 risks migrated with corrected ISO 27001:2022 mappings, CyFun and DORA controls
+- [x] **Phase 2, catalogue**: 167 risks migrated with corrected ISO 27001:2022 mappings, CyFun 2023, DORA and CRA controls, crosswalk to NIS2, CyFun and NIST CSF 2.0 ([migration report](docs/catalogue-v4-migration.md))
 - [ ] **Phase 3, front end**: GRC, Cyber and Data Leaks views, filters, export, notifications
 - [ ] **Phase 4, collector**: sources, rules, scoring, link to the catalogue
 - [ ] **Phase 5, administration**: login with TOTP, moderation, proposals, CRA tab, statistics
@@ -42,7 +42,8 @@ Requirements: PHP 8.2+ with `pdo_mysql`, Composer, MariaDB 10.6+, Node.js 22+ (b
 
 ```bash
 make setup     # PHP and front-end dependencies
-make db        # database, least-privilege users, migrations, seeds
+make db        # database, least-privilege users, migrations, seeds, catalogue
+make catalogue # validate and import db/catalogue after editing it
 make dev       # API on :8080 and front end on :5173
 make check     # PHP tests and front-end type check
 make preview   # production build served like Apache would, on :8090
@@ -53,7 +54,7 @@ make preview   # production build served like Apache would, on :8090
 ```
 api/       PHP API (src/, public/, bin/migrate.php, tests/)
 web/       SvelteKit front end
-db/        migrations/, seeds/, grants.sql
+db/        migrations/, seeds/, catalogue/ (editable CSV sources), grants.sql
 docs/      architecture and deployment
 scripts/   local tooling
 legacy/    v4 application, reference only

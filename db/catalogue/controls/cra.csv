@@ -1,0 +1,27 @@
+framework;ref;label;parent_ref;assurance_level;key_measure_level
+CRA;Art.13;Obligations of manufacturers;;;
+CRA;Art.14;Reporting obligations of manufacturers;;;
+CRA;AnnexI.I;Cybersecurity requirements relating to the properties of products;;;
+CRA;AnnexI.I.1;Products designed, developed and produced to ensure an appropriate level of cybersecurity based on the risks;AnnexI.I;;
+CRA;AnnexI.I.2.a;Made available on the market without known exploitable vulnerabilities;AnnexI.I;;
+CRA;AnnexI.I.2.b;Secure by default configuration;AnnexI.I;;
+CRA;AnnexI.I.2.c;Vulnerabilities can be addressed through security updates;AnnexI.I;;
+CRA;AnnexI.I.2.d;Protection from unauthorised access by appropriate control mechanisms;AnnexI.I;;
+CRA;AnnexI.I.2.e;Confidentiality of stored, transmitted or processed data;AnnexI.I;;
+CRA;AnnexI.I.2.f;Integrity of stored, transmitted or processed data, commands, programs and configuration;AnnexI.I;;
+CRA;AnnexI.I.2.g;Data minimisation;AnnexI.I;;
+CRA;AnnexI.I.2.h;Availability of essential and basic functions, including resilience against denial-of-service attacks;AnnexI.I;;
+CRA;AnnexI.I.2.i;Minimise the negative impact on the availability of other devices or networks;AnnexI.I;;
+CRA;AnnexI.I.2.j;Limit attack surfaces, including external interfaces;AnnexI.I;;
+CRA;AnnexI.I.2.k;Reduce the impact of an incident using exploitation mitigation mechanisms;AnnexI.I;;
+CRA;AnnexI.I.2.l;Provide security-related information by recording and monitoring relevant internal activity;AnnexI.I;;
+CRA;AnnexI.I.2.m;Allow users to securely and easily remove all data and settings;AnnexI.I;;
+CRA;AnnexI.II;Vulnerability handling requirements;;;
+CRA;AnnexI.II.1;Identify and document vulnerabilities and components, including a software bill of materials;AnnexI.II;;
+CRA;AnnexI.II.2;Address and remediate vulnerabilities without delay, including by providing security updates;AnnexI.II;;
+CRA;AnnexI.II.3;Apply effective and regular tests and reviews of the security of the product;AnnexI.II;;
+CRA;AnnexI.II.4;Share and publicly disclose information about fixed vulnerabilities;AnnexI.II;;
+CRA;AnnexI.II.5;Put in place and enforce a policy on coordinated vulnerability disclosure;AnnexI.II;;
+CRA;AnnexI.II.6;Facilitate the sharing of information about potential vulnerabilities;AnnexI.II;;
+CRA;AnnexI.II.7;Provide mechanisms to securely distribute updates;AnnexI.II;;
+CRA;AnnexI.II.8;Disseminate security updates without delay and free of charge;AnnexI.II;;

@@ -18,7 +18,9 @@
 - SvelteKit 3: use `#lib/...js` imports, not `$lib`.
 - The public API reads only `v_public_*` views and reference tables (`rs_read` user).
 - Schema changes go in a new numbered migration; never edit an applied one.
+- The catalogue source of truth is `db/catalogue/*.csv`; never edit risks directly in the database. `scripts/legacy/convert-v4-catalogue.php` is a one-shot migration kept for traceability, do not rerun it (it would overwrite edits to risks.csv).
+- CyFun: store references and NIST CSF 1.1 titles only, never the CCB requirement texts.
 
 ## Commands
 
-`make db`, `make dev`, `make check`, `make preview` (see Makefile).
+`make db`, `make catalogue`, `make dev`, `make check`, `make preview` (see Makefile).
