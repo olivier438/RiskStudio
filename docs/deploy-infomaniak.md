@@ -1,6 +1,11 @@
 # Deploying on Infomaniak shared hosting
 
-Production runs on an Infomaniak web hosting: Apache + PHP + MariaDB + scheduled tasks. Nothing else. Deployments go through **GitHub Actions over SSH**: credentials stay in GitHub's encrypted secrets, never in the code or in a chat.
+Production runs on an Infomaniak web hosting: Apache + PHP + MariaDB + the task planner. Nothing else.
+
+**Two routes:**
+
+- **FTP (main route).** `make release` builds `dist/RiskStudio-<version>-ftp.zip` with `site/`, `riskstudio-app/` and a French step-by-step guide (`docs/INSTALLATION-FTP.txt`). Database installation and updates run from the web installer `/setup/` (enabled only while `SETUP_TOKEN` is in `.env`); the collector runs from the task planner calling `/api/v1/cron/collect` with `CRON_KEY` as the URL password. No SSH, no command line.
+- **SSH (optional)**, described below: GitHub Actions or a computer with SSH access, running `scripts/deploy.sh`.
 
 ```
 GitHub Actions  ── tests, SBOM, package ──►  rsync over SSH  ──►  Infomaniak

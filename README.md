@@ -50,7 +50,7 @@ php api/bin/admin.php create you@example.org "Your Name"   # first administrator
 make dev       # API on :8080 and front end on :5173
 make check     # PHP tests and front-end type check
 make preview   # production build served like Apache would, on :8090
-make release   # SBOM + release package in dist/
+make release   # SBOM + release package in dist/, including the FTP zip with its French guide
 ```
 
 ## Repository layout

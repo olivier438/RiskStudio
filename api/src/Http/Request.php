@@ -42,6 +42,14 @@ final class Request
                 $headers[$name] = (string) $value;
             }
         }
+        // PHP-FPM/CGI behind Apache only sees Authorization once .htaccess
+        // has copied it to an environment variable (see api/public/.htaccess).
+        if (!isset($headers['authorization']) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $headers['authorization'] = (string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+        if (!isset($headers['authorization']) && isset($_SERVER['PHP_AUTH_USER'])) {
+            $headers['authorization'] = 'Basic ' . base64_encode($_SERVER['PHP_AUTH_USER'] . ':' . ($_SERVER['PHP_AUTH_PW'] ?? ''));
+        }
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $headers['content-type'] = (string) $_SERVER['CONTENT_TYPE'];
         }

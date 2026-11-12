@@ -1,0 +1,142 @@
+RISK STUDIO v5 : INSTALLATION PAR FTP SUR INFOMANIAK
+=====================================================
+
+Ce dossier contient deux dossiers à envoyer :
+
+  site/              le site web (pages, styles, point d'entrée de l'API)
+  riskstudio-app/    l'application (code PHP, base, catalogue, règles)
+
+Aucun mot de passe n'est inclus. Les vôtres restent dans votre client FTP
+et dans un fichier .env que vous créez vous-même.
+
+Durée : 20 à 30 minutes la première fois.
+
+
+ÉTAPE 1 : DANS LE MANAGER INFOMANIAK
+------------------------------------
+
+1. Site : créez le site (domaine ou sous-domaine), PHP 8.3, et activez le
+   certificat Let's Encrypt (HTTPS). Notez le dossier du site, par exemple
+   /sites/riskstudio.mondomaine.be
+
+2. Base de données : créez une base MariaDB et trois utilisateurs :
+     - un utilisateur avec tous les droits       (installation)
+     - un utilisateur en lecture et écriture     (administration, collecteur)
+     - un utilisateur en lecture seule           (site public)
+   Notez l'hôte de la base, son nom, et les trois couples identifiant / mot de passe.
+
+3. FTP : utilisez de préférence FTPS (FTP sur TLS) ou SFTP. En FTP simple,
+   votre mot de passe circule en clair.
+
+
+ÉTAPE 2 : PRÉPARER LE FICHIER DE CONFIGURATION
+----------------------------------------------
+
+1. Ouvrez riskstudio-app/.env.example dans un éditeur de texte.
+   (Sur Mac, le Finder cache les fichiers qui commencent par un point :
+   Cmd + Maj + point pour les afficher.)
+
+2. Enregistrez une copie sous le nom env.txt et complétez :
+
+     APP_ENV=prod
+     APP_SECRET=     64 lettres et chiffres au hasard
+     SETUP_TOKEN=    40 lettres et chiffres au hasard (installation)
+     CRON_KEY=       40 lettres et chiffres au hasard (collecteur)
+     DB_HOST=        hôte donné par le Manager
+     DB_NAME=        nom de la base
+     DB_PUBLIC_WRITES=write
+     DB_READ_USER= / DB_READ_PASSWORD=      utilisateur en lecture seule
+     DB_WRITE_USER= / DB_WRITE_PASSWORD=    utilisateur lecture et écriture
+     DB_ADMIN_USER= / DB_ADMIN_PASSWORD=    utilisateur avec tous les droits
+
+   Pour les valeurs au hasard, utilisez le générateur de votre gestionnaire
+   de mots de passe, en lettres et chiffres seulement. Gardez-les dans ce
+   gestionnaire.
+
+   DB_PUBLIC_WRITES=write est nécessaire chez Infomaniak : le Manager ne
+   permet pas les droits MariaDB colonne par colonne. C'est sans danger :
+   une proposition du public reste toujours « en attente ».
+
+
+ÉTAPE 3 : ENVOYER LES FICHIERS PAR FTP
+--------------------------------------
+
+Activez l'affichage des fichiers cachés dans votre client FTP (FileZilla :
+affichés par défaut ; Cyberduck : Présentation > Afficher les fichiers
+cachés ; Transmit : Présentation > Afficher les fichiers invisibles).
+Les fichiers .htaccess sont indispensables à la sécurité du site.
+
+1. Envoyez le CONTENU du dossier site/ dans le dossier du site
+   (exemple : /sites/riskstudio.mondomaine.be/).
+
+2. Envoyez le dossier riskstudio-app/ entier À CÔTÉ du dossier du site,
+   jamais dedans (exemple : /sites/riskstudio-app/).
+
+     /sites/
+       riskstudio.mondomaine.be/     <- contenu de site/
+       riskstudio-app/               <- dossier riskstudio-app/
+
+3. Envoyez env.txt dans /sites/riskstudio-app/, puis renommez-le en .env
+   sur le serveur (clic droit > Renommer dans le client FTP).
+   Si votre client le permet, réglez ses permissions sur 600.
+
+
+ÉTAPE 4 : INSTALLER LA BASE ET CRÉER VOTRE COMPTE
+-------------------------------------------------
+
+1. Ouvrez https://riskstudio.mondomaine.be/setup/
+2. Collez votre SETUP_TOKEN, cliquez sur Vérifier.
+3. Cliquez sur « Installer la base et le catalogue ».
+4. Créez votre compte administrateur (mot de passe de 14 caractères minimum).
+5. Ajoutez la clé affichée dans votre application d'authentification
+   (Aegis, 2FAS, Microsoft ou Google Authenticator). Depuis le téléphone,
+   le lien « Ouvrir dans l'application » le fait directement.
+   La clé n'est affichée qu'une seule fois.
+
+6. IMPORTANT : retirez la ligne SETUP_TOKEN=... du fichier .env
+   (téléchargez-le, supprimez la ligne, renvoyez-le). L'assistant
+   d'installation est alors désactivé.
+
+7. Connectez-vous sur https://riskstudio.mondomaine.be/admin/
+
+
+ÉTAPE 5 : LE COLLECTEUR DE VEILLE
+---------------------------------
+
+Dans le Manager : votre site > Outils avancés > Planificateur de tâches >
+Planifier une tâche.
+
+  URL :          https://riskstudio.mondomaine.be/api/v1/cron/collect
+  Protégée par mot de passe : oui
+    identifiant : collector (n'importe lequel)
+    mot de passe : votre CRON_KEY
+  Fréquence :    toutes les 15 minutes
+  Notifications : en cas d'erreur
+
+Activez la tâche. Le premier passage importe les 30 derniers jours de
+veille. L'onglet Sources de l'administration montre la santé de chaque
+source. La source CCB est désactivée : le site du CCB refuse certains
+hébergeurs. Activez-la dans cet onglet si vous voulez tenter.
+
+
+METTRE À JOUR PLUS TARD
+-----------------------
+
+1. Remettez une ligne SETUP_TOKEN=... dans .env.
+2. Renvoyez le contenu de site/ et le dossier riskstudio-app/
+   (sans écraser votre .env sur le serveur).
+3. Ouvrez /setup/ et cliquez sur « Mettre à jour la base et le catalogue ».
+4. Retirez SETUP_TOKEN du .env.
+
+Avant d'écraser riskstudio-app/, téléchargez-en une copie : c'est votre
+retour arrière.
+
+
+EN CAS DE PROBLÈME
+------------------
+
+- Page blanche ou erreur 500 sur /api/ : vérifiez que riskstudio-app/ est
+  bien À CÔTÉ du dossier du site et que .env existe.
+- « Installation désactivée » sur /setup/ : SETUP_TOKEN absent du .env ou
+  plus court que 32 caractères.
+- /api/v1/health indique l'état de l'API et de la base.

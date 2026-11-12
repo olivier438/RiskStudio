@@ -7,6 +7,8 @@ DirectoryIndex index.php
     # Run the parent rules first (HTTPS redirect of the site's .htaccess):
     # a child .htaccess does not inherit rewrite rules otherwise.
     RewriteOptions InheritBefore
+    # Pass the Authorization header to PHP under FastCGI (collector trigger).
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [QSA,L]
 </IfModule>

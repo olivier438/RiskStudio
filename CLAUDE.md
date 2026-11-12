@@ -28,8 +28,8 @@
 
 ## Deployment
 
-- Production: Infomaniak shared hosting, deployed by `.github/workflows/deploy.yml` (manual, SSH, GitHub environment `production`). Guide: `docs/deploy-infomaniak.md`.
-- Never ask for or handle hosting credentials in a conversation: they live in GitHub environment secrets and in the server `.env` only.
+- Production: Infomaniak shared hosting. The owner deploys **by FTP** with the zip from `make release` (guide `docs/INSTALLATION-FTP.txt`, web installer `/setup/`, collector triggered by the Infomaniak task planner on `/api/v1/cron/collect`). Do not steer him towards GitHub: he does not use it for operations. The SSH workflow stays as an option only.
+- Never ask for or handle hosting credentials (FTP, database, keys) in a conversation: they live in the owner's FTP client and in the server `.env` only.
 - `scripts/package.sh` must never ship `.env`, tests or fixtures (it checks). `scripts/deploy.sh` never touches the server `.env`.
 
 ## Commands

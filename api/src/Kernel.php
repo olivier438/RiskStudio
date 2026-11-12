@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace RiskStudio;
 
 use RiskStudio\Controller\AdminController;
+use RiskStudio\Controller\CronController;
 use RiskStudio\Controller\ProposalController;
 use RiskStudio\Controller\PublicController;
+use RiskStudio\Controller\SetupController;
 use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
@@ -44,6 +46,17 @@ final class Kernel
         $router->get('/v1/intel/{id}', $public->intelItem(...));
         $router->get('/v1/leaks', $public->leaks(...));
         $router->post('/v1/proposals', fn (Request $r) => $this->proposals()->create($r));
+
+        // Web installer (FTP-only hosting): 404 unless SETUP_TOKEN is set.
+        $setup = fn (string $method): \Closure => fn (Request $r) => $this->setup()->{$method}($r);
+        $router->get('/v1/setup/status', $setup('status'));
+        $router->post('/v1/setup/install', $setup('install'));
+        $router->post('/v1/setup/admin', $setup('createAdmin'));
+
+        // Collector trigger for the hosting task planner: 404 unless CRON_KEY is set.
+        $cron = fn (Request $r) => (new CronController($this->config, $this->db, $this->dbDir()))->collect($r);
+        $router->get('/v1/cron/collect', $cron);
+        $router->post('/v1/cron/collect', $cron);
 
         // Back office: controllers (and their read-write connection) are only
         // created when an admin route is actually called.
@@ -91,6 +104,19 @@ final class Kernel
         }
 
         return $this->admin;
+    }
+
+    /** Release package: db/ inside the application root. Repository: next to api/. */
+    private function dbDir(): string
+    {
+        $appRoot = getenv('RS_APP_ROOT') ?: dirname(__DIR__);
+
+        return is_dir($appRoot . '/db') ? $appRoot . '/db' : dirname($appRoot) . '/db';
+    }
+
+    private function setup(): SetupController
+    {
+        return new SetupController($this->config, $this->db, $this->dbDir());
     }
 
     private function proposals(): ProposalController
