@@ -62,6 +62,17 @@ final class Response
         return new self($this->status, $this->body, $headers);
     }
 
+    /**
+     * Session cookie: HttpOnly, SameSite=Strict, Secure outside development.
+     * A `__Host-` name additionally forbids Domain and forces Path=/.
+     */
+    public function withCookie(string $name, string $value, int $maxAge, bool $secure): self
+    {
+        $cookie = sprintf('%s=%s; Path=/; Max-Age=%d; HttpOnly; SameSite=Strict%s', $name, rawurlencode($value), $maxAge, $secure ? '; Secure' : '');
+
+        return $this->withHeader('Set-Cookie', $cookie);
+    }
+
     public function withHeader(string $name, string $value): self
     {
         return new self($this->status, $this->body, [$name => $value] + $this->headers);

@@ -23,6 +23,7 @@
 - Tests must not depend on fixtures: integration tests create and clean their own rows.
 - Collector: sources only normalise facts, `Classifier` decides, `Store` writes. Classification must stay a pure function of facts + `db/rules/*.csv` (no randomness, no clock, no network). Never store `.onion` links.
 - Collector tests run on frozen payloads in `api/tests/fixtures/collector`, never on the network.
+- Admin endpoints: always through `AdminController::session()` (authentication + CSRF), answers with `Cache-Control: no-store`, every decision audited. Never add a public write endpoint outside `rs_read` column grants.
 - CyFun: store references and NIST CSF 1.1 titles only, never the CCB requirement texts.
 
 ## Commands

@@ -67,6 +67,20 @@ The catalogue lives in `db/catalogue/` as CSV files (risks, framework controls, 
 
 ISO/IEC 27001 control titles are copyrighted: only reference numbers (`A.5.1`) are stored. NIS2, DORA and CRA texts are EU legislation, NIST CSF 2.0 is a US government work, CyFun is published by the Centre for Cybersecurity Belgium.
 
+## Administration
+
+- Accounts are created from the command line only (`api/bin/admin.php`): no sign-up page.
+- Login needs e-mail, password (argon2id) **and** a TOTP code (RFC 6238, replay refused).
+- Sessions are random tokens in an HttpOnly, SameSite=Strict cookie (`__Host-` and Secure in production); only their SHA-256 is stored in `admin_sessions`. Idle timeout 30 minutes, lifetime 8 hours.
+- Every mutating admin request carries the session CSRF token (`X-CSRF-Token`).
+- Login attempts are throttled per account and per client; rate-limit buckets are HMACs keyed by `APP_SECRET`, never raw IPs or e-mails.
+- Every decision (publish, reject, approve, edit, source change, login) is written to `audit_log`.
+- Catalogue risks stay read-only in the back office (source of truth: `db/catalogue/risks.csv`); community risks created from approved proposals (`R-COM-xx`) are editable.
+
+## Public proposals
+
+`POST /v1/proposals` runs as `rs_read`: the database only grants it an `INSERT` on a few columns of `proposals`, so the status is always the default `pending`. Honeypot field, 5 proposals per hour per client, 100 per day in total, 32 KB body limit.
+
 ## V2: user environment (planned)
 
 Users stay read-only on all content. They only write their **environment profile**: sectors, IT/OT, followed frameworks, watched vendors and products. The profile has the same shape as the catalogue filters (`RiskFilter`, `RiskQuery` in `web/src/lib/api.ts`), so V2 adds two tables (`users`, `user_environment`) and no rewrite.

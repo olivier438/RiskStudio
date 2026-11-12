@@ -40,10 +40,11 @@ The public views still protect reads: the public API code only ever queries `v_p
 
 1. `make build` and `composer install --no-dev --optimize-autoloader`.
 2. Upload the content of `api/` and the `db/` folder to `~/riskstudio-app/`, and `web/build/` to the web root. The `api/index.php` stub in the web root sets `RS_APP_ROOT` and requires `~/riskstudio-app/public/index.php`.
-3. Create `~/riskstudio-app/.env` from `api/.env.example`, with `APP_ENV=prod`.
+3. Create `~/riskstudio-app/.env` from `api/.env.example`, with `APP_ENV=prod` and a fresh `APP_SECRET` (`php -r 'echo bin2hex(random_bytes(32));'`).
 4. From SSH: `php ~/riskstudio-app/bin/migrate.php --seed` with `RS_DB_DIR=~/riskstudio-app/db`.
 5. Apply `db/grants.sql` if allowed, otherwise follow the section above.
-6. Declare the collector scheduled task (see below).
+6. Create the first administrator from SSH: `php ~/riskstudio-app/bin/admin.php create you@example.org "Your Name"`. The command asks the password (14 characters minimum) and prints the TOTP key to add to an authenticator app. There is no sign-up page.
+7. Declare the collector scheduled task (see below).
 
 ## Collector scheduled task
 

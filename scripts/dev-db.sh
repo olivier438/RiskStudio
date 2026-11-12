@@ -22,6 +22,15 @@ if [[ ! -f "$ENV_FILE" ]]; then
   done
   echo "Created api/.env with random local passwords."
 fi
+if ! grep -q '^APP_SECRET=[0-9a-f]\{64\}$' "$ENV_FILE"; then
+  secret="$(php -r 'echo bin2hex(random_bytes(32));')"
+  if grep -q '^APP_SECRET=' "$ENV_FILE"; then
+    sed -i "s|^APP_SECRET=.*|APP_SECRET=${secret}|" "$ENV_FILE"
+  else
+    printf '\nAPP_SECRET=%s\n' "$secret" >> "$ENV_FILE"
+  fi
+  echo "Generated a local APP_SECRET."
+fi
 
 env_get() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2-; }
 DB_NAME="$(env_get DB_NAME)"

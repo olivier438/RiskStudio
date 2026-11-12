@@ -174,10 +174,71 @@ export class ApiError extends Error {
 	constructor(
 		public readonly status: number,
 		public readonly code: string,
-		message: string
+		message: string,
+		/** Per-field messages of a 422 validation error. */
+		public readonly fields: Record<string, string> = {}
 	) {
 		super(message);
 	}
+}
+
+/** JSON request with a body (POST, PUT). Cookies are sent: same origin. */
+export async function send<T>(
+	method: 'POST' | 'PUT',
+	path: string,
+	body: unknown,
+	headers: Record<string, string> = {}
+): Promise<T> {
+	const response = await fetch(BASE + path, {
+		method,
+		headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...headers },
+		body: JSON.stringify(body),
+		credentials: 'same-origin'
+	});
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		const error = data?.error ?? {};
+		throw new ApiError(response.status, error.code ?? 'http_error', error.message ?? response.statusText, error.fields ?? {});
+	}
+	return data as T;
+}
+
+/** GET with cookies and without HTTP cache (back office). */
+export async function getPrivate<T>(path: string): Promise<T> {
+	const response = await fetch(BASE + path, {
+		headers: { Accept: 'application/json' },
+		cache: 'no-store',
+		credentials: 'same-origin'
+	});
+	const data = await response.json().catch(() => null);
+	if (!response.ok) {
+		const error = data?.error ?? {};
+		throw new ApiError(response.status, error.code ?? 'http_error', error.message ?? response.statusText);
+	}
+	return data as T;
+}
+
+export interface RiskProposal {
+	title: string;
+	category: string;
+	threat: string;
+	scenario: string;
+	measures: string;
+	impact: number;
+	cia: string;
+	environment: 'IT' | 'OT' | 'BOTH';
+	sectors: string[];
+	references?: string;
+}
+
+export interface ProposalRequest {
+	kind: 'risk' | 'correction';
+	payload: RiskProposal | { risk_code: string; message: string };
+	submitter_name?: string;
+	submitter_email?: string;
+	consent?: boolean;
+	/** Honeypot: must stay empty. */
+	website?: string;
 }
 
 async function request<T>(path: string, fetchFn: typeof fetch = fetch): Promise<T> {
@@ -214,5 +275,6 @@ export const api = {
 			f
 		),
 	risk: (code: string, f?: typeof fetch) =>
-		request<{ data: Risk }>(`/risks/${encodeURIComponent(code)}`, f)
+		request<{ data: Risk }>(`/risks/${encodeURIComponent(code)}`, f),
+	propose: (proposal: ProposalRequest) => send<{ status: 'received' }>('POST', '/proposals', proposal)
 };

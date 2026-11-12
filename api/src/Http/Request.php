@@ -6,6 +6,9 @@ namespace RiskStudio\Http;
 
 final class Request
 {
+    /** Request bodies are small JSON documents: anything bigger is refused. */
+    public const MAX_BODY = 32 * 1024;
+
     /**
      * @param array<string, string|array<mixed>> $query
      * @param array<string, string> $headers  lower-cased header names
@@ -18,6 +21,7 @@ final class Request
         public readonly array $headers = [],
         public readonly string $body = '',
         public readonly array $params = [],
+        public readonly string $ip = '',
     ) {
     }
 
@@ -47,7 +51,9 @@ final class Request
             self::normalisePath($path),
             $_GET,
             $headers,
-            (string) file_get_contents('php://input'),
+            (string) file_get_contents('php://input', false, null, 0, self::MAX_BODY + 1),
+            [],
+            (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
         );
     }
 
@@ -61,7 +67,39 @@ final class Request
     /** @param array<string, string> $params */
     public function withParams(array $params): self
     {
-        return new self($this->method, $this->path, $this->query, $this->headers, $this->body, $params);
+        return new self($this->method, $this->path, $this->query, $this->headers, $this->body, $params, $this->ip);
+    }
+
+    public function cookie(string $name): ?string
+    {
+        foreach (explode(';', $this->header('cookie') ?? '') as $pair) {
+            [$key, $value] = array_pad(explode('=', trim($pair), 2), 2, '');
+            if ($key === $name && $value !== '') {
+                return urldecode($value);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Decoded JSON object body.
+     * @return array<string, mixed>
+     */
+    public function json(): array
+    {
+        if (strlen($this->body) > self::MAX_BODY) {
+            throw new HttpException(413, 'payload_too_large', 'Request body too large.');
+        }
+        if (!str_contains($this->header('content-type') ?? '', 'application/json')) {
+            throw new HttpException(415, 'unsupported_media_type', 'Expected application/json.');
+        }
+        $data = json_decode($this->body, true);
+        if (!is_array($data) || array_is_list($data) && $data !== []) {
+            throw HttpException::badRequest('Invalid JSON object.');
+        }
+
+        return $data;
     }
 
     public function header(string $name): ?string

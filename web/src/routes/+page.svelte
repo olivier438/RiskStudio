@@ -311,7 +311,7 @@
 					>
 				{/each}
 			</div>
-			<button class="btn btn-propo" disabled title="Formulaire de proposition : bientôt disponible">➕ Proposer un risque</button>
+			<a class="btn btn-propo" href="/proposer/">➕ Proposer un risque</a>
 			<button class="btn btn-pdf" disabled={selectedCount === 0} onclick={() => window.print()}>📄 PDF</button>
 			<button class="btn btn-excel" disabled={selectedCount === 0} onclick={exportCsv}
 				>📊 Excel{selectedCount ? ` (${selectedCount})` : ''}</button
