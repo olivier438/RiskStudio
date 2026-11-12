@@ -1,130 +1,75 @@
 # 🛡️ Risk Studio
 
-> A living, community-driven GRC risk catalogue — open, searchable, and built for cybersecurity professionals.
+> A GRC risk catalogue and a deterministic threat intelligence feed, open and built for cybersecurity professionals.
 
-[![Status](https://img.shields.io/badge/status-active-brightgreen)](https://olivier438.github.io/RiskStudio/)
-[![Risks](https://img.shields.io/badge/risks-168-blue)](https://olivier438.github.io/RiskStudio/)
 [![License](https://img.shields.io/badge/license-CC%20BY--SA%204.0-lightgrey)](LICENSE)
-[![Frameworks](https://img.shields.io/badge/frameworks-ISO%2027001%20%7C%20NIS2%20%7C%20DORA-orange)](https://olivier438.github.io/RiskStudio/)
+[![Frameworks](https://img.shields.io/badge/frameworks-ISO%2027001%20%7C%20NIS2%20%7C%20DORA%20%7C%20CyFun%20%7C%20NIST%20CSF-orange)](docs/architecture.md)
 
----
+**v5 is a full rebuild, in progress on the `v5` branch.** The v4 application stays online from `main` until v5 replaces it. Its code is kept in [`legacy/`](legacy/) as the visual reference.
 
 ## What is Risk Studio?
 
-Risk Studio is a **free, open-source GRC risk catalogue** designed for cybersecurity consultants, CISOs, risk managers, and compliance professionals.
+Two products under one interface:
 
-It provides a structured, searchable library of cybersecurity risks mapped to major regulatory frameworks — **ISO/IEC 27001:2022**, **NIS2**, and **DORA** — covering both IT and OT environments.
+- **GRC catalogue**: a structured library of cybersecurity risks, mapped to ISO/IEC 27001:2022, NIS2, DORA, CRA, CyFun and NIST CSF 2.0, for IT and OT environments.
+- **Threat intelligence feed**: vulnerabilities, advisories and data leaks collected from authoritative sources (CISA KEV, NVD, FIRST EPSS, ENISA EUVD, CERT-FR, CCB...), scored and linked to the catalogue risks they materialise.
 
-No login. No paywall. No bloated platform. Just the risks you need, when you need them.
+## What changes in v5
 
----
+| | v4 | v5 |
+|---|---|---|
+| Classification | LLM (Groq / LLaMA) | **No AI.** Explicit, auditable rules, stored with each item |
+| Hosting | Supabase, Cloudflare, GitHub Pages (US) | **Infomaniak shared hosting** (Switzerland) |
+| Back end | Supabase REST + RLS | PHP 8.3 API + MariaDB, least-privilege users and public views |
+| Front end | Single HTML files | SvelteKit static build, strict CSP without `unsafe-inline` |
+| Editorial flow | Agent published directly | Only authoritative sources publish directly, the rest is reviewed |
 
-## Why we built it
-
-Most GRC tools are either too expensive, too closed, or too generic.
-
-Risk Studio was born from a simple frustration: every new client engagement starts with rebuilding the same risk catalogue from scratch. Templates are locked behind paywalls. Excel files get stale. Frameworks multiply.
-
-We wanted a **community-maintained, always-current, framework-agnostic** risk library that any GRC professional could use, contribute to, and trust.
-
----
-
-## Features
-
-- 🔍 **Full-text search** across titles, scenarios, threats, and compliance references
-- 🏷️ **Filter by** environment (IT / OT), category, and impact level
-- 🗺️ **Multi-framework mapping** — ISO 27001, NIS2, DORA in a single view
-- 🔴 **DIC classification** — Disponibilité, Intégrité, Confidentialité per risk
-- 📊 **Export to CSV/Excel** with selected risks
-- ➕ **Community contributions** — propose new risks via the submission form
-- ⚡ **Real-time updates** — agent-powered ingestion from live cyber threat feeds *(coming soon)*
-- 🔒 **Security by design** — Supabase backend with Row Level Security, editorial validation
-
----
-
-## Risk Coverage
-
-| Category | Examples |
-|---|---|
-| Gouvernance | Absence de politique de sécurité, budget insuffisant |
-| Accès & IAM | MFA non activé, privilege escalation |
-| Infrastructure | Patch management, misconfiguration cloud |
-| Données | Fuite, chiffrement absent, RGPD |
-| Continuité | DRP absent, sauvegardes non testées |
-| OT / Industrie | SCADA exposure, firmware obsolète |
-| Supply Chain | Tiers non audités, dépendance fournisseur |
-| IA | Shadow AI, données d'entraînement sensibles |
-| ... | 18 categories total, 168+ risks |
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | HTML5 / CSS3 / Vanilla JS — single file, zero dependencies |
-| Database | [Supabase](https://supabase.com) (PostgreSQL + REST API + Realtime) |
-| Hosting | GitHub Pages |
-| Security | Row Level Security (RLS), anon read-only, editorial validation |
-| Agent *(coming soon)* | Cloudflare Workers + Claude API |
-
----
+Details: [docs/architecture.md](docs/architecture.md).
 
 ## Roadmap
 
-- [x] Static CSV catalogue (v1–v3)
-- [x] Supabase migration with optimised relational schema (v4.0)
-- [x] Multi-framework mapping (ISO 27001, NIS2, DORA)
-- [x] IT / OT classification
-- [x] Community risk submission form
-- [ ] Real-time agent ingestion from cyber threat feeds
-- [ ] Supabase Realtime — live risk appearance without refresh
-- [ ] Admin validation interface
-- [ ] CyFun / NIST CSF 2.0 framework mapping
-- [ ] Risk scoring & likelihood matrix
-- [ ] API public endpoint
+- [x] **Phase 1, foundations**: schema, reference data, PHP API skeleton, Svelte shell, CI
+- [ ] **Phase 2, catalogue**: v4 risks migrated with corrected ISO 27001:2022 mappings, CyFun and DORA controls
+- [ ] **Phase 3, front end**: GRC, Cyber and Data Leaks views, filters, export, notifications
+- [ ] **Phase 4, collector**: sources, rules, scoring, link to the catalogue
+- [ ] **Phase 5, administration**: login with TOTP, moderation, proposals, CRA tab, statistics
+- [ ] **Phase 6, deployment**: Infomaniak packaging, documentation, SBOM
+- [ ] **V2**: user environment profile (sectors, technologies, frameworks) to filter the feed
 
----
+## Local development
+
+Requirements: PHP 8.2+ with `pdo_mysql`, Composer, MariaDB 10.6+, Node.js 22+ (build only).
+
+```bash
+make setup     # PHP and front-end dependencies
+make db        # database, least-privilege users, migrations, seeds
+make dev       # API on :8080 and front end on :5173
+make check     # PHP tests and front-end type check
+make preview   # production build served like Apache would, on :8090
+```
+
+## Repository layout
+
+```
+api/       PHP API (src/, public/, bin/migrate.php, tests/)
+web/       SvelteKit front end
+db/        migrations/, seeds/, grants.sql
+docs/      architecture and deployment
+scripts/   local tooling
+legacy/    v4 application, reference only
+```
 
 ## Contributing
 
-Risk Studio grows with its community. You can contribute in two ways:
-
-### 1. Propose a risk (no technical skills needed)
-Use the **➕ Proposer un risque** button on the live app. Your submission goes into a moderation queue and will be reviewed before publication.
-
-### 2. Contribute via GitHub
-```bash
-git clone https://github.com/olivier438/RiskStudio.git
-cd RiskStudio
-```
-
-- **Bug reports & feature requests**: open an [Issue](https://github.com/olivier438/RiskStudio/issues)
-- **Pull requests**: welcome for front-end improvements, new framework mappings, documentation
-
-### Contribution guidelines
-- Risks must be realistic and based on documented threat scenarios
-- Each risk must map to at least one framework reference (ISO 27001, NIS2, DORA, or other)
-- DIC classification is mandatory
-- Language: French (catalogue), English (code & docs)
-
----
+- **Propose a risk** from the application (moderated).
+- **Issues and pull requests** are welcome on GitHub.
+- Catalogue content in French, code and documentation in English.
+- Each risk maps to at least one framework reference and declares its CIA impact (Confidentiality, Integrity, Availability).
 
 ## License
 
-Risk Studio catalogue content is published under **[Creative Commons BY-SA 4.0](LICENSE)**.  
-You are free to use, share, and adapt — with attribution and under the same license.
-
-Source code is MIT licensed.
-
----
+Catalogue content: [Creative Commons BY-SA 4.0](LICENSE). Source code: MIT.
 
 ## Author
 
-Built by **Olivier Delvigne / One Circle IT Solutions srl** — CISO as a Service, ISO 27001 Lead Implementer, GRC consultant with 25+ years in IT.
-
-🔗 [LinkedIn] (https://www.linkedin.com/in/odocits)
-
----
-
-*Risk Studio is part of the ONE CIRCLE IT SOLUTIONS ecosystem.*
+Built by **Olivier Delvigne, One Circle IT Solutions srl**: CISO as a Service, ISO 27001 Lead Implementer, GRC consultant with 25+ years in IT. [LinkedIn](https://www.linkedin.com/in/odocits)

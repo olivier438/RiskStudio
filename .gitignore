@@ -1,0 +1,13 @@
+# PHP API
+/api/vendor/
+/api/.env
+/api/.phpunit.cache/
+/api/.phpunit.result.cache
+
+# Release packages
+/dist/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/

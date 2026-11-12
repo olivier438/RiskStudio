@@ -1,0 +1,143 @@
+/* =============================================================================
+   Risk Studio v5 | Global styles
+   Ported as-is from the v4 interface (legacy/index.html): same tokens, same
+   look. Component-specific styles live in their Svelte components.
+   No inline style attributes anywhere: the CSP forbids 'unsafe-inline'.
+   ========================================================================== */
+
+:root {
+	--primary: #2563eb;
+	--ot-color: #f59e0b;
+	--it-color: #3b82f6;
+	--cyber: #dc2626;
+	--leaks: #7c3aed;
+	--ok: #10b981;
+	--excel: #107c10;
+	--bg: #f8fafc;
+	--surface: #ffffff;
+	--text: #1e293b;
+	--muted: #64748b;
+	--muted-strong: #475569;
+	--border: #e2e8f0;
+	--shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	font-family: 'Segoe UI', system-ui, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+	margin: 0;
+	padding: 20px;
+}
+
+.container {
+	max-width: 1400px;
+	margin: 0 auto;
+}
+
+/* Buttons */
+.btn {
+	padding: 10px 16px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: bold;
+	border: none;
+	transition: 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	text-decoration: none;
+	white-space: nowrap;
+	font-family: inherit;
+}
+.btn-propo {
+	background: #e0f2fe;
+	color: #0369a1;
+}
+.btn-pdf {
+	background: var(--primary);
+	color: white;
+}
+.btn-excel {
+	background: var(--excel);
+	color: white;
+}
+.btn:disabled {
+	background: #cbd5e1;
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Loading and errors */
+.loading {
+	text-align: center;
+	padding: 40px;
+	color: var(--muted);
+	font-size: 14px;
+}
+.loading-spinner {
+	display: inline-block;
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--border);
+	border-top-color: var(--primary);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin-right: 10px;
+	vertical-align: middle;
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+.error-msg {
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	color: #dc2626;
+	padding: 15px;
+	border-radius: 8px;
+	margin: 20px 0;
+	font-size: 13px;
+}
+
+/* Live indicator */
+.live-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--ok);
+	animation: livePulse 1.5s infinite;
+	margin-right: 5px;
+	vertical-align: middle;
+}
+@keyframes livePulse {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.4;
+		transform: scale(0.8);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.loading-spinner,
+	.live-dot {
+		animation: none;
+	}
+}
+
+/* SvelteKit mount point, kept out of the layout flow. */
+.app-root {
+	display: contents;
+}

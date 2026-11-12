@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v5]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, mbstring
+          coverage: none
+      - name: Install dependencies
+        working-directory: api
+        run: composer install --no-interaction --no-progress
+      - name: Create database and users
+        run: |
+          cp api/.env.example api/.env
+          sed -i 's/^DB_READ_PASSWORD=.*/DB_READ_PASSWORD=ci-read/; s/^DB_WRITE_PASSWORD=.*/DB_WRITE_PASSWORD=ci-write/; s/^DB_ADMIN_PASSWORD=.*/DB_ADMIN_PASSWORD=ci-admin/' api/.env
+          M="mysql -h127.0.0.1 -uroot -proot"
+          $M -e "CREATE DATABASE riskstudio CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+                 CREATE USER 'rs_admin'@'%' IDENTIFIED BY 'ci-admin';
+                 CREATE USER 'rs_write'@'%' IDENTIFIED BY 'ci-write';
+                 CREATE USER 'rs_read'@'%' IDENTIFIED BY 'ci-read';
+                 GRANT ALL PRIVILEGES ON riskstudio.* TO 'rs_admin'@'%';"
+          php api/bin/migrate.php --seed
+          sed "s/__DB__/riskstudio/g; s/'@'localhost'/'@'%'/g" db/grants.sql | $M
+      - name: Tests
+        working-directory: api
+        run: vendor/bin/phpunit
+
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - working-directory: web
+        run: npm ci
+      - working-directory: web
+        run: npm run check
+      - working-directory: web
+        run: npm run build
