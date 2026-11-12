@@ -140,7 +140,9 @@ final class FeedApiTest extends TestCase
 
         self::assertGreaterThanOrEqual(1, $stats['intel']['critical_recent']);
         self::assertGreaterThanOrEqual(2, $stats['intel']['total']);
-        self::assertSame(167, $stats['risks']['total']);
+        $community = (int) self::$db->connection(Database::WRITE)
+            ->query("SELECT COUNT(*) FROM risks WHERE origin = 'community' AND status = 'published'")->fetchColumn();
+        self::assertSame(167 + $community, $stats['risks']['total']);
         self::assertNotNull($stats['last_update']);
     }
 

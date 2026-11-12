@@ -1,7 +1,7 @@
 # Risk Studio v5 | Developer commands
 # Requirements: PHP 8.2+ (pdo_mysql), Composer, MariaDB 10.6+, Node.js 22+ (build only).
 
-.PHONY: help setup db db-reset fixtures catalogue collect api web dev test check build preview
+.PHONY: help setup db db-reset fixtures catalogue collect api web dev test check build preview sbom release
 
 help: ## List commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-10s %s\n", $$1, $$2}'
@@ -45,3 +45,9 @@ build: ## Build the static front end into web/build
 
 preview: build ## Serve the production build + API like Apache would, on :8090
 	php -S 127.0.0.1:8090 scripts/preview-router.php
+
+sbom: ## CycloneDX SBOM of the front end and the API, in dist/sbom
+	scripts/sbom.sh
+
+release: sbom ## Release package for Infomaniak in dist/release and dist/*.tar.gz
+	scripts/package.sh

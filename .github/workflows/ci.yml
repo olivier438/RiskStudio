@@ -46,11 +46,18 @@ jobs:
       - name: Tests
         working-directory: api
         run: vendor/bin/phpunit
+      - name: Known vulnerabilities in PHP dependencies
+        working-directory: api
+        run: composer audit --no-interaction
 
   web:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -62,3 +69,13 @@ jobs:
         run: npm run check
       - working-directory: web
         run: npm run build
+      - name: Known vulnerabilities in npm dependencies
+        working-directory: web
+        run: npm audit --audit-level=high
+      - name: SBOM (CycloneDX)
+        run: scripts/sbom.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: dist/sbom/*.cdx.json
+          retention-days: 90

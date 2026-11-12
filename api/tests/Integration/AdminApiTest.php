@@ -23,7 +23,7 @@ final class AdminApiTest extends TestCase
     private static ?Kernel $kernel = null;
     private static ?PDO $pdo = null;
     private static string $secret;
-    private static int $step;
+    private static int $lastStep;
 
     public static function setUpBeforeClass(): void
     {
@@ -44,7 +44,7 @@ final class AdminApiTest extends TestCase
         }
         self::cleanup();
         self::$secret = Totp::generateSecret();
-        self::$step = intdiv(time(), 30) - 1;
+        self::$lastStep = 0;
         self::$pdo->prepare('INSERT INTO admins (email, display_name, password_hash, totp_secret) VALUES (?, ?, ?, ?)')
             ->execute([self::EMAIL, 'Test Admin', AdminAuth::hashPassword(self::PASSWORD), self::$secret]);
     }
@@ -65,10 +65,15 @@ final class AdminApiTest extends TestCase
         self::$pdo->exec('DELETE FROM rate_limits');
     }
 
-    /** A fresh, never used TOTP code for each login of a test. */
+    /**
+     * A fresh, never used TOTP code, computed at call time (a 30 s boundary
+     * may pass during a test) and always newer than the previous one (replay).
+     */
     private static function code(): string
     {
-        return Totp::code(self::$secret, self::$step++);
+        self::$lastStep = max(self::$lastStep + 1, intdiv(time(), 30) - 1);
+
+        return Totp::code(self::$secret, self::$lastStep);
     }
 
     private function call(string $method, string $path, ?array $body = null, array $headers = [], string $ip = '203.0.113.10'): Response
@@ -220,6 +225,22 @@ final class AdminApiTest extends TestCase
         $actions = array_column(self::json($this->call('GET', '/v1/admin/audit', null, $h))['data'], 'action');
         self::assertContains('proposal.approve', $actions);
         self::assertContains('risk.update', $actions);
+    }
+
+    public function testFallbackModeStillForcesPendingStatus(): void
+    {
+        putenv('DB_PUBLIC_WRITES=write');
+        try {
+            $config = Config::fromFile(dirname(__DIR__, 2) . '/.env');
+            $kernel = new Kernel($config, new Database($config));
+            $body = ['kind' => 'correction', 'submitter_name' => 'phpunit', 'status' => 'approved',
+                'payload' => ['risk_code' => 'R-GOV-01', 'message' => 'phpunit: mode de repli.', 'status' => 'approved']];
+            $r = $kernel->handle(new Request('POST', '/v1/proposals', [], ['content-type' => 'application/json'], json_encode($body), [], '192.0.2.50'));
+            self::assertSame(202, $r->status, $r->body);
+            self::assertSame(['pending'], self::$pdo->query("SELECT status FROM proposals WHERE payload LIKE '%mode de repli%'")->fetchAll(PDO::FETCH_COLUMN));
+        } finally {
+            putenv('DB_PUBLIC_WRITES');
+        }
     }
 
     public function testProposalsAreRateLimitedPerClient(): void

@@ -1,0 +1,91 @@
+name: Deploy to Infomaniak
+
+# Manual only: Actions tab > "Deploy to Infomaniak" > Run workflow.
+# Credentials live in the "production" environment of the repository
+# (Settings > Environments > production), never in the code:
+#   secrets   INFOMANIAK_SSH_KEY        private key allowed on the hosting
+#             INFOMANIAK_KNOWN_HOSTS    output of `ssh-keyscan -p PORT HOST`
+#   variables INFOMANIAK_SSH_HOST, INFOMANIAK_SSH_USER, INFOMANIAK_SSH_PORT,
+#             INFOMANIAK_APP_DIR, INFOMANIAK_WEB_DIR, PUBLIC_URL
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.inputs.confirm == 'deploy'
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, mbstring
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Dependencies
+        run: |
+          (cd api && composer install --no-interaction --no-progress)
+          (cd web && npm ci)
+
+      - name: Unit tests and type check
+        run: |
+          (cd api && vendor/bin/phpunit --testsuite unit)
+          (cd web && npm run check)
+
+      - name: SBOM and package
+        run: |
+          scripts/sbom.sh
+          scripts/package.sh "${{ vars.INFOMANIAK_APP_FROM_WEB || '../riskstudio-app' }}"
+
+      - name: SSH key
+        env:
+          SSH_KEY: ${{ secrets.INFOMANIAK_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.INFOMANIAK_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          printf '%s\n' "$SSH_KEY" | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ vars.INFOMANIAK_SSH_HOST }}
+          DEPLOY_USER: ${{ vars.INFOMANIAK_SSH_USER }}
+          DEPLOY_PORT: ${{ vars.INFOMANIAK_SSH_PORT || '22' }}
+          DEPLOY_APP_DIR: ${{ vars.INFOMANIAK_APP_DIR }}
+          DEPLOY_WEB_DIR: ${{ vars.INFOMANIAK_WEB_DIR }}
+          DEPLOY_URL: ${{ vars.PUBLIC_URL }}
+        run: scripts/deploy.sh
+
+      - name: Keep the release and its SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: riskstudio-release
+          path: |
+            dist/*.tar.gz
+            dist/sbom/*.cdx.json
+          retention-days: 90

@@ -33,7 +33,7 @@ Details: [docs/architecture.md](docs/architecture.md).
 - [x] **Phase 3, front end**: GRC, Cyber and Data Leaks views, shareable filters, selection, CSV and PDF export, local edit mode, polling with toasts and browser notifications, "why" panel showing the rules behind each alert
 - [x] **Phase 4, collector**: CISA KEV, ENISA EUVD, CERT-FR, Have I Been Pwned, ransomware.live; FIRST EPSS and NVD enrichment; rule-based classification, scoring and links to the catalogue, all traceable ([rules](db/rules/README.md))
 - [x] **Phase 5, administration**: password + TOTP login, database sessions with CSRF protection, moderation queues, community proposals and risks, source management and collector health, statistics, audit log, CRA self-assessment
-- [ ] **Phase 6, deployment**: Infomaniak packaging, documentation, SBOM
+- [x] **Phase 6, deployment**: release package, SSH deployment from GitHub Actions with smoke tests and rollback, CycloneDX SBOM, dependency audits and Dependabot, security policy v3 and security.txt ([deployment guide](docs/deploy-infomaniak.md))
 - [ ] **V2**: user environment profile (sectors, technologies, frameworks) to filter the feed
 
 ## Local development
@@ -50,6 +50,7 @@ php api/bin/admin.php create you@example.org "Your Name"   # first administrator
 make dev       # API on :8080 and front end on :5173
 make check     # PHP tests and front-end type check
 make preview   # production build served like Apache would, on :8090
+make release   # SBOM + release package in dist/
 ```
 
 ## Repository layout

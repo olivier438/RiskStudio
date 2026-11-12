@@ -42,6 +42,13 @@ final class CatalogueTest extends TestCase
         }
     }
 
+    /** Catalogue size + community risks published by earlier manual tests. */
+    private function expectedTotal(): int
+    {
+        return 167 + (int) self::$db->connection(Database::WRITE)
+            ->query("SELECT COUNT(*) FROM risks WHERE origin = 'community' AND status = 'published'")->fetchColumn();
+    }
+
     /** @return array{status: int, json: mixed} */
     private function get(string $path, array $query = []): array
     {
@@ -63,7 +70,7 @@ final class CatalogueTest extends TestCase
     {
         $r = $this->get('/v1/risks', ['per_page' => '1']);
 
-        self::assertSame(167, $r['json']['meta']['total']);
+        self::assertSame($this->expectedTotal(), $r['json']['meta']['total']);
     }
 
     public function testBackupRiskUsesTheIso2022BackupControl(): void
@@ -172,7 +179,7 @@ final class CatalogueTest extends TestCase
         }
 
         // Nothing was written: the real catalogue is intact.
-        self::assertSame(167, $this->get('/v1/risks', ['per_page' => '1'])['json']['meta']['total']);
+        self::assertSame($this->expectedTotal(), $this->get('/v1/risks', ['per_page' => '1'])['json']['meta']['total']);
         self::assertSame('Absence d\'Information Security Policy', $this->get('/v1/risks/R-GOV-01')['json']['data']['title']);
     }
 }

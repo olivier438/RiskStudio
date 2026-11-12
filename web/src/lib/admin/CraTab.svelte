@@ -11,10 +11,10 @@
 		{ ref: 'Annexe I, I.2.h', label: 'Disponibilité des fonctions essentielles', how: 'Limitation de débit sur les écritures publiques, polling par ETag, collecteur isolé par source.', status: 'done' },
 		{ ref: 'Annexe I, I.2.j', label: 'Surface d’attaque limitée', how: 'Aucun CDN, aucun script tiers, aucune police externe ; API minimale, une seule route publique en écriture.', status: 'done' },
 		{ ref: 'Annexe I, I.2.l', label: 'Journalisation de l’activité', how: 'Journal d’audit des décisions et connexions, journal des passages du collecteur.', status: 'done' },
-		{ ref: 'Annexe I, I.2.a', label: 'Pas de vulnérabilité exploitable connue', how: 'Dépendances verrouillées (lockfiles). Surveillance automatique des mises à jour à mettre en place (phase 6).', status: 'partial' },
-		{ ref: 'Annexe I, II.1', label: 'SBOM', how: 'Software Bill of Materials CycloneDX à générer en CI et publier (phase 6).', status: 'todo' },
-		{ ref: 'Annexe I, II.5', label: 'Politique de divulgation coordonnée', how: 'SECURITY.md existe mais décrit encore l’architecture v4 : à mettre à jour (phase 6).', status: 'partial' },
-		{ ref: 'Art. 14', label: 'Processus de signalement', how: 'Contacts CCB et ENISA documentés dans SECURITY.md ; procédure interne à formaliser.', status: 'partial' }
+		{ ref: 'Annexe I, I.2.a', label: 'Pas de vulnérabilité exploitable connue', how: 'Lockfiles, composer audit et npm audit en CI, mises à jour Dependabot chaque semaine.', status: 'done' },
+		{ ref: 'Annexe I, II.1', label: 'SBOM', how: 'SBOM CycloneDX généré en CI et livré avec chaque release (scripts/sbom.sh, dossier sbom/ de l’application).', status: 'done' },
+		{ ref: 'Annexe I, II.5', label: 'Politique de divulgation coordonnée', how: 'SECURITY.md v3 (délais de correction, embargo) et /.well-known/security.txt (RFC 9116).', status: 'done' },
+		{ ref: 'Art. 14', label: 'Processus de signalement', how: 'Délais et canal (plateforme ENISA, CCB) documentés dans SECURITY.md ; exercice de notification à planifier.', status: 'partial' }
 	];
 
 	const ICON: Record<Status, string> = { done: '✅', partial: '🟡', todo: '⬜' };

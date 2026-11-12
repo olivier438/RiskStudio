@@ -26,6 +26,12 @@
 - Admin endpoints: always through `AdminController::session()` (authentication + CSRF), answers with `Cache-Control: no-store`, every decision audited. Never add a public write endpoint outside `rs_read` column grants.
 - CyFun: store references and NIST CSF 1.1 titles only, never the CCB requirement texts.
 
+## Deployment
+
+- Production: Infomaniak shared hosting, deployed by `.github/workflows/deploy.yml` (manual, SSH, GitHub environment `production`). Guide: `docs/deploy-infomaniak.md`.
+- Never ask for or handle hosting credentials in a conversation: they live in GitHub environment secrets and in the server `.env` only.
+- `scripts/package.sh` must never ship `.env`, tests or fixtures (it checks). `scripts/deploy.sh` never touches the server `.env`.
+
 ## Commands
 
-`make db`, `make catalogue`, `make dev`, `make check`, `make preview` (see Makefile).
+`make db`, `make catalogue`, `make dev`, `make check`, `make preview`, `make release` (see Makefile).

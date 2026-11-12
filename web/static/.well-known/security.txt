@@ -1,0 +1,4 @@
+Contact: mailto:security@onecircle.be
+Expires: 2027-11-12T00:00:00.000Z
+Preferred-Languages: fr, en, nl
+Policy: https://github.com/olivier438/RiskStudio/blob/main/SECURITY.md

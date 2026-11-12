@@ -96,7 +96,12 @@ final class Kernel
     private function proposals(): ProposalController
     {
         if ($this->proposals === null) {
-            $pdo = $this->db->connection(Database::READ);
+            // Default: rs_read, whose column grants make "pending" the only
+            // possible status. Fallback for hosting without fine-grained GRANT
+            // (DB_PUBLIC_WRITES=write): rs_write, the INSERT never names the
+            // status column, so the default "pending" still applies.
+            $role = $this->config->get('DB_PUBLIC_WRITES', 'read') === 'write' ? Database::WRITE : Database::READ;
+            $pdo = $this->db->connection($role);
             $this->proposals = new ProposalController($pdo, new RateLimiter($pdo, $this->secret()));
         }
 

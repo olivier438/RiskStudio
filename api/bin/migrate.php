@@ -22,7 +22,8 @@ use RiskStudio\Database;
 use RiskStudio\Migrator;
 
 $config = Config::fromFile($appRoot . '/.env');
-$dbDir = getenv('RS_DB_DIR') ?: dirname($appRoot) . '/db';
+// Release package: db/ sits inside the application root. Repository: next to api/.
+$dbDir = getenv('RS_DB_DIR') ?: (is_dir($appRoot . '/db') ? $appRoot . '/db' : dirname($appRoot) . '/db');
 $log = static fn (string $message) => fwrite(STDOUT, $message . PHP_EOL);
 
 try {

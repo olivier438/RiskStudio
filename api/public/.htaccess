@@ -4,6 +4,9 @@ DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    # Run the parent rules first (HTTPS redirect of the site's .htaccess):
+    # a child .htaccess does not inherit rewrite rules otherwise.
+    RewriteOptions InheritBefore
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [QSA,L]
 </IfModule>

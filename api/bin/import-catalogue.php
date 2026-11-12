@@ -22,7 +22,8 @@ use RiskStudio\Config;
 use RiskStudio\Database;
 
 $config = Config::fromFile($appRoot . '/.env');
-$dbDir = getenv('RS_DB_DIR') ?: dirname($appRoot) . '/db';
+// Release package: db/ sits inside the application root. Repository: next to api/.
+$dbDir = getenv('RS_DB_DIR') ?: (is_dir($appRoot . '/db') ? $appRoot . '/db' : dirname($appRoot) . '/db');
 $dryRun = in_array('--dry-run', $argv, true);
 
 try {

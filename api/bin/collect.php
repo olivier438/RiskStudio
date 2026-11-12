@@ -35,7 +35,8 @@ use RiskStudio\Database;
 
 $options = getopt('', ['source:', 'force', 'reclassify']);
 $config = Config::fromFile($appRoot . '/.env');
-$dbDir = getenv('RS_DB_DIR') ?: dirname($appRoot) . '/db';
+// Release package: db/ sits inside the application root. Repository: next to api/.
+$dbDir = getenv('RS_DB_DIR') ?: (is_dir($appRoot . '/db') ? $appRoot . '/db' : dirname($appRoot) . '/db');
 $log = static fn (string $m) => fwrite(STDOUT, gmdate('Y-m-d H:i:s') . " {$m}" . PHP_EOL);
 
 try {
