@@ -1,0 +1,17 @@
+activity;sector
+Healthcare;HEALTH
+Public Sector;PUBLIC_ADMIN
+Government;PUBLIC_ADMIN
+Education;EDUCATION
+Financial Services;BANKING
+Insurance;INSURANCE
+Energy;ENERGY
+Transportation/Logistics;TRANSPORT
+Manufacturing;MANUFACTURING
+Agriculture and Food Production;FOOD
+Technology;DIGITAL_PROVIDERS
+Telecommunication;DIGITAL_INFRA
+Business Services;OTHER
+Consumer Services;OTHER
+Construction;OTHER
+Hospitality and Tourism;OTHER

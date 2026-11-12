@@ -29,7 +29,8 @@ final class StatsRepository
         $intel = $this->pdo->prepare(
             'SELECT COUNT(*) AS total, MAX(id) AS latest_id, MAX(published_at) AS latest_published_at,
                     MAX(updated_at) AS updated_at,
-                    SUM(CASE WHEN ' . IntelRepository::CRITICAL_SQL . ' AND i.published_at >= UTC_TIMESTAMP() - INTERVAL ? DAY
+                    SUM(CASE WHEN ' . IntelRepository::CRITICAL_SQL . '
+                             AND COALESCE(i.source_published_at, i.published_at) >= UTC_TIMESTAMP() - INTERVAL ? DAY
                         THEN 1 ELSE 0 END) AS critical_recent
              FROM v_public_intel i'
         );

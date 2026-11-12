@@ -1,0 +1,33 @@
+condition;value;risk_code;note
+kev;;R-OPS-01;Known exploited: patch delay becomes the main risk
+kev_ransomware;;R-IT-29;Used by ransomware: backups must survive encryption
+env;OT;R-OT-04;OT product affected: patching constraints in industrial systems
+env;OT;R-OT-10;OT product affected: IT to OT pivot
+cwe;CWE-798;R-IAM-05;Hard-coded credentials
+cwe;CWE-259;R-IAM-05;Hard-coded password
+cwe;CWE-321;R-IAM-05;Hard-coded key
+cwe;CWE-312;R-IAM-13;Cleartext storage
+cwe;CWE-256;R-IAM-13;Plaintext password storage
+cwe;CWE-326;R-TEC-01;Weak encryption
+cwe;CWE-327;R-TEC-01;Broken crypto algorithm
+cwe;CWE-328;R-TEC-01;Weak hash
+cwe;CWE-494;R-SUP-03;Code downloaded without integrity check
+cwe;CWE-829;R-SUP-03;Untrusted functionality
+cwe;CWE-1357;R-SUP-03;Untrusted component
+product;jenkins;R-IT-24;CI/CD
+product;gitlab;R-IT-24;CI/CD
+product;teamcity;R-IT-24;CI/CD
+product;bamboo;R-IT-24;CI/CD
+product;screenconnect;R-SUP-04;Remote maintenance tool
+product;teamviewer;R-SUP-04;Remote maintenance tool
+product;anydesk;R-SUP-04;Remote maintenance tool
+product;connectwise;R-SUP-04;Remote maintenance tool
+product;kaseya;R-SUP-15;Remote management tool
+product;solarwinds;R-SUP-15;Monitoring tool
+product;veeam;R-IT-29;Backup software
+product;backup;R-IT-29;Backup software
+product;vpn;R-ACC-01;Remote access entry point
+product;secure access;R-ACC-01;Remote access entry point
+product;active directory;R-IAM-10;Directory compromise
+text;kerberos;R-IAM-10;Directory compromise
+text;supply chain;R-SUP-03;Software supply chain

@@ -43,4 +43,20 @@ The public views still protect reads: the public API code only ever queries `v_p
 3. Create `~/riskstudio-app/.env` from `api/.env.example`, with `APP_ENV=prod`.
 4. From SSH: `php ~/riskstudio-app/bin/migrate.php --seed` with `RS_DB_DIR=~/riskstudio-app/db`.
 5. Apply `db/grants.sql` if allowed, otherwise follow the section above.
-6. Declare the collector scheduled task (phase 4).
+6. Declare the collector scheduled task (see below).
+
+## Collector scheduled task
+
+In the Infomaniak Manager, create a scheduled task every **15 minutes** running:
+
+```bash
+php ~/riskstudio-app/bin/collect.php
+```
+
+With `RS_DB_DIR=~/riskstudio-app/db` if the `db/` folder is not next to `bin/`. Keep `COLLECTOR_TIME_BUDGET` (50 s by default) below the maximum duration the hosting allows for a scheduled task. A run that finds another run in progress exits immediately (database lock).
+
+Each run is journaled in `collector_runs` (status, counts, errors), kept 30 days. Exit code: 0 success, 2 when a source failed, 1 on a configuration error.
+
+Optional: request a free NVD API key and set `NVD_API_KEY`, to complete CVSS scores 8 times faster.
+
+Before enabling the **CCB** source, check from the hosting SSH that the CCB advisory feed answers (`curl -I`), since the CCB site rejects requests from some data centres.

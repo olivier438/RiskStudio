@@ -1,0 +1,4 @@
+{"id":"CVE-2099-2001","descriptions":[{"lang":"en","value":"A test vulnerability."}],
+ "metrics":{"cvssMetricV31":[{"source":"vendor","type":"Secondary","cvssData":{"baseScore":7.0,"vectorString":"CVSS:3.1/secondary"}},{"source":"nvd@nist.gov","type":"Primary","cvssData":{"baseScore":9.8,"vectorString":"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}}]},
+ "weaknesses":[{"description":[{"lang":"en","value":"CWE-327"},{"lang":"en","value":"NVD-CWE-Other"}]}],
+ "configurations":[{"nodes":[{"cpeMatch":[{"vulnerable":true,"criteria":"cpe:2.3:a:exemple_soft:build_runner:1.0:*:*:*:*:*:*:*"}]}]}]}

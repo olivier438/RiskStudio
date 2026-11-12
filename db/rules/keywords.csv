@@ -1,0 +1,9 @@
+pattern;category;note
+exécution de code arbitraire;VULN;CERT-FR risk wording
+injection de code;VULN;
+élévation de privilèges;IAM;
+contournement de la politique de sécurité;IAM;
+usurpation d'identité;IAM;
+atteinte à la confidentialité des données;DATA;
+atteinte à l'intégrité des données;DATA;
+déni de service;INFRA;

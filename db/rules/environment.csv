@@ -1,0 +1,37 @@
+kind;pattern;environment;sectors;note
+vendor;siemens;BOTH;ENERGY|MANUFACTURING;Industrial and IT portfolio
+vendor;schneider electric;BOTH;ENERGY|MANUFACTURING|DRINKING_WATER|WASTE_WATER;
+vendor;rockwell;OT;MANUFACTURING;Rockwell Automation
+vendor;abb;BOTH;ENERGY|MANUFACTURING;
+vendor;hitachi energy;OT;ENERGY;
+vendor;honeywell;BOTH;MANUFACTURING|ENERGY;
+vendor;mitsubishi electric;OT;MANUFACTURING;
+vendor;omron;OT;MANUFACTURING;
+vendor;yokogawa;OT;ENERGY|MANUFACTURING|CHEMICALS;
+vendor;emerson;OT;ENERGY|MANUFACTURING;
+vendor;ge vernova;OT;ENERGY;
+vendor;phoenix contact;OT;MANUFACTURING|ENERGY;
+vendor;moxa;OT;MANUFACTURING|TRANSPORT;
+vendor;wago;OT;MANUFACTURING;
+vendor;beckhoff;OT;MANUFACTURING;
+vendor;weidmueller;OT;MANUFACTURING;
+vendor;festo;OT;MANUFACTURING;
+vendor;delta electronics;OT;MANUFACTURING;
+vendor;advantech;OT;MANUFACTURING;
+vendor;inductive automation;OT;MANUFACTURING;
+vendor;unitronics;OT;DRINKING_WATER|MANUFACTURING;
+vendor;aveva;OT;MANUFACTURING|ENERGY;
+vendor;kepware;OT;MANUFACTURING;
+vendor;codesys;OT;MANUFACTURING;
+vendor;triangle microworks;OT;ENERGY;
+vendor;johnson controls;BOTH;;Building management
+product;scada;OT;;
+product;plc;OT;;
+product;hmi;OT;;
+product;simatic;OT;MANUFACTURING;
+product;modicon;OT;MANUFACTURING;
+product;controllogix;OT;MANUFACTURING;
+product;compactlogix;OT;MANUFACTURING;
+product;rtu;OT;ENERGY;
+product;infusion;BOTH;HEALTH;Medical devices
+product;patient monitor;BOTH;HEALTH;Medical devices

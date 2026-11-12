@@ -21,6 +21,8 @@
 - The catalogue source of truth is `db/catalogue/*.csv`; never edit risks directly in the database. `scripts/legacy/convert-v4-catalogue.php` is a one-shot migration kept for traceability, do not rerun it (it would overwrite edits to risks.csv).
 - `db/fixtures/` holds fictitious development data (CVE-2099-*, "Exemple" names). Never load it in production, never use real organisation names in it.
 - Tests must not depend on fixtures: integration tests create and clean their own rows.
+- Collector: sources only normalise facts, `Classifier` decides, `Store` writes. Classification must stay a pure function of facts + `db/rules/*.csv` (no randomness, no clock, no network). Never store `.onion` links.
+- Collector tests run on frozen payloads in `api/tests/fixtures/collector`, never on the network.
 - CyFun: store references and NIST CSF 1.1 titles only, never the CCB requirement texts.
 
 ## Commands

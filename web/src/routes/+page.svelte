@@ -234,7 +234,7 @@
 				toCsv(
 					['Identifiant', 'Publication', 'Titre', 'Source', 'Type', 'Critique', 'Sévérité', 'Score', 'CVE', 'CVSS', 'EPSS', 'KEV', 'Échéance KEV', 'Produits', 'Catégories', 'Risques liés', 'URL', 'Règles appliquées'],
 					intelSelection.values().map((i) => [
-						i.external_id, i.published_at, i.title, i.source.name, i.type, i.critical, i.severity, i.score,
+						i.external_id, i.source_published_at ?? i.published_at, i.title, i.source.name, i.type, i.critical, i.severity, i.score,
 						i.cves.join(', '), i.cvss?.score, i.epss?.score, i.kev, i.kev_due_date,
 						i.products.map((p) => `${p.vendor} ${p.product}`).join(', '), i.categories.map(categoryName).join(', '),
 						i.risks.map((k) => k.code).join(', '), i.url, i.rule_trace?.rules?.join(' | ')

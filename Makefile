@@ -1,7 +1,7 @@
 # Risk Studio v5 | Developer commands
 # Requirements: PHP 8.2+ (pdo_mysql), Composer, MariaDB 10.6+, Node.js 22+ (build only).
 
-.PHONY: help setup db db-reset fixtures catalogue api web dev test check build preview
+.PHONY: help setup db db-reset fixtures catalogue collect api web dev test check build preview
 
 help: ## List commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-10s %s\n", $$1, $$2}'
@@ -21,6 +21,9 @@ fixtures: ## Load fictitious feed data for UI development (never in production)
 
 catalogue: ## Validate then import db/catalogue (risks, controls, crosswalk)
 	php api/bin/import-catalogue.php --dry-run && php api/bin/import-catalogue.php
+
+collect: ## Run the collector on every enabled source, now
+	php api/bin/collect.php --force
 
 api: ## Run the PHP API on http://127.0.0.1:8080/api
 	php -S 127.0.0.1:8080 api/public/index.php

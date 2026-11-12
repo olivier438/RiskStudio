@@ -52,7 +52,7 @@
 							onchange={(e) => selection.toggle(String(it.id), it, e.currentTarget.checked)}
 						/>
 					</td>
-					<td class="col-date">{shortDate(it.published_at)}</td>
+					<td class="col-date" title="Date de la source">{shortDate(it.source_published_at ?? it.published_at)}</td>
 					<td class="col-score">
 						{#if it.score !== null}
 							<span class="score" class:impact-5={it.score >= 80} class:impact-4={it.score >= 60 && it.score < 80}
@@ -65,7 +65,7 @@
 						<span class="kind">{INTEL_TYPE_LABEL[it.type] ?? it.type}</span>
 						<div class="item-source">📡 {it.source.name}</div>
 						<div class="item-title">{it.title}</div>
-						{#if it.summary}<div class="item-text">{it.summary}</div>{/if}
+						{#if it.summary}<div class="item-text clamp" title={it.summary}>{it.summary}</div>{/if}
 						{#if it.risks.length}
 							<div class="linked">
 								{#each it.risks as k (k.code)}
@@ -109,6 +109,13 @@
 </div>
 
 <style>
+	.clamp {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 	.kind {
 		font-size: 10px;
 		color: var(--muted);

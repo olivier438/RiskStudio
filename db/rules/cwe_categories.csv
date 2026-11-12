@@ -1,0 +1,72 @@
+cwe;category;note
+CWE-250;IAM;Execution with unnecessary privileges
+CWE-259;IAM;Hard-coded password
+CWE-266;IAM;Incorrect privilege assignment
+CWE-269;IAM;Improper privilege management
+CWE-284;IAM;Improper access control
+CWE-285;IAM;Improper authorization
+CWE-287;IAM;Improper authentication
+CWE-288;IAM;Authentication bypass using an alternate path
+CWE-290;IAM;Authentication bypass by spoofing
+CWE-294;IAM;Authentication bypass by capture-replay
+CWE-306;IAM;Missing authentication for critical function
+CWE-307;IAM;Excessive authentication attempts
+CWE-321;IAM;Hard-coded cryptographic key
+CWE-521;IAM;Weak password requirements
+CWE-522;IAM;Insufficiently protected credentials
+CWE-620;IAM;Unverified password change
+CWE-639;IAM;Authorization bypass through user-controlled key
+CWE-640;IAM;Weak password recovery
+CWE-798;IAM;Hard-coded credentials
+CWE-862;IAM;Missing authorization
+CWE-863;IAM;Incorrect authorization
+CWE-20;VULN;Improper input validation
+CWE-22;VULN;Path traversal
+CWE-23;VULN;Relative path traversal
+CWE-74;VULN;Injection
+CWE-77;VULN;Command injection
+CWE-78;VULN;OS command injection
+CWE-79;VULN;Cross-site scripting
+CWE-89;VULN;SQL injection
+CWE-94;VULN;Code injection
+CWE-95;VULN;Eval injection
+CWE-98;VULN;PHP remote file inclusion
+CWE-119;VULN;Memory buffer errors
+CWE-120;VULN;Classic buffer overflow
+CWE-121;VULN;Stack-based buffer overflow
+CWE-122;VULN;Heap-based buffer overflow
+CWE-125;VULN;Out-of-bounds read
+CWE-190;VULN;Integer overflow
+CWE-352;VULN;Cross-site request forgery
+CWE-362;VULN;Race condition
+CWE-416;VULN;Use after free
+CWE-434;VULN;Unrestricted file upload
+CWE-476;VULN;NULL pointer dereference
+CWE-502;VULN;Deserialization of untrusted data
+CWE-601;VULN;Open redirect
+CWE-611;VULN;XML external entity
+CWE-787;VULN;Out-of-bounds write
+CWE-843;VULN;Type confusion
+CWE-917;VULN;Expression language injection
+CWE-918;VULN;Server-side request forgery
+CWE-1321;VULN;Prototype pollution
+CWE-200;DATA;Exposure of sensitive information
+CWE-209;DATA;Information exposure through error messages
+CWE-312;DATA;Cleartext storage of sensitive information
+CWE-319;DATA;Cleartext transmission of sensitive information
+CWE-359;DATA;Exposure of private personal information
+CWE-532;DATA;Sensitive information in log files
+CWE-538;DATA;File and directory information exposure
+CWE-552;DATA;Files or directories accessible to external parties
+CWE-295;INFRA;Improper certificate validation
+CWE-297;INFRA;Improper validation of certificate with host mismatch
+CWE-326;INFRA;Inadequate encryption strength
+CWE-327;INFRA;Broken or risky cryptographic algorithm
+CWE-328;INFRA;Weak hash
+CWE-330;INFRA;Insufficiently random values
+CWE-400;INFRA;Uncontrolled resource consumption
+CWE-770;INFRA;Allocation of resources without limits
+CWE-835;INFRA;Infinite loop
+CWE-494;SUPPLY;Download of code without integrity check
+CWE-829;SUPPLY;Inclusion of functionality from untrusted control sphere
+CWE-1357;SUPPLY;Reliance on insufficiently trustworthy component

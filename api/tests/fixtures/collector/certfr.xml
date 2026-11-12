@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>CERT-FR</title>
+<item><title>Vulnérabilité dans Exemple PLC</title><link>https://www.cert.cyber.gouv.fr/avis/CERTFR-2099-AVI-0001/</link><description>Une vulnérabilité a été découverte.</description><pubDate>Mon, 12 Jan 2099 10:00:00 +0000</pubDate></item>
+<item><title>Exploitation active dans Exemple VPN</title><link>https://www.cert.cyber.gouv.fr/alerte/CERTFR-2099-ALE-0001/</link><description>Alerte.</description><pubDate>Tue, 13 Jan 2099 10:00:00 +0000</pubDate></item>
+<item><title>Bulletin d'actualité</title><link>https://www.cert.cyber.gouv.fr/actualite/CERTFR-2099-ACT-0001/</link><description>News.</description><pubDate>Tue, 13 Jan 2099 11:00:00 +0000</pubDate></item>
+<item><title>Ancien avis</title><link>https://www.cert.cyber.gouv.fr/avis/CERTFR-2098-AVI-0001/</link><description>Old.</description><pubDate>Mon, 12 Jan 2098 10:00:00 +0000</pubDate></item>
+</channel></rss>

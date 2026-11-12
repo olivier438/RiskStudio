@@ -27,7 +27,7 @@ final class IntelRepository
         $offset = ($filter->page - 1) * $filter->perPage;
         $stmt = $this->pdo->prepare(
             "SELECT i.* FROM v_public_intel i {$where}
-             ORDER BY i.published_at DESC, i.id DESC
+             ORDER BY COALESCE(i.source_published_at, i.published_at) DESC, i.id DESC
              LIMIT {$filter->perPage} OFFSET {$offset}"
         );
         $stmt->execute($params);

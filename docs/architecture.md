@@ -22,9 +22,10 @@
                                                        |
                                                   MariaDB 10.6+
                                                        ^
-       Scheduled task ── php collector (phase 4) ──────┘
+       Scheduled task ── php api/bin/collect.php ──────┘
                          |
-                 CISA KEV, NVD, EPSS, ENISA EUVD, CERT-FR, CCB, ransomware.live, HIBP
+                 CISA KEV, ENISA EUVD, CERT-FR, HIBP, ransomware.live
+                 + enrichment: FIRST EPSS, NVD
 ```
 
 | Layer | Technology | Notes |
@@ -32,7 +33,7 @@
 | Front end | SvelteKit 3 + TypeScript, `adapter-static` | Built with Node.js locally or in CI, deployed as plain files |
 | API | PHP 8.3, no runtime dependency | Tiny router, PDO, JSON, ETag for cheap polling |
 | Database | MariaDB 10.6+ / MySQL 8 | utf8mb4, InnoDB, CHECK constraints, public views |
-| Collector | PHP CLI, scheduled task | Phase 4. Small resumable batches to fit shared hosting limits |
+| Collector | PHP CLI, scheduled task every 15 min | Sources normalise facts, `Classifier` applies `db/rules`, `Store` merges and publishes. Database lock, time budget, per-source isolation, cursors for incremental fetches |
 | Real time | Polling `/v1/stats` every 60 s (visible tab only), revalidated by ETag | Replaces Supabase Realtime. A 304 costs almost nothing. New items trigger a toast, and a browser notification when critical |
 
 ## Database users
