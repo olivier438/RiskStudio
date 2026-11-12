@@ -19,6 +19,8 @@
 - The public API reads only `v_public_*` views and reference tables (`rs_read` user).
 - Schema changes go in a new numbered migration; never edit an applied one.
 - The catalogue source of truth is `db/catalogue/*.csv`; never edit risks directly in the database. `scripts/legacy/convert-v4-catalogue.php` is a one-shot migration kept for traceability, do not rerun it (it would overwrite edits to risks.csv).
+- `db/fixtures/` holds fictitious development data (CVE-2099-*, "Exemple" names). Never load it in production, never use real organisation names in it.
+- Tests must not depend on fixtures: integration tests create and clean their own rows.
 - CyFun: store references and NIST CSF 1.1 titles only, never the CCB requirement texts.
 
 ## Commands

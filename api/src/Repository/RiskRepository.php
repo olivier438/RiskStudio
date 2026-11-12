@@ -167,8 +167,8 @@ final class RiskRepository
                 'origin' => $r['origin'],
                 'sectors' => $sectors[$id] ?? [],
                 'controls' => $controls[$id] ?? [],
-                'updated_at' => $r['updated_at'],
-                'published_at' => $r['published_at'],
+                'updated_at' => Dates::iso($r['updated_at']),
+                'published_at' => Dates::iso($r['published_at']),
             ];
         }, $rows);
     }

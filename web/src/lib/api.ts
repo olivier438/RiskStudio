@@ -32,10 +32,93 @@ export interface Framework {
 	controls_count: number;
 }
 
+export interface Source {
+	code: string;
+	name: string;
+}
+
 export interface Reference {
 	categories: Category[];
 	sectors: Sector[];
 	frameworks: Framework[];
+	/** Sources that have published content. */
+	sources: Source[];
+}
+
+export type Severity = 'low' | 'medium' | 'high' | 'critical';
+
+export interface IntelItem {
+	id: number;
+	source: Source;
+	external_id: string;
+	type: 'vulnerability' | 'advisory' | 'exploitation' | 'campaign';
+	title: string;
+	summary: string | null;
+	url: string | null;
+	cves: string[];
+	cvss: { score: number; vector: string | null } | null;
+	epss: { score: number; percentile: number | null } | null;
+	kev: boolean;
+	kev_due_date: string | null;
+	severity: Severity | null;
+	/** Known exploited (KEV) or rated critical. */
+	critical: boolean;
+	score: number | null;
+	environment: 'IT' | 'OT' | 'BOTH';
+	products: { vendor: string; product: string; environment: string }[];
+	categories: string[];
+	sectors: string[];
+	/** Catalogue risks this item materialises. */
+	risks: { code: string; title: string; rule: string }[];
+	/** Rules that classified the item: the "why", no AI involved. */
+	rule_trace: { rules?: string[] } | null;
+	source_published_at: string | null;
+	published_at: string | null;
+	updated_at: string | null;
+}
+
+export interface Leak {
+	id: number;
+	source: Source;
+	type: 'ransomware' | 'breach' | 'exposure';
+	organisation: string;
+	country: string | null;
+	sector: string | null;
+	actor: string | null;
+	records_count: number | null;
+	data_classes: string[];
+	url: string | null;
+	disclosed_at: string | null;
+	published_at: string | null;
+	updated_at: string | null;
+}
+
+export interface Stats {
+	risks: { total: number };
+	intel: {
+		total: number;
+		critical_recent: number;
+		critical_window_days: number;
+		latest_id: number | null;
+		latest_published_at: string | null;
+	};
+	leaks: { total: number; latest_id: number | null };
+	last_update: string | null;
+}
+
+export interface FeedQuery {
+	q?: string;
+	env?: 'IT' | 'OT';
+	severity_min?: Severity;
+	kev?: '1';
+	source?: string;
+	category?: string;
+	sector?: string;
+	type?: Leak['type'];
+	country?: string;
+	since?: string;
+	page?: number;
+	per_page?: number;
 }
 
 export interface Risk {
@@ -98,7 +181,8 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, fetchFn: typeof fetch = fetch): Promise<T> {
-	const response = await fetchFn(BASE + path, { headers: { Accept: 'application/json' } });
+	// `no-cache` revalidates with the ETag: an unchanged answer costs a 304.
+	const response = await fetchFn(BASE + path, { headers: { Accept: 'application/json' }, cache: 'no-cache' });
 	const body = await response.json().catch(() => null);
 	if (!response.ok) {
 		const error = body?.error ?? {};
@@ -120,6 +204,10 @@ export const api = {
 	health: (f?: typeof fetch) => request<Health>('/health', f),
 	reference: (f?: typeof fetch) => request<Reference>('/reference', f),
 	risks: (query: RiskQuery = {}, f?: typeof fetch) => request<Page<Risk>>(`/risks${toQueryString(query)}`, f),
+	stats: (f?: typeof fetch) => request<Stats>('/stats', f),
+	intel: (query: FeedQuery = {}, f?: typeof fetch) =>
+		request<Page<IntelItem>>(`/intel${toQueryString(query)}`, f),
+	leaks: (query: FeedQuery = {}, f?: typeof fetch) => request<Page<Leak>>(`/leaks${toQueryString(query)}`, f),
 	controls: (framework: string, f?: typeof fetch) =>
 		request<{ framework: string; controls: Control[] }>(
 			`/frameworks/${encodeURIComponent(framework)}/controls`,

@@ -33,7 +33,7 @@
 | API | PHP 8.3, no runtime dependency | Tiny router, PDO, JSON, ETag for cheap polling |
 | Database | MariaDB 10.6+ / MySQL 8 | utf8mb4, InnoDB, CHECK constraints, public views |
 | Collector | PHP CLI, scheduled task | Phase 4. Small resumable batches to fit shared hosting limits |
-| Real time | Polling every 60 s with `If-None-Match` | Replaces Supabase Realtime. A 304 costs almost nothing |
+| Real time | Polling `/v1/stats` every 60 s (visible tab only), revalidated by ETag | Replaces Supabase Realtime. A 304 costs almost nothing. New items trigger a toast, and a browser notification when critical |
 
 ## Database users
 

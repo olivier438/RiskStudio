@@ -31,6 +31,10 @@ final class Kernel
         $router->get('/v1/frameworks/{code}/controls', $public->controls(...));
         $router->get('/v1/risks', $public->risks(...));
         $router->get('/v1/risks/{code}', $public->risk(...));
+        $router->get('/v1/stats', $public->stats(...));
+        $router->get('/v1/intel', $public->intel(...));
+        $router->get('/v1/intel/{id}', $public->intelItem(...));
+        $router->get('/v1/leaks', $public->leaks(...));
 
         return $router;
     }

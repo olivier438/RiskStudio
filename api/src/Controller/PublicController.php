@@ -9,9 +9,13 @@ use RiskStudio\Database;
 use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
+use RiskStudio\Repository\FeedFilter;
+use RiskStudio\Repository\IntelRepository;
+use RiskStudio\Repository\LeakRepository;
 use RiskStudio\Repository\ReferenceRepository;
 use RiskStudio\Repository\RiskFilter;
 use RiskStudio\Repository\RiskRepository;
+use RiskStudio\Repository\StatsRepository;
 
 /** Public, read-only endpoints. Every query runs as the `rs_read` database user. */
 final class PublicController
@@ -48,6 +52,7 @@ final class PublicController
             'categories' => $repo->categories(),
             'sectors' => $repo->sectors(),
             'frameworks' => $repo->frameworks(),
+            'sources' => (new StatsRepository($this->db->connection(Database::READ)))->sources(),
         ], 200, 300)->withETag($request);
     }
 
@@ -87,5 +92,55 @@ final class PublicController
         }
 
         return Response::json(['data' => $risk])->withETag($request);
+    }
+
+    public function stats(Request $request): Response
+    {
+        return Response::json((new StatsRepository($this->db->connection(Database::READ)))->summary())
+            ->withETag($request);
+    }
+
+    public function intel(Request $request): Response
+    {
+        $filter = FeedFilter::fromRequest($request);
+        $result = (new IntelRepository($this->db->connection(Database::READ)))->search($filter);
+
+        return $this->page($request, $result, $filter);
+    }
+
+    public function intelItem(Request $request): Response
+    {
+        $id = $request->params['id'] ?? '';
+        if (!ctype_digit($id) || strlen($id) > 18) {
+            throw HttpException::notFound('Unknown item.');
+        }
+        $item = (new IntelRepository($this->db->connection(Database::READ)))->find((int) $id);
+        if ($item === null) {
+            throw HttpException::notFound('Unknown item.');
+        }
+
+        return Response::json(['data' => $item])->withETag($request);
+    }
+
+    public function leaks(Request $request): Response
+    {
+        $filter = FeedFilter::fromRequest($request);
+        $result = (new LeakRepository($this->db->connection(Database::READ)))->search($filter);
+
+        return $this->page($request, $result, $filter);
+    }
+
+    /** @param array{items: list<array<string, mixed>>, total: int} $result */
+    private function page(Request $request, array $result, FeedFilter $filter): Response
+    {
+        return Response::json([
+            'data' => $result['items'],
+            'meta' => [
+                'total' => $result['total'],
+                'page' => $filter->page,
+                'per_page' => $filter->perPage,
+                'pages' => (int) ceil($result['total'] / $filter->perPage),
+            ],
+        ])->withETag($request);
     }
 }

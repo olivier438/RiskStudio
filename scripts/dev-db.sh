@@ -6,6 +6,8 @@
 #
 #   scripts/dev-db.sh           bootstrap or upgrade
 #   scripts/dev-db.sh --reset   drop everything first
+#   scripts/dev-db.sh --fixtures also load db/fixtures (fictitious feed data,
+#                                development only)
 # =============================================================================
 set -euo pipefail
 
@@ -30,7 +32,16 @@ if ! mariadb -e 'SELECT 1' >/dev/null 2>&1; then
   for _ in $(seq 1 20); do mariadb -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 1; done
 fi
 
-if [[ "${1:-}" == "--reset" ]]; then
+RESET=0; FIXTURES=0
+for arg in "$@"; do
+  case "$arg" in
+    --reset) RESET=1 ;;
+    --fixtures) FIXTURES=1 ;;
+    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
+
+if [[ "$RESET" == 1 ]]; then
   echo "Dropping database ${DB_NAME}."
   mariadb -e "DROP DATABASE IF EXISTS \`${DB_NAME}\`;"
 fi
@@ -49,7 +60,14 @@ SQL
 php "$ROOT/api/bin/migrate.php" --seed
 
 # Grants last: column and view grants need the objects to exist.
-sed "s/__DB__/${DB_NAME}/g" "$ROOT/db/grants.sql" | mariadb
+sed "s/__DB__/${DB_NAME}/g" "$ROOT/db/grants.sql" | mariadb --default-character-set=utf8mb4
 
 php "$ROOT/api/bin/import-catalogue.php"
+
+if [[ "$FIXTURES" == 1 ]]; then
+  for f in "$ROOT"/db/fixtures/*.sql; do
+    echo "Loading development fixtures $(basename "$f")"
+    mariadb --default-character-set=utf8mb4 "$DB_NAME" < "$f"
+  done
+fi
 echo "Database ${DB_NAME} ready."
