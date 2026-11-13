@@ -81,6 +81,23 @@ final class SetupTest extends TestCase
         self::assertGreaterThanOrEqual(167, $status['risks']);
     }
 
+    public function testSchemaOwnerTypedInTheFormIsUsedAndNeverEchoed(): void
+    {
+        putenv('SETUP_TOKEN=' . self::TOKEN);
+        $config = Config::fromFile(dirname(__DIR__, 2) . '/.env');
+
+        $refused = $this->call('POST', '/v1/setup/install', self::TOKEN, ['db_admin_user' => 'nobody', 'db_admin_password' => 'wrong']);
+        self::assertSame(400, $refused->status);
+        self::assertStringNotContainsString('nobody', $refused->body, 'driver message (user, host) never echoed');
+        self::assertStringNotContainsString('SQLSTATE', $refused->body);
+
+        $ok = $this->call('POST', '/v1/setup/install', self::TOKEN, [
+            'db_admin_user' => $config->get('DB_ADMIN_USER'),
+            'db_admin_password' => $config->get('DB_ADMIN_PASSWORD'),
+        ]);
+        self::assertSame(200, $ok->status, $ok->body);
+    }
+
     public function testOnlyTheFirstAdministratorCanBeCreated(): void
     {
         putenv('SETUP_TOKEN=' . self::TOKEN);

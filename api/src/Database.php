@@ -40,6 +40,16 @@ final class Database
             default => throw new \InvalidArgumentException("Unknown database role: {$role}"),
         };
 
+        return $this->connectAs($this->config->require($prefix . 'USER'), (string) $this->config->get($prefix . 'PASSWORD', ''));
+    }
+
+    /**
+     * Connection with explicit credentials, never cached. Used by the web
+     * installer for the schema owner, whose password is typed in the form and
+     * kept in memory for one request only (never written to .env).
+     */
+    public function connectAs(string $user, string $password): PDO
+    {
         $dsn = sprintf(
             'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
             $this->config->require('DB_HOST'),
@@ -47,7 +57,7 @@ final class Database
             $this->config->require('DB_NAME'),
         );
 
-        $pdo = new PDO($dsn, $this->config->require($prefix . 'USER'), $this->config->get($prefix . 'PASSWORD', ''), [
+        $pdo = new PDO($dsn, $user, $password, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,

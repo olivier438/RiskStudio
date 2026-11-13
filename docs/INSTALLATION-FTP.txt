@@ -47,7 +47,11 @@ Durée : 20 à 30 minutes la première fois.
      DB_PUBLIC_WRITES=write
      DB_READ_USER= / DB_READ_PASSWORD=      utilisateur en lecture seule
      DB_WRITE_USER= / DB_WRITE_PASSWORD=    utilisateur lecture et écriture
-     DB_ADMIN_USER= / DB_ADMIN_PASSWORD=    utilisateur avec tous les droits
+     DB_ADMIN_USER= / DB_ADMIN_PASSWORD=    LAISSEZ VIDE
+
+   L'utilisateur qui a tous les droits n'est jamais écrit dans .env :
+   l'assistant d'installation vous le demande à l'étape 4, s'en sert pour
+   créer les tables, et l'oublie aussitôt.
 
    Pour les valeurs au hasard, utilisez le générateur de votre gestionnaire
    de mots de passe, en lettres et chiffres seulement. Gardez-les dans ce
@@ -86,7 +90,9 @@ Les fichiers .htaccess sont indispensables à la sécurité du site.
 
 1. Ouvrez https://riskstudio.mondomaine.be/setup/
 2. Collez votre SETUP_TOKEN, cliquez sur Vérifier.
-3. Cliquez sur « Installer la base et le catalogue ».
+3. Saisissez l'utilisateur de la base qui a tous les droits et son mot de
+   passe (utilisés pour cette opération seulement, jamais enregistrés),
+   puis cliquez sur « Installer la base et le catalogue ».
 4. Créez votre compte administrateur (mot de passe de 14 caractères minimum).
 5. Ajoutez la clé affichée dans votre application d'authentification
    (Aegis, 2FAS, Microsoft ou Google Authenticator). Depuis le téléphone,
@@ -125,7 +131,8 @@ METTRE À JOUR PLUS TARD
 1. Remettez une ligne SETUP_TOKEN=... dans .env.
 2. Renvoyez le contenu de site/ et le dossier riskstudio-app/
    (sans écraser votre .env sur le serveur).
-3. Ouvrez /setup/ et cliquez sur « Mettre à jour la base et le catalogue ».
+3. Ouvrez /setup/, saisissez l'utilisateur administrateur de la base et
+   cliquez sur « Mettre à jour la base et le catalogue ».
 4. Retirez SETUP_TOKEN du .env.
 
 Avant d'écraser riskstudio-app/, téléchargez-en une copie : c'est votre

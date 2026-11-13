@@ -21,6 +21,9 @@ use RiskStudio\Security\Totp;
  * every endpoint then answers 404, as if it did not exist. With the token:
  *   GET  /v1/setup/status   schema and accounts state
  *   POST /v1/setup/install  migrations, seeds, catalogue import (idempotent)
+ *                           with the schema owner typed in the form
+ *                           (db_admin_user / db_admin_password), used for
+ *                           this request only, never stored or logged
  *   POST /v1/setup/admin    first administrator only, returns the TOTP key once
  * Remove SETUP_TOKEN from .env once done.
  */
@@ -36,7 +39,8 @@ final class SetupController
     public function status(Request $request): Response
     {
         $this->guard($request);
-        $pdo = $this->db->connection(Database::ADMIN);
+        // Read-write account: enough to inspect, never the schema owner.
+        $pdo = $this->db->connection(Database::WRITE);
         $tables = $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN);
         $installed = in_array('schema_migrations', $tables, true);
         $applied = $installed ? $pdo->query('SELECT version FROM schema_migrations')->fetchAll(\PDO::FETCH_COLUMN) : [];
@@ -61,7 +65,7 @@ final class SetupController
         $append = static function (string $line) use (&$log): void {
             $log[] = $line;
         };
-        $migrator = new Migrator($this->db->connection(Database::ADMIN), $this->dbDir . '/migrations');
+        $migrator = new Migrator($this->ownerConnection($request), $this->dbDir . '/migrations');
         $applied = $migrator->migrate($append);
         $migrator->seed($this->dbDir . '/seeds', $append);
         $stats = (new CatalogueImporter($this->db->connection(Database::WRITE), $this->dbDir . '/catalogue'))->import();
@@ -102,6 +106,33 @@ final class SetupController
             ->execute([$email, json_encode(['via' => 'web setup'])]);
 
         return self::private(['ok' => true, 'totp_secret' => $secret, 'totp_uri' => Totp::uri($secret, $email)]);
+    }
+
+    /**
+     * The schema owner: credentials typed in the installer (preferred, never
+     * stored), or DB_ADMIN_* from .env when present (command-line installs).
+     */
+    private function ownerConnection(Request $request): \PDO
+    {
+        $body = $request->body === '' ? [] : $request->json();
+        $user = is_string($body['db_admin_user'] ?? null) ? trim($body['db_admin_user']) : '';
+        $password = is_string($body['db_admin_password'] ?? null) ? $body['db_admin_password'] : '';
+
+        if ($user === '') {
+            if ((string) $this->config->get('DB_ADMIN_USER', '') === '') {
+                throw new \RiskStudio\Repository\ValidationException([
+                    'db_admin_user' => 'Indiquez l’utilisateur de la base qui a tous les droits.',
+                ]);
+            }
+
+            return $this->db->connection(Database::ADMIN);
+        }
+        try {
+            return $this->db->connectAs($user, $password);
+        } catch (\PDOException) {
+            // Never echo the driver message: it may contain the host or user.
+            throw new HttpException(400, 'db_admin_refused', 'Connexion refusée avec cet utilisateur de la base : vérifiez l’identifiant et le mot de passe.');
+        }
     }
 
     /** 404 when setup is disabled; 403 on a wrong token, with a delay against guessing. */

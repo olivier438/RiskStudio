@@ -16,6 +16,8 @@
 	let error = $state<string | null>(null);
 	let busy = $state(false);
 	let admin = $state({ email: '', name: '', password: '' });
+	// Schema owner of the database: sent for one request, never stored.
+	let owner = $state({ user: '', password: '' });
 	let fields = $state<Record<string, string>>({});
 	let totp = $state<{ secret: string; uri: string } | null>(null);
 
@@ -53,7 +55,12 @@
 		});
 	const install = () =>
 		run(async () => {
-			log = (await call<{ log: string[] }>('POST', '/install', {})).log;
+			fields = {};
+			try {
+				log = (await call<{ log: string[] }>('POST', '/install', { db_admin_user: owner.user, db_admin_password: owner.password })).log;
+			} finally {
+				owner.password = '';
+			}
 			status = await call<Status>('GET', '/status');
 		});
 	const createAdmin = (event: SubmitEvent) => {
@@ -105,7 +112,17 @@
 				<li>Catalogue : <b>{status.risks}</b> risques publiés</li>
 				<li>Administrateurs : <b>{status.admins}</b></li>
 			</ul>
-			<button onclick={install} disabled={busy}>
+			<div class="owner">
+				<p class="muted small">
+					Utilisateur de la base qui a <b>tous les droits</b> (Manager &gt; Bases de données). Il sert uniquement à
+					créer ou mettre à jour les tables, pour cette opération : il n'est <b>jamais enregistré</b>, ni dans
+					<code>.env</code> ni dans les journaux.
+				</p>
+				<label>Utilisateur administrateur de la base <input type="text" autocomplete="off" bind:value={owner.user} /></label>
+				{#if fields.db_admin_user}<p class="err">{fields.db_admin_user}</p>{/if}
+				<label>Mot de passe <input type="password" autocomplete="off" bind:value={owner.password} /></label>
+			</div>
+			<button onclick={install} disabled={busy || !owner.user || !owner.password}>
 				{status.installed ? 'Mettre à jour la base et le catalogue' : 'Installer la base et le catalogue'}
 			</button>
 			{#if log.length}<pre>{log.join('\n')}</pre>{/if}
@@ -175,6 +192,12 @@
 	.card h2 {
 		margin: 0 0 12px;
 		font-size: 15px;
+	}
+	.owner {
+		margin: 12px 0;
+		padding: 12px 14px;
+		background: #f8fafc;
+		border-radius: 8px;
 	}
 	.highlight {
 		border: 2px solid var(--leaks);
