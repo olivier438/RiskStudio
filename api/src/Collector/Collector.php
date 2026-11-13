@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RiskStudio\Collector;
 
 use PDO;
+use RiskStudio\Collector\Source\BonjourLaFuite;
 use RiskStudio\Collector\Source\CertFr;
 use RiskStudio\Collector\Source\CisaKev;
 use RiskStudio\Collector\Source\Euvd;
@@ -69,6 +70,9 @@ final class Collector
                 $summary[$source['code']] = $this->runSource($source);
             }
             $summary['_enrichment'] = ['completed' => $this->completeEnrichment()];
+            if ($this->hasTime(5)) {
+                $summary['_reclassified'] = ['completed' => $this->store->reclassifyStale()];
+            }
             // The run journal is for monitoring, not history: 30 days are enough.
             $this->pdo->exec('DELETE FROM collector_runs WHERE started_at < UTC_TIMESTAMP() - INTERVAL 30 DAY');
 
@@ -87,6 +91,7 @@ final class Collector
             CertFr::CODE => new CertFr(),
             'HIBP' => new Hibp(),
             'RANSOMWARE_LIVE' => new RansomwareLive($leakCountries),
+            BonjourLaFuite::CODE => new BonjourLaFuite(),
             default => null,
         };
     }

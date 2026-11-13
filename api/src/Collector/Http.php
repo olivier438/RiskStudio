@@ -19,7 +19,7 @@ class Http
 
     /**
      * @param array<string, string> $headers
-     * @return array{status: int, body: string}
+     * @return array{status: int, body: string, content_type: string}
      */
     public function get(string $url, array $headers = []): array
     {
@@ -52,6 +52,7 @@ class Http
         ]);
         $ok = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $type = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
         $error = curl_error($ch);
         curl_close($ch);
 
@@ -59,7 +60,7 @@ class Http
             throw new \RuntimeException(strlen($body) > self::MAX_BYTES ? "Response too large: {$url}" : "HTTP error on {$url}: {$error}");
         }
 
-        return ['status' => $status, 'body' => $body];
+        return ['status' => $status, 'body' => $body, 'content_type' => $type];
     }
 
     /** @param array<string, string> $headers @return array<mixed> */

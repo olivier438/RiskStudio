@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RiskStudio\Controller;
 
+use RiskStudio\Collector\Probe;
 use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
@@ -164,6 +165,41 @@ final class AdminController
         ], 'source', $code);
 
         return self::private(['ok' => true, 'data' => $this->repo->sources()]);
+    }
+
+    /** Tests a source from this server with its real parser; stores nothing. */
+    public function probeSource(Request $request): Response
+    {
+        $session = $this->session($request);
+        $code = strtoupper($request->params['code'] ?? '');
+        $source = array_values(array_filter($this->repo->sources(), static fn (array $s): bool => $s['code'] === $code))[0]
+            ?? throw HttpException::notFound('Unknown source.');
+        @set_time_limit(90);
+        $report = (new Probe())->source($code, (string) $source['url']);
+        $this->auth->audit($session['admin']['id'], 'source.probe', self::probeSummary($report), 'source', $code);
+
+        return self::private(['data' => $report]);
+    }
+
+    /** Tests any public HTTPS address from this server (candidate sources). */
+    public function probeUrl(Request $request): Response
+    {
+        $session = $this->session($request);
+        $url = trim(is_string($request->json()['url'] ?? null) ? $request->json()['url'] : '');
+        if ($url === '') {
+            throw HttpException::badRequest('url is required.');
+        }
+        @set_time_limit(60);
+        $report = (new Probe())->url($url);
+        $this->auth->audit($session['admin']['id'], 'url.probe', ['url' => mb_substr($url, 0, 500)] + self::probeSummary($report), 'url', null);
+
+        return self::private(['data' => $report]);
+    }
+
+    /** @param array<string, mixed> $report @return array<string, mixed> */
+    private static function probeSummary(array $report): array
+    {
+        return ['verdict' => $report['verdict'], 'status' => $report['requests'][0]['status'] ?? null, 'items' => $report['items'] ?? null];
     }
 
     public function statistics(Request $request): Response

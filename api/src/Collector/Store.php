@@ -55,43 +55,101 @@ final class Store
         return 'new';
     }
 
-    /** @param array{id: int|string, code: string, authoritative: int|string|bool} $source */
+    /**
+     * Publication of leaks: an authoritative source publishes what it reports
+     * as confirmed (or without a confidence level); claims wait for review. A
+     * pending leak is published when the authoritative source later confirms it.
+     *
+     * @param array{id: int|string, code: string, authoritative: int|string|bool} $source
+     */
     public function saveLeak(array $source, LeakFacts $leak): string
     {
-        $stmt = $this->pdo->prepare('SELECT id, facts FROM leaks WHERE source_id = ? AND external_id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, facts, status, rule_trace FROM leaks WHERE source_id = ? AND external_id = ?');
         $stmt->execute([$source['id'], $leak->externalId]);
         $row = $stmt->fetch();
         $json = json_encode($leak->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-        if ($row !== false && $row['facts'] === $json) {
+        $publishable = (bool) $source['authoritative'] && in_array($leak->confidence, [null, 'confirmed'], true);
+        if ($row !== false && $row['facts'] === $json && self::traceVersion($row['rule_trace']) === $this->classifier->rulesVersion()) {
             return 'unchanged';
         }
 
-        $c = $this->classifier->classifyLeak($leak, $source['code']);
-        $values = [
-            $leak->type, mb_substr($leak->organisation, 0, 255), $leak->country, $c['sector'], $leak->actor,
-            $leak->records, json_encode($leak->dataClasses, JSON_UNESCAPED_UNICODE), $leak->disclosedAt, $leak->url,
-            json_encode($c['trace'], JSON_UNESCAPED_UNICODE), $json,
-        ];
         if ($row !== false) {
-            $this->pdo->prepare(
-                'UPDATE leaks SET leak_type = ?, organisation = ?, country = ?,
-                        sector_id = (SELECT id FROM sectors WHERE code = ?), actor = ?, records_count = ?,
-                        data_classes = ?, disclosed_at = ?, url = ?, rule_trace = ?, facts = ?
-                 WHERE id = ?'
-            )->execute([...$values, $row['id']]);
+            $this->writeLeak((int) $row['id'], $leak, $source['code'], $publishable && $row['status'] === 'pending');
 
             return 'updated';
         }
 
-        $published = (bool) $source['authoritative'];
+        $c = $this->classifier->classifyLeak($leak, $source['code']);
         $this->pdo->prepare(
-            'INSERT INTO leaks (leak_type, organisation, country, sector_id, actor, records_count, data_classes,
+            'INSERT INTO leaks (leak_type, organisation, country, sector_id, actor, records_count, data_classes, severity, confidence,
                                 disclosed_at, url, rule_trace, facts, source_id, external_id, status, published_at)
-             VALUES (?, ?, ?, (SELECT id FROM sectors WHERE code = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
-             . ($published ? 'UTC_TIMESTAMP()' : 'NULL') . ')'
-        )->execute([...$values, $source['id'], $leak->externalId, $published ? 'published' : 'pending']);
+             VALUES (?, ?, ?, (SELECT id FROM sectors WHERE code = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+             . ($publishable ? 'UTC_TIMESTAMP()' : 'NULL') . ')'
+        )->execute([...self::leakValues($leak, $c), $source['id'], mb_substr($leak->externalId, 0, 191), $publishable ? 'published' : 'pending']);
 
         return 'new';
+    }
+
+    /**
+     * Re-applies the current rules to items classified with older rules, a
+     * batch at a time: an edited rule file reaches every item over the next
+     * runs, without any command line (FTP-only hosting).
+     *
+     * @return int items reclassified
+     */
+    public function reclassifyStale(int $limit = 50): int
+    {
+        $version = $this->classifier->rulesVersion();
+        $stale = "facts IS NOT NULL AND (rule_trace IS NULL
+                  OR COALESCE(JSON_UNQUOTE(JSON_EXTRACT(rule_trace, '$.rules_version')), '') <> ?)";
+        $count = 0;
+
+        $stmt = $this->pdo->prepare("SELECT l.id, l.facts, s.code FROM leaks l JOIN sources s ON s.id = l.source_id WHERE {$stale} ORDER BY l.id DESC LIMIT {$limit}");
+        $stmt->execute([$version]);
+        foreach ($stmt->fetchAll() as $row) {
+            $this->writeLeak((int) $row['id'], LeakFacts::fromArray(json_decode((string) $row['facts'], true)), (string) $row['code'], false);
+            $count++;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, facts FROM intel_items WHERE {$stale} ORDER BY id DESC LIMIT " . max(0, $limit - $count));
+        $stmt->execute([$version]);
+        foreach ($stmt->fetchAll() as $row) {
+            $this->writeIntel((int) $row['id'], Facts::fromArray(json_decode((string) $row['facts'], true)), null);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function writeLeak(int $id, LeakFacts $leak, string $sourceCode, bool $publish): void
+    {
+        $c = $this->classifier->classifyLeak($leak, $sourceCode);
+        $this->pdo->prepare(
+            'UPDATE leaks SET leak_type = ?, organisation = ?, country = ?,
+                    sector_id = (SELECT id FROM sectors WHERE code = ?), actor = ?, records_count = ?,
+                    data_classes = ?, severity = ?, confidence = ?, disclosed_at = ?, url = ?, rule_trace = ?, facts = ?'
+            . ($publish ? ", status = 'published', published_at = UTC_TIMESTAMP()" : '') . ' WHERE id = ?'
+        )->execute([...self::leakValues($leak, $c), $id]);
+    }
+
+    /** @param array{sector: ?string, severity: ?string, trace: array<string, mixed>} $c @return list<mixed> */
+    private static function leakValues(LeakFacts $leak, array $c): array
+    {
+        return [
+            $leak->type, mb_substr($leak->organisation, 0, 255), $leak->country, $c['sector'],
+            $leak->actor === null ? null : mb_substr($leak->actor, 0, 160), $leak->records,
+            json_encode($leak->dataClasses, JSON_UNESCAPED_UNICODE), $c['severity'],
+            in_array($leak->confidence, LeakFacts::CONFIDENCES, true) ? $leak->confidence : null,
+            $leak->disclosedAt, $leak->url === null ? null : mb_substr($leak->url, 0, 2048),
+            json_encode($c['trace'], JSON_UNESCAPED_UNICODE), json_encode($leak->toArray(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+        ];
+    }
+
+    private static function traceVersion(mixed $trace): ?string
+    {
+        $data = is_string($trace) ? json_decode($trace, true) : null;
+
+        return is_array($data) && is_string($data['rules_version'] ?? null) ? $data['rules_version'] : null;
     }
 
     /** Re-applies the current rules to every stored item. @return int items updated */
@@ -101,6 +159,11 @@ final class Store
         $rows = $this->pdo->query('SELECT id, facts FROM intel_items WHERE facts IS NOT NULL ORDER BY id');
         foreach ($rows->fetchAll() as $row) {
             $this->writeIntel((int) $row['id'], Facts::fromArray(json_decode((string) $row['facts'], true)), null);
+            $count++;
+        }
+        $rows = $this->pdo->query('SELECT l.id, l.facts, s.code FROM leaks l JOIN sources s ON s.id = l.source_id WHERE l.facts IS NOT NULL ORDER BY l.id');
+        foreach ($rows->fetchAll() as $row) {
+            $this->writeLeak((int) $row['id'], LeakFacts::fromArray(json_decode((string) $row['facts'], true)), (string) $row['code'], false);
             $count++;
         }
 

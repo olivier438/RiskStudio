@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[Fixture]]></title>
+    <link>https://bonjourlafuite.eu.org/</link>
+    <item>
+      <title><![CDATA[🟢 Exemple Mutuelle]]></title>
+      <link><![CDATA[https://bonjourlafuite.eu.org/#Exemple%20Mutuelle-2099-01-12]]></link>
+      <guid isPermaLink="false"><![CDATA[bonjour-la-fuite:Exemple Mutuelle-2099-01-12]]></guid>
+      <pubDate>Mon, 12 Jan 2099 00:00:00 +0000</pubDate>
+      <description><![CDATA[<ul><li>Nom, prénom</li><li>Adresse email</li><li>IBAN</li><li>Numéro de sécurité sociale</li></ul>]]></description>
+      <category>leak</category>
+      <category>sensitive</category>
+    </item>
+    <item>
+      <title><![CDATA[🟠 Exemple Boutique]]></title>
+      <link><![CDATA[https://evil.example.org/phishing]]></link>
+      <guid isPermaLink="false"><![CDATA[bonjour-la-fuite:Exemple Boutique-2099-01-11]]></guid>
+      <pubDate>Sun, 11 Jan 2099 00:00:00 +0000</pubDate>
+      <description><![CDATA[<ul><li>Adresse email</li><li>Numéro de téléphone</li><li>Historique d&#39;achats</li></ul>]]></description>
+      <category>leak</category>
+    </item>
+    <item>
+      <title><![CDATA[🔴 Exemple Club]]></title>
+      <link><![CDATA[https://bonjourlafuite.eu.org/#Exemple%20Club-2099-01-10]]></link>
+      <guid isPermaLink="false"><![CDATA[bonjour-la-fuite:Exemple Club-2099-01-10]]></guid>
+      <pubDate>Sat, 10 Jan 2099 00:00:00 +0000</pubDate>
+      <description><![CDATA[<ul><li>Pseudonyme</li><li>Mots de passe hachés</li></ul>]]></description>
+      <category>leak</category>
+    </item>
+    <item>
+      <title><![CDATA[🟢 Exemple Ancien]]></title>
+      <link><![CDATA[https://bonjourlafuite.eu.org/#Exemple%20Ancien-2098-01-01]]></link>
+      <guid isPermaLink="false"><![CDATA[bonjour-la-fuite:Exemple Ancien-2098-01-01]]></guid>
+      <pubDate>Wed, 01 Jan 2098 00:00:00 +0000</pubDate>
+      <description><![CDATA[<ul><li>Nom</li></ul>]]></description>
+      <category>leak</category>
+    </item>
+  </channel>
+</rss>

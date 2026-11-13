@@ -20,13 +20,15 @@ final class Rules
     public array $riskLinks = [];
     /** @var array<string, string> ransomware.live activity => sector */
     public array $ransomwareSectors = [];
+    /** @var list<array{pattern: string, severity: string}> exposed data class => leak severity */
+    public array $leakData = [];
     public string $version = '';
 
     public static function load(string $dir): self
     {
         $rules = new self();
         $hash = hash_init('sha256');
-        foreach (['cwe_categories', 'environment', 'keywords', 'risk_links', 'ransomware_sectors'] as $name) {
+        foreach (['cwe_categories', 'environment', 'keywords', 'risk_links', 'ransomware_sectors', 'leak_data'] as $name) {
             $path = "{$dir}/{$name}.csv";
             if (!is_readable($path)) {
                 throw new \RuntimeException("Missing rules file {$path}");
@@ -44,6 +46,7 @@ final class Rules
                     'keywords' => $rules->keywords[] = ['pattern' => mb_strtolower($r['pattern']), 'category' => $r['category']],
                     'risk_links' => $rules->riskLinks[] = ['condition' => $r['condition'], 'value' => $r['value'], 'risk' => $r['risk_code']],
                     'ransomware_sectors' => $rules->ransomwareSectors[mb_strtolower($r['activity'])] = $r['sector'],
+                    'leak_data' => $rules->leakData[] = ['pattern' => self::normalise($r['pattern']), 'severity' => $r['severity']],
                 };
             }
         }
@@ -68,6 +71,12 @@ final class Rules
         fclose($fh);
 
         return $rows;
+    }
+
+    /** Lower case, typographic apostrophes made straight: "Carte d’identité" = "carte d'identité". */
+    public static function normalise(string $text): string
+    {
+        return mb_strtolower(str_replace(['’', 'ʼ', '‘'], "'", trim($text)));
     }
 
     /** Word match: "abb" matches "ABB Ltd" but not "Abbott". */

@@ -56,6 +56,21 @@ final class AdminApiTest extends TestCase
         }
     }
 
+    public function testProbeNeedsCsrfRefusesPrivateAddressesAndIsAudited(): void
+    {
+        $s = $this->login();
+        $h = ['cookie' => $s['cookie'], 'x-csrf-token' => $s['csrf']];
+        self::assertSame(403, $this->call('POST', '/v1/admin/probe', ['url' => 'https://127.0.0.1/'], ['cookie' => $s['cookie']])->status);
+        self::assertSame(404, $this->call('POST', '/v1/admin/sources/NOPE/probe', [], $h)->status);
+
+        $r = $this->call('POST', '/v1/admin/probe', ['url' => 'https://127.0.0.1/'], $h);
+        self::assertSame(200, $r->status, $r->body);
+        self::assertSame('no-store', $r->headers['Cache-Control']);
+        self::assertSame('refused', self::json($r)['data']['verdict']);
+        $audit = self::$pdo->query("SELECT details FROM audit_log WHERE action = 'url.probe' ORDER BY id DESC LIMIT 1")->fetchColumn();
+        self::assertStringContainsString('"verdict":"refused"', (string) $audit);
+    }
+
     private static function cleanup(): void
     {
         self::$pdo->exec("DELETE FROM risks WHERE origin = 'community' AND code LIKE 'R-COM-%'

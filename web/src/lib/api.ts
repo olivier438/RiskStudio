@@ -87,6 +87,11 @@ export interface Leak {
 	actor: string | null;
 	records_count: number | null;
 	data_classes: string[];
+	/** Computed from the exposed data classes (db/rules/leak_data.csv). */
+	severity: 'low' | 'medium' | 'high' | 'critical' | null;
+	/** Stated by the source: confirmed, claimed (credible) or untrusted claim. */
+	confidence: 'confirmed' | 'claimed' | 'untrusted' | null;
+	rule_trace: { rules?: string[] } | null;
 	url: string | null;
 	disclosed_at: string | null;
 	published_at: string | null;

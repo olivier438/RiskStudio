@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Leak } from '#lib/api.js';
-	import { count, LEAK_TYPE_LABEL, safeUrl, shortDate } from '#lib/format.js';
+	import { CONFIDENCE_LABEL, count, LEAK_TYPE_LABEL, safeUrl, SEVERITY_LABEL, shortDate } from '#lib/format.js';
 	import type { Selection } from '#lib/selection.svelte.js';
 	import { Expander } from '#lib/expand.svelte.js';
 
@@ -65,13 +65,23 @@
 						/>
 					</td>
 					<td class="col-date">{shortDate(l.disclosed_at ?? l.published_at)}</td>
-					<td class="col-score"><span class="mini-badge leak-{l.type}">{LEAK_TYPE_LABEL[l.type]}</span></td>
+					<td class="col-score">
+						<span class="mini-badge leak-{l.type}">{LEAK_TYPE_LABEL[l.type]}</span>
+						{#if l.severity}<div class="small leak-severity severity-{l.severity}" title="Gravité selon les données exposées">{SEVERITY_LABEL[l.severity]}</div>{/if}
+					</td>
 					<td>
 						<span class="tag tag-leak">💧 Leak</span>
 						<div class="item-source">📡 {l.source.name}</div>
 						<div class="item-title">{l.organisation}</div>
+						{#if l.confidence && l.confidence !== 'confirmed'}<div class="confidence confidence-{l.confidence}">⚠️ {CONFIDENCE_LABEL[l.confidence]}</div>{/if}
 						{#if l.actor}<div class="item-text">Groupe revendiquant : <b>{l.actor}</b></div>{/if}
 						{#if open && url}<div class="fold-details"><a class="link" href={url} target="_blank" rel="noopener noreferrer">🔗 Source</a></div>{/if}
+						{#if open && l.rule_trace?.rules?.length}
+							<details class="why fold-details">
+								<summary title="Règles qui ont fixé la gravité">Pourquoi ?</summary>
+								{#each l.rule_trace.rules as rule (rule)}<code class="rule">{rule}</code>{/each}
+							</details>
+						{/if}
 						<button class="fold-toggle no-print" aria-expanded={open} onclick={() => expander.toggle(String(l.id))}>
 							<span class="chevron">▸</span>
 							{open ? 'Moins de détails' : 'Détails'}
@@ -111,5 +121,52 @@
 	}
 	.unknown {
 		font-style: italic;
+	}
+	.leak-severity {
+		margin-top: 4px;
+		font-weight: 600;
+	}
+	.severity-critical {
+		color: #b91c1c;
+	}
+	.severity-high {
+		color: #ea580c;
+	}
+	.severity-medium {
+		color: #ca8a04;
+	}
+	.severity-low {
+		color: #16a34a;
+	}
+	.confidence {
+		font-size: 11px;
+		font-weight: 600;
+		margin-top: 2px;
+	}
+	.confidence-claimed {
+		color: #c2410c;
+	}
+	.confidence-untrusted {
+		color: #b91c1c;
+	}
+	.why {
+		margin-top: 6px;
+		font-size: 11px;
+	}
+	.why summary {
+		cursor: pointer;
+		color: var(--muted);
+	}
+	.why summary:hover {
+		color: var(--primary);
+	}
+	.rule {
+		display: inline-block;
+		font-size: 10px;
+		background: #f1f5f9;
+		color: var(--muted-strong);
+		border-radius: 3px;
+		padding: 1px 5px;
+		margin: 3px 3px 0 0;
 	}
 </style>

@@ -7,6 +7,7 @@ namespace RiskStudio\Tests\Unit\Collector;
 use PHPUnit\Framework\TestCase;
 use RiskStudio\Collector\Enricher;
 use RiskStudio\Collector\Facts;
+use RiskStudio\Collector\Source\BonjourLaFuite;
 use RiskStudio\Collector\Source\CertFr;
 use RiskStudio\Collector\Source\CisaKev;
 use RiskStudio\Collector\Source\Euvd;
@@ -138,6 +139,33 @@ final class SourcesTest extends TestCase
             self::assertStringNotContainsString('.onion', json_encode($leak->toArray()));
         }
         self::assertSame('ExempleLocker', $result['leaks'][0]->actor);
+    }
+
+    public function testBonjourLaFuiteReadsStatusDataClassesAndSensitiveFlag(): void
+    {
+        $result = (new BonjourLaFuite())->parse(self::fixture('bonjourlafuite.xml'), [], self::since());
+
+        self::assertSame(['Exemple Mutuelle', 'Exemple Boutique', 'Exemple Club'], array_map(fn ($l) => $l->organisation, $result['leaks']), 'entries older than the window are skipped');
+        [$mutuelle, $boutique, $club] = $result['leaks'];
+        self::assertSame('Exemple Mutuelle-2099-01-12', $mutuelle->externalId);
+        self::assertSame(['confirmed', 'claimed', 'untrusted'], [$mutuelle->confidence, $boutique->confidence, $club->confidence]);
+        self::assertSame(['Nom, prénom', 'Adresse email', 'IBAN', 'Numéro de sécurité sociale'], $mutuelle->dataClasses);
+        self::assertSame("Historique d'achats", $boutique->dataClasses[2], 'HTML entities are decoded');
+        self::assertTrue($mutuelle->sensitive);
+        self::assertFalse($boutique->sensitive);
+        self::assertSame('FR', $mutuelle->country);
+        self::assertSame('2099-01-12 00:00:00', $mutuelle->disclosedAt);
+        self::assertSame('https://bonjourlafuite.eu.org/', $boutique->url, 'links outside the site are never stored');
+        self::assertSame('2099-01-12 00:00:00', $result['cursor']['latest']);
+    }
+
+    public function testBonjourLaFuiteRejectsExternalEntities(): void
+    {
+        $xml = '<?xml version="1.0"?><!DOCTYPE r [<!ENTITY x SYSTEM "file:///etc/passwd">]><rss><channel><item><title>🟢 &x;</title>'
+            . '<guid>a</guid><pubDate>Mon, 12 Jan 2099 00:00:00 +0000</pubDate></item></channel></rss>';
+        $result = (new BonjourLaFuite())->parse($xml, [], self::since());
+
+        self::assertStringNotContainsString('root:', json_encode(array_map(fn ($l) => $l->toArray(), $result['leaks'])));
     }
 
     public function testNvdPrefersThePrimaryScoreAndReadsCweAndCpe(): void

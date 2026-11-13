@@ -172,6 +172,34 @@ final class StoreTest extends TestCase
         self::assertSame(['status' => 'pending', 'code' => 'HEALTH'], $row);
     }
 
+    public function testClaimsWaitAndArePublishedOnceConfirmed(): void
+    {
+        $source = ['code' => 'TST_KEV'] + self::$sources['TST_KEV'];
+        $claim = new LeakFacts('tst-claim-1', 'breach', 'Exemple Boutique', country: 'FR', dataClasses: ['IBAN'], confidence: 'claimed');
+        $confirmed = new LeakFacts('tst-claim-2', 'breach', 'Exemple Banque', dataClasses: ['Adresse email'], confidence: 'confirmed');
+        $status = fn (string $id) => self::$pdo->query("SELECT status, severity, confidence FROM leaks WHERE external_id = '{$id}'")->fetch();
+
+        self::assertSame('new', self::$store->saveLeak($source, $claim));
+        self::assertSame('new', self::$store->saveLeak($source, $confirmed));
+        self::assertSame(['status' => 'pending', 'severity' => 'critical', 'confidence' => 'claimed'], $status('tst-claim-1'), 'an authority does not publish a claim');
+        self::assertSame(['status' => 'published', 'severity' => 'medium', 'confidence' => 'confirmed'], $status('tst-claim-2'));
+
+        $claim->confidence = 'confirmed';
+        self::assertSame('updated', self::$store->saveLeak($source, $claim));
+        self::assertSame('published', $status('tst-claim-1')['status']);
+    }
+
+    public function testStaleClassificationsAreReplayed(): void
+    {
+        $leak = new LeakFacts('tst-stale-1', 'breach', 'Exemple', dataClasses: ['Passwords']);
+        self::$store->saveLeak(self::$sources['TST_LEAKS'], $leak);
+        self::$pdo->exec("UPDATE leaks SET severity = NULL, rule_trace = '{\"rules\":[],\"rules_version\":\"old\"}' WHERE external_id = 'tst-stale-1'");
+
+        self::assertGreaterThanOrEqual(1, self::$store->reclassifyStale(500));
+        self::assertSame('high', self::$pdo->query("SELECT severity FROM leaks WHERE external_id = 'tst-stale-1'")->fetchColumn());
+        self::assertSame('unchanged', self::$store->saveLeak(self::$sources['TST_LEAKS'], $leak));
+    }
+
     public function testEveryRiskReferencedByTheRulesExists(): void
     {
         $codes = array_unique(array_column(Rules::load(dirname(__DIR__, 3) . '/db/rules')->riskLinks, 'risk'));

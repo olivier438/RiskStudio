@@ -75,6 +75,8 @@ final class Kernel
         $router->add('PUT', '/v1/admin/risks/{code}', $admin('updateRisk'));
         $router->get('/v1/admin/sources', $admin('sources'));
         $router->post('/v1/admin/sources/{code}', $admin('updateSource'));
+        $router->post('/v1/admin/sources/{code}/probe', $admin('probeSource'));
+        $router->post('/v1/admin/probe', $admin('probeUrl'));
         $router->get('/v1/admin/statistics', $admin('statistics'));
         $router->get('/v1/admin/audit', $admin('audit'));
 

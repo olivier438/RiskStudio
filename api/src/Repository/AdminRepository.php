@@ -70,7 +70,7 @@ final class AdminRepository
     {
         $rows = $this->pdo->query(
             "SELECT l.id, s.name AS source, l.leak_type AS type, l.organisation, l.country, sec.code AS sector, l.actor,
-                    l.records_count, l.data_classes, l.url, l.disclosed_at, l.created_at
+                    l.records_count, l.data_classes, l.severity, l.confidence, l.url, l.disclosed_at, l.created_at
              FROM leaks l JOIN sources s ON s.id = l.source_id LEFT JOIN sectors sec ON sec.id = l.sector_id
              WHERE l.status = 'pending' ORDER BY COALESCE(l.disclosed_at, l.created_at) DESC LIMIT {$limit}"
         )->fetchAll();
@@ -85,6 +85,8 @@ final class AdminRepository
             'actor' => $r['actor'],
             'records_count' => $r['records_count'] === null ? null : (int) $r['records_count'],
             'data_classes' => json_decode((string) ($r['data_classes'] ?? '[]'), true) ?: [],
+            'severity' => $r['severity'],
+            'confidence' => $r['confidence'],
             'url' => $r['url'],
             'disclosed_at' => Dates::iso($r['disclosed_at']),
             'created_at' => Dates::iso($r['created_at']),

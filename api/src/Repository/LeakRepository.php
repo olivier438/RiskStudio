@@ -60,6 +60,7 @@ final class LeakRepository
 
         $items = array_map(static function (array $l): array {
             $classes = $l['data_classes'] === null ? [] : json_decode((string) $l['data_classes'], true);
+            $trace = $l['rule_trace'] === null ? null : json_decode((string) $l['rule_trace'], true);
 
             return [
                 'id' => (int) $l['id'],
@@ -71,6 +72,9 @@ final class LeakRepository
                 'actor' => $l['actor'],
                 'records_count' => $l['records_count'] === null ? null : (int) $l['records_count'],
                 'data_classes' => is_array($classes) ? array_values($classes) : [],
+                'severity' => $l['severity'],
+                'confidence' => $l['confidence'],
+                'rule_trace' => is_array($trace) ? $trace : null,
                 'url' => $l['url'],
                 'disclosed_at' => Dates::iso($l['disclosed_at']),
                 'published_at' => Dates::iso($l['published_at']),

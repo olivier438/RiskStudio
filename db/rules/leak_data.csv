@@ -1,0 +1,67 @@
+pattern;severity;note
+# Exposed data class (whole word, case insensitive) -> leak severity.
+# For each class the most specific (longest) matching pattern decides; then the most serious class wins.
+# A class no pattern matches counts as low.
+# French wording from Bonjour la fuite, English wording from Have I Been Pwned.
+iban;critical;Bank account: direct fraud
+rib;critical;
+coordonnées bancaires;critical;
+informations bancaires;critical;
+numéro de carte;critical;
+carte bancaire;critical;
+cartes bancaires;critical;
+bank account numbers;critical;
+credit cards;critical;
+partial credit card data;high;
+derniers chiffres;high;Last digits of a card: phishing pretext, not fraud
+carte de fidélité;low;Loyalty card, not a payment card
+cartes de fidélité;low;
+sécurité sociale;critical;French social security number
+numéro de sécurité sociale;critical;
+nir;critical;
+social security numbers;critical;
+national registration number;critical;Belgian national register number
+numéro de registre national;critical;
+registre national;critical;
+santé;critical;Health data: special category (GDPR article 9)
+médical;critical;
+médicales;critical;
+médicaux;critical;
+mutuelle;high;
+pathologie;critical;
+pathologies;critical;
+diagnostic;critical;
+health records;critical;
+health insurance information;critical;
+medical conditions;critical;
+pièce d'identité;critical;Identity document: identity theft
+pièces d'identité;critical;
+carte d'identité;critical;
+passeport;critical;
+passport numbers;critical;
+government issued ids;critical;
+mot de passe en clair;critical;Plain text password
+mots de passe en clair;critical;
+mot de passe;high;Hashed or unspecified: credential stuffing
+mots de passe;high;
+passwords;high;
+informations de paiement;high;
+payment histories;high;
+salaire;high;
+revenus;high;
+income levels;high;
+date de naissance;high;Identity theft enabler with name and address
+dates de naissance;high;
+dates of birth;high;
+adresse postale;medium;
+adresses postales;medium;
+physical addresses;medium;
+numéro de téléphone;medium;Phishing and smishing
+numéros de téléphone;medium;
+téléphone;medium;
+phone numbers;medium;
+adresse email;medium;
+adresse mail;medium;
+adresses email;medium;
+adresse e-mail;medium;
+email addresses;medium;

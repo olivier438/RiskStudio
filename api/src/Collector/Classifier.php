@@ -150,7 +150,16 @@ final class Classifier
         ];
     }
 
-    /** @return array{sector: ?string, trace: array<string, mixed>} */
+    /**
+     * Severity of a leak, from the exposed data classes (db/rules/leak_data.csv):
+     * for each class the most specific (longest) matching pattern decides, then
+     * the most serious class wins; a class no rule knows counts as low. A source
+     * flag "sensitive" raises it to at least high. Without any data class, a
+     * ransomware claim is high (exfiltration before encryption is the norm),
+     * anything else stays unknown.
+     *
+     * @return array{sector: ?string, severity: ?string, trace: array<string, mixed>}
+     */
     public function classifyLeak(LeakFacts $l, string $sourceCode): array
     {
         $trace = ['source.' . strtolower($sourceCode)];
@@ -160,7 +169,50 @@ final class Classifier
             $trace[] = 'activity.' . str_replace(' ', '_', mb_strtolower($l->activity)) . "->{$sector}";
         }
 
-        return ['sector' => $sector, 'trace' => ['rules' => $trace, 'rules_version' => $this->rules->version]];
+        $severity = null;
+        foreach ($l->dataClasses as $class) {
+            $text = Rules::normalise($class);
+            $found = null;
+            foreach ($this->rules->leakData as $rule) {
+                // The most specific (longest) matching pattern decides: "carte de fidélité" beats "numéro de carte".
+                if (mb_strlen($rule['pattern']) > mb_strlen($found['pattern'] ?? '') && Rules::matches($text, $rule['pattern'])) {
+                    $found = $rule;
+                }
+            }
+            if ($found === null) {
+                $severity ??= 'low';
+                continue;
+            }
+            if (self::rank($found['severity']) > self::rank($severity ?? '')) {
+                $severity = $found['severity'];
+            }
+            $trace[] = 'data.' . str_replace(' ', '_', $found['pattern']) . "->{$found['severity']}";
+        }
+        if ($severity === 'low') {
+            $trace[] = 'data.other->low';
+        }
+        if ($l->sensitive && self::rank($severity ?? '') < self::rank('high')) {
+            $severity = 'high';
+            $trace[] = 'hint.sensitive->high';
+        }
+        if ($severity === null && $l->type === 'ransomware') {
+            $severity = 'high';
+            $trace[] = 'type.ransomware->high';
+        }
+        if ($l->confidence !== null) {
+            $trace[] = "confidence.{$l->confidence}";
+        }
+
+        return [
+            'sector' => $sector,
+            'severity' => $severity,
+            'trace' => ['rules' => array_values(array_unique($trace)), 'rules_version' => $this->rules->version],
+        ];
+    }
+
+    public function rulesVersion(): string
+    {
+        return $this->rules->version;
     }
 
     private static function rank(string $severity): int

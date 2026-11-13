@@ -16,4 +16,7 @@ INSERT IGNORE INTO sources (code, name, kind, url, authoritative, enabled, poll_
   -- the feed is confirmed from the production hosting.
   ('CCB',             'CCB (CERT.be)',       'rss',      'https://ccb.belgium.be/advisories', 1, 0, 60),
   ('HIBP',            'Have I Been Pwned',   'json_api', 'https://haveibeenpwned.com/api/v3/breaches', 1, 1, 720),
-  ('RANSOMWARE_LIVE', 'ransomware.live',     'json_api', 'https://api.ransomware.live/v2/recentvictims', 0, 1, 120);
+  ('RANSOMWARE_LIVE', 'ransomware.live',     'json_api', 'https://api.ransomware.live/v2/recentvictims', 0, 1, 120),
+  -- Leaks affecting French organisations. Authoritative for confirmed leaks
+  -- only: claims (🟠 🔴) always wait for review.
+  ('BONJOUR_LA_FUITE', 'Bonjour la fuite',   'rss',      'https://bonjourlafuite.eu.org/feed.xml', 1, 1, 60);

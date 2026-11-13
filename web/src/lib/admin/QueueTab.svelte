@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ApiError } from '#lib/api.js';
 	import { adminApi, type PendingIntel, type PendingLeak, type Proposal, type QueueCounts } from '#lib/admin-api.js';
-	import { count, dateAndTime, LEAK_TYPE_LABEL, safeUrl, SEVERITY_LABEL } from '#lib/format.js';
+	import { CONFIDENCE_LABEL, count, dateAndTime, LEAK_TYPE_LABEL, safeUrl, SEVERITY_LABEL } from '#lib/format.js';
 
 	let {
 		categoryName,
@@ -161,6 +161,12 @@
 					<span class="a-muted">{LEAK_TYPE_LABEL[l.type]} · {dateAndTime(l.disclosed_at ?? l.created_at)}</span>
 				</header>
 				<h3>{l.organisation}</h3>
+				{#if l.severity || l.confidence}
+					<p class="meta">
+						{#if l.severity}Gravité : <b>{SEVERITY_LABEL[l.severity]}</b>{/if}
+						{#if l.confidence}{#if l.severity}·{/if} {CONFIDENCE_LABEL[l.confidence]}{/if}
+					</p>
+				{/if}
 				<p class="meta">
 					{l.country ?? 'Pays inconnu'}{#if l.sector}· {sectorName(l.sector)}{/if}
 					{#if l.actor}· Revendiqué par {l.actor}{/if}

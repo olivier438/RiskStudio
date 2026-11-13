@@ -5,6 +5,14 @@
 </script>
 
 <Modal bind:open title="📋 Changelog">
+	<h3>v5.1 : fuites françaises et gravité <span class="date">Novembre 2026</span></h3>
+	<p>
+		Nouvelle source <strong>Bonjour la fuite</strong> : les fuites touchant des organisations françaises, presque au
+		jour le jour. Chaque fuite reçoit une <strong>gravité</strong> calculée par des règles à partir des données
+		exposées (IBAN, données de santé, pièce d'identité…), visible sous « Pourquoi ? ». Les revendications non
+		confirmées sont signalées comme telles.
+	</p>
+
 	<h3>v5.0 : refonte complète <span class="date">2026</span></h3>
 	<p>
 		Reconstruction de zéro, en gardant le visuel et les fonctionnalités. <strong>Plus aucune IA</strong> : la

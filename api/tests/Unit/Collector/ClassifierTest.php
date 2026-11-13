@@ -107,4 +107,34 @@ final class ClassifierTest extends TestCase
         self::assertSame('HEALTH', $c['sector']);
         self::assertContains('activity.healthcare->HEALTH', $c['trace']['rules']);
     }
+
+    public function testLeakSeverityFromDataClasses(): void
+    {
+        $leak = fn (array $classes, bool $sensitive = false, string $type = 'breach') => self::$classifier
+            ->classifyLeak(new LeakFacts('x', $type, 'Org', dataClasses: $classes, sensitive: $sensitive), 'TST');
+
+        $c = $leak(['Nom, prénom', 'Adresse email', 'IBAN']);
+        self::assertSame('critical', $c['severity'], 'the most serious class wins');
+        self::assertContains('data.iban->critical', $c['trace']['rules']);
+        self::assertContains('data.adresse_email->medium', $c['trace']['rules']);
+
+        self::assertSame('critical', $leak(['Copie de la carte d’identité'])['severity'], 'typographic apostrophes match');
+        self::assertSame('high', $leak(['Mots de passe hachés'])['severity']);
+        self::assertSame('low', $leak(['Numéro de carte de fidélité'])['severity'], 'the most specific pattern decides');
+        self::assertSame('high', $leak(['4 derniers chiffres du numéro de carte bancaire'])['severity']);
+        self::assertSame('high', $leak(['Email addresses', 'Passwords'])['severity'], 'HIBP wording');
+        self::assertSame('low', $leak(['Pseudonyme', 'Nombre de visites'])['severity'], '"nom" does not match "nombre"');
+        self::assertSame('high', $leak(['Pseudonyme'], true)['severity'], 'sensitive flag raises to high');
+        self::assertSame('critical', $leak(['Santé'], true)['severity'], 'the flag never lowers');
+        self::assertNull($leak([])['severity'], 'unknown data: unknown severity');
+        self::assertSame('high', $leak([], false, 'ransomware')['severity']);
+    }
+
+    public function testLeakDataRulesUseKnownSeverities(): void
+    {
+        self::assertNotEmpty(self::$rules->leakData);
+        foreach (self::$rules->leakData as $rule) {
+            self::assertContains($rule['severity'], ['low', 'medium', 'high', 'critical'], $rule['pattern']);
+        }
+    }
 }

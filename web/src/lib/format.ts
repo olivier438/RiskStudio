@@ -44,6 +44,12 @@ export const SEVERITY_LABEL: Record<string, string> = {
 	low: 'Faible'
 };
 
+export const CONFIDENCE_LABEL: Record<string, string> = {
+	confirmed: 'Confirmée',
+	claimed: 'Revendiquée',
+	untrusted: 'Revendication peu fiable'
+};
+
 export const LEAK_TYPE_LABEL: Record<string, string> = {
 	ransomware: 'Ransomware',
 	breach: 'Fuite de données',

@@ -2,10 +2,10 @@
 
 The threat intelligence feed uses **no AI**. Every classification comes from the rule files of this folder, applied by `api/src/Collector/Classifier.php`. Each item stores the identifiers of the rules that fired (`rule_trace`), shown in the interface under **Pourquoi ?**, plus a fingerprint of these files (`rules_version`).
 
-After editing a file:
+After editing a file, the next collector runs re-apply the rules to every item classified with the previous version (50 items per run, rule `rules_version`). No command is needed on FTP-only hosting. With a shell:
 
 ```bash
-php api/bin/collect.php --reclassify    # re-applies the rules to every stored item
+php api/bin/collect.php --reclassify    # re-applies the rules to every stored item, now
 ```
 
 Classification is a pure function of the stored facts and of these files: the same inputs always give the same result.
@@ -19,6 +19,7 @@ Classification is a pure function of the stored facts and of these files: the sa
 | `environment.csv` | Vendor or product (whole word, case insensitive) → `OT` or `BOTH`, plus sectors. The CERT-FR `scada` flag always gives `OT`. |
 | `risk_links.csv` | Condition → catalogue risk. Conditions: `kev`, `kev_ransomware`, `env` (`OT` matches OT and BOTH), `cwe`, `product` (whole word in vendor + product), `text` (whole word in title + summary). |
 | `ransomware_sectors.csv` | ransomware.live `activity` → sector. |
+| `leak_data.csv` | Exposed data class (whole word, French or English wording) → leak severity. For each class the longest matching pattern decides (`carte de fidélité` beats `numéro de carte`), then the most serious class wins. |
 
 ## Severity
 
@@ -27,6 +28,15 @@ Classification is a pure function of the stored facts and of these files: the sa
 3. Known exploited without CVSS yet: `high` (rule `kev.no_cvss->high`).
 
 An item is shown as **critical** when it is known exploited (KEV, EUVD exploited) or its severity is critical.
+
+## Leak severity
+
+1. Each exposed data class is matched against `leak_data.csv` (rule `data.<pattern>-><severity>`); a class no rule knows counts as `low` (rule `data.other->low`).
+2. The most serious class gives the leak severity.
+3. A source flag "sensitive" (Bonjour la fuite) raises it to at least `high` (rule `hint.sensitive->high`).
+4. No data class at all: a ransomware claim is `high` (rule `type.ransomware->high`), anything else stays unknown.
+
+The confidence stated by the source is kept as is (`confirmed`, `claimed`, `untrusted`, rule `confidence.*`). An authoritative source only publishes confirmed leaks: claims always wait for review, and a pending claim is published when the source later confirms it.
 
 ## Score (0 to 100)
 
@@ -48,7 +58,8 @@ Capped at 100. The detail of each component is stored in `rule_trace.score`.
 | ENISA EUVD critical | Critical vulnerabilities | Pending review |
 | CERT-FR | Alerts, advisories, CTI reports (news skipped) | Direct (authoritative) |
 | Have I Been Pwned | Verified breaches (sensitive, spam, fabricated excluded) | Direct (authoritative) |
-| ransomware.live | Ransomware claims, filtered by country | Pending review (claims are unverified) |
+| ransomware.live | Ransomware claims, filtered by country | Pending review (claims are unverified). Answers 404 to the production hosting: disabled there |
+| Bonjour la fuite | Leaks affecting French organisations (RSS, about ten latest entries) | Direct when confirmed (🟢), pending review when claimed (🟠 🔴) |
 | CCB | Belgian advisories | Disabled: the site rejects data-centre requests, to test from the production hosting |
 
 The same CVE reported by several vulnerability feeds is merged into one item; a pending item becomes published when an authoritative source confirms it. A rejected item is never republished. Enrichment: FIRST EPSS for every CVE, NVD for CVSS, CWE and product (5 lookups per run without key, completed over the next runs).

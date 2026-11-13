@@ -46,6 +46,8 @@ export interface PendingLeak {
 	actor: string | null;
 	records_count: number | null;
 	data_classes: string[];
+	severity: string | null;
+	confidence: string | null;
 	url: string | null;
 	disclosed_at: string | null;
 	created_at: string;
@@ -78,6 +80,28 @@ export interface AdminSource {
 	last_error: string | null;
 	new_24h: number;
 	failures_24h: number;
+}
+
+export interface ProbeRequest {
+	url: string;
+	status: number;
+	content_type: string;
+	bytes: number;
+	ms: number;
+	format: string | null;
+	error: string | null;
+}
+
+/** Diagnostic run from the production server: verdict and message are ready to show. */
+export interface ProbeReport {
+	url: string;
+	ok: boolean;
+	verdict: 'works' | 'reachable' | 'blocked' | 'unreachable' | 'redirect' | 'format' | 'error' | 'refused' | 'no_parser';
+	message: string;
+	requests: ProbeRequest[];
+	items?: number | null;
+	sample?: string[];
+	location?: string | null;
 }
 
 export interface AdminRisk {
@@ -159,6 +183,8 @@ export const adminApi = {
 	sources: () => getPrivate<{ data: AdminSource[] }>('/admin/sources'),
 	updateSource: (code: string, changes: { enabled?: boolean; authoritative?: boolean }) =>
 		mutate<{ data: AdminSource[] }>('POST', `/sources/${encodeURIComponent(code)}`, changes),
+	probeSource: (code: string) => mutate<{ data: ProbeReport }>('POST', `/sources/${encodeURIComponent(code)}/probe`, {}),
+	probeUrl: (url: string) => mutate<{ data: ProbeReport }>('POST', '/probe', { url }),
 	statistics: () => getPrivate<Statistics>('/admin/statistics'),
 	audit: () => getPrivate<{ data: AuditEntry[] }>('/admin/audit?limit=200')
 };
