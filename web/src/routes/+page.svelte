@@ -34,7 +34,7 @@
 
 	const MODES: { id: Mode; label: string; title: string }[] = [
 		{ id: 'grc', label: '🛡️ GRC', title: 'Catalogue GRC' },
-		{ id: 'cyber', label: '⚡ Cyberrisques', title: 'Veille cyber' },
+		{ id: 'cyber', label: '⚡ Cyberrisques', title: 'Cyberrisques' },
 		{ id: 'leaks', label: '💧 Data Leaks', title: 'Data Leaks' }
 	];
 
@@ -258,7 +258,7 @@
 </script>
 
 <svelte:head>
-	<title>NOROSHI | {view.mode === 'grc' ? 'Catalogue GRC' : view.mode === 'cyber' ? 'Veille cyber' : 'Data Leaks'}</title>
+	<title>NOROSHI | {view.mode === 'grc' ? 'Catalogue GRC' : view.mode === 'cyber' ? 'Cyberrisques' : 'Data Leaks'}</title>
 	<meta
 		name="description"
 		content="Catalogue de risques GRC et veille cyber sans IA, mappés sur ISO 27001, NIS2, DORA, CRA, CyFun et NIST CSF."
