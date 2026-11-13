@@ -25,6 +25,9 @@ use RiskStudio\Security\Totp;
  *                           (db_admin_user / db_admin_password), used for
  *                           this request only, never stored or logged
  *   POST /v1/setup/admin    first administrator only, returns the TOTP key once
+ *   POST /v1/setup/admin/reset  new TOTP key for an existing administrator,
+ *                           after checking e-mail + password; closes the
+ *                           sessions and lifts a login lockout
  * Remove SETUP_TOKEN from .env once done.
  */
 final class SetupController
@@ -103,6 +106,36 @@ final class SetupController
         $pdo->prepare('INSERT INTO admins (email, display_name, password_hash, totp_secret) VALUES (?, ?, ?, ?)')
             ->execute([$email, $name, AdminAuth::hashPassword($password), $secret]);
         $pdo->prepare("INSERT INTO audit_log (actor_type, action, entity, entity_id, details) VALUES ('system', 'admin.create', 'admin', ?, ?)")
+            ->execute([$email, json_encode(['via' => 'web setup'])]);
+
+        return self::private(['ok' => true, 'totp_secret' => $secret, 'totp_uri' => Totp::uri($secret, $email)]);
+    }
+
+    public function resetAdminTotp(Request $request): Response
+    {
+        $this->guard($request);
+        $pdo = $this->db->connection(Database::WRITE);
+        $body = $request->json();
+        $email = mb_strtolower(trim(is_string($body['email'] ?? null) ? $body['email'] : ''));
+        $password = is_string($body['password'] ?? null) ? $body['password'] : '';
+
+        $stmt = $pdo->prepare('SELECT id, password_hash FROM admins WHERE email = ? AND is_active = 1');
+        $stmt->execute([$email]);
+        $admin = $stmt->fetch();
+        if ($admin === false || !password_verify($password, (string) $admin['password_hash'])) {
+            usleep(random_int(800_000, 1_200_000));
+            throw new HttpException(401, 'invalid_credentials', 'E-mail ou mot de passe incorrect.');
+        }
+
+        $secret = Totp::generateSecret();
+        $pdo->prepare('UPDATE admins SET totp_secret = ?, totp_last_step = NULL WHERE id = ?')->execute([$secret, $admin['id']]);
+        $pdo->prepare('DELETE FROM admin_sessions WHERE admin_id = ?')->execute([$admin['id']]);
+        // Lift the login lockout of this account (its bucket is an HMAC of the e-mail).
+        $appSecret = (string) $this->config->get('APP_SECRET', '');
+        if (strlen($appSecret) >= 32) {
+            (new \RiskStudio\Security\RateLimiter($pdo, $appSecret))->reset('login-account', $email);
+        }
+        $pdo->prepare("INSERT INTO audit_log (actor_type, action, entity, entity_id, details) VALUES ('system', 'admin.reset_totp', 'admin', ?, ?)")
             ->execute([$email, json_encode(['via' => 'web setup'])]);
 
         return self::private(['ok' => true, 'totp_secret' => $secret, 'totp_uri' => Totp::uri($secret, $email)]);

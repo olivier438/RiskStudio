@@ -98,6 +98,26 @@ final class SetupTest extends TestCase
         self::assertSame(200, $ok->status, $ok->body);
     }
 
+    public function testTotpResetNeedsThePasswordAndUnlocksTheAccount(): void
+    {
+        putenv('SETUP_TOKEN=' . self::TOKEN);
+        self::$pdo->prepare('INSERT INTO admins (email, display_name, password_hash, totp_secret) VALUES (?, ?, ?, ?)')
+            ->execute(['reset-test@example.org', 'Reset', \RiskStudio\Security\AdminAuth::hashPassword('a long enough passphrase'), 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA']);
+        try {
+            $wrong = $this->call('POST', '/v1/setup/admin/reset', self::TOKEN, ['email' => 'reset-test@example.org', 'password' => 'nope']);
+            self::assertSame(401, $wrong->status);
+            self::assertSame(403, $this->call('POST', '/v1/setup/admin/reset', 'bad-token', ['email' => 'reset-test@example.org', 'password' => 'a long enough passphrase'])->status);
+
+            $r = $this->call('POST', '/v1/setup/admin/reset', self::TOKEN, ['email' => 'Reset-Test@example.org', 'password' => 'a long enough passphrase']);
+            self::assertSame(200, $r->status, $r->body);
+            $secret = json_decode($r->body, true)['totp_secret'];
+            self::assertNotSame('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', $secret);
+            self::assertSame($secret, self::$pdo->query("SELECT totp_secret FROM admins WHERE email = 'reset-test@example.org'")->fetchColumn());
+        } finally {
+            self::$pdo->exec("DELETE FROM admins WHERE email = 'reset-test@example.org'");
+        }
+    }
+
     public function testOnlyTheFirstAdministratorCanBeCreated(): void
     {
         putenv('SETUP_TOKEN=' . self::TOKEN);

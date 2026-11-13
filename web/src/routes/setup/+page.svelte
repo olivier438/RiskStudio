@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ApiError } from '#lib/api.js';
+	import QRCode from 'qrcode';
 
 	interface Status {
 		installed: boolean;
@@ -19,7 +20,47 @@
 	// Schema owner of the database: sent for one request, never stored.
 	let owner = $state({ user: '', password: '' });
 	let fields = $state<Record<string, string>>({});
-	let totp = $state<{ secret: string; uri: string } | null>(null);
+	let totp = $state<{ secret: string; uri: string; qr: string } | null>(null);
+	let reset = $state({ email: '', password: '' });
+	let probe = $state('');
+	let probeResult = $state<'ok' | 'ko' | null>(null);
+
+	/** Generated in the browser: an SVG of paths only (no inline style, CSP-safe). */
+	async function showTotp(secret: string, uri: string): Promise<void> {
+		const qr = await QRCode.toString(uri, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
+		totp = { secret, uri, qr };
+		probe = '';
+		probeResult = null;
+	}
+
+	function base32(text: string): Uint8Array<ArrayBuffer> {
+		const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+		let bits = '';
+		for (const c of text.replace(/[\s=]/g, '').toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, '0');
+		const bytes = new Uint8Array(new ArrayBuffer(Math.floor(bits.length / 8)));
+		for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(bits.slice(i * 8, i * 8 + 8), 2);
+		return bytes;
+	}
+
+	/** Checks, in the browser only, that the authenticator app shows the right codes. */
+	async function checkProbe(): Promise<void> {
+		if (!totp) return;
+		const key = await crypto.subtle.importKey('raw', base32(totp.secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+		const now = Math.floor(Date.now() / 30000);
+		const code = probe.replace(/\s/g, '');
+		for (const step of [now - 1, now, now + 1]) {
+			const msg = new DataView(new ArrayBuffer(8));
+			msg.setUint32(4, step);
+			const h = new Uint8Array(await crypto.subtle.sign('HMAC', key, msg.buffer));
+			const o = h[19] & 0xf;
+			const v = (((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3]) % 1_000_000;
+			if (String(v).padStart(6, '0') === code) {
+				probeResult = 'ok';
+				return;
+			}
+		}
+		probeResult = 'ko';
+	}
 
 	async function call<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
 		const response = await fetch(`/api/v1/setup${path}`, {
@@ -68,9 +109,17 @@
 		return run(async () => {
 			fields = {};
 			const r = await call<{ totp_secret: string; totp_uri: string }>('POST', '/admin', admin);
-			totp = { secret: r.totp_secret, uri: r.totp_uri };
+			await showTotp(r.totp_secret, r.totp_uri);
 			admin.password = '';
 			status = await call<Status>('GET', '/status');
+		});
+	};
+	const resetTotp = (event: SubmitEvent) => {
+		event.preventDefault();
+		return run(async () => {
+			const r = await call<{ totp_secret: string; totp_uri: string }>('POST', '/admin/reset', reset);
+			reset.password = '';
+			await showTotp(r.totp_secret, r.totp_uri);
 		});
 	};
 </script>
@@ -145,11 +194,33 @@
 
 		{#if totp}
 			<section class="card highlight">
-				<h2>4. Code d'authentification</h2>
-				<p>Ajoutez cette clé dans votre application d'authentification (Aegis, 2FAS, Microsoft ou Google Authenticator...). <b>Elle ne sera plus affichée.</b></p>
+				<h2>4. Application d'authentification</h2>
+				<p><b>Scannez ce QR code</b> avec votre application d'authentification (Microsoft ou Google Authenticator, 2FAS, Aegis, Mots de passe d'iOS). Il ne sera plus affiché.</p>
+				<div class="qr" aria-label="QR code de la clé d'authentification">{@html totp.qr}</div>
+				<p class="muted small">Sur le téléphone qui affiche cette page : <a href={totp.uri}>ouvrir directement dans l'application</a>. Ou saisie manuelle de la clé (type : basé sur le temps) :</p>
 				<p class="secret">{totp.secret.match(/.{1,4}/g)?.join(' ')}</p>
-				<p><a href={totp.uri}>Ouvrir dans l'application d'authentification</a> (depuis le téléphone)</p>
-				<p class="muted small">Type : basé sur le temps, 6 chiffres, 30 secondes.</p>
+				<div class="probe">
+					<label>Pour vérifier, tapez le code à 6 chiffres que l'application affiche maintenant
+						<span class="row"><input type="text" inputmode="numeric" maxlength="7" bind:value={probe} /><button onclick={checkProbe} disabled={probe.replace(/\s/g, '').length !== 6}>Vérifier</button></span>
+					</label>
+					{#if probeResult === 'ok'}<p class="ok">✅ C'est bon : l'application est bien configurée. Vous pouvez vous connecter.</p>
+					{:else if probeResult === 'ko'}<p class="err">✕ Ce code ne correspond pas. Vérifiez que l'heure du téléphone est automatique, ou rescannez le QR code.</p>{/if}
+				</div>
+			</section>
+		{/if}
+
+		{#if status.installed && status.admins > 0 && !totp}
+			<section class="card">
+				<h2>Réinitialiser l'authentification</h2>
+				<p class="muted small">
+					Code refusé, clé perdue, nouveau téléphone ? Donnez l'e-mail et le mot de passe du compte : une nouvelle clé est
+					générée (l'ancienne cesse de fonctionner) et un éventuel blocage après trop d'essais est levé.
+				</p>
+				<form onsubmit={resetTotp}>
+					<label>E-mail <input type="email" autocomplete="username" bind:value={reset.email} /></label>
+					<label>Mot de passe <input type="password" autocomplete="current-password" bind:value={reset.password} /></label>
+					<button type="submit" disabled={busy || !reset.email || !reset.password}>Générer une nouvelle clé</button>
+				</form>
 			</section>
 		{/if}
 
@@ -192,6 +263,28 @@
 	.card h2 {
 		margin: 0 0 12px;
 		font-size: 15px;
+	}
+	.qr {
+		width: 220px;
+		max-width: 100%;
+		background: white;
+		padding: 8px;
+		border-radius: 8px;
+		border: 1px solid var(--border);
+		margin: 8px 0;
+	}
+	.qr :global(svg) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+	.probe {
+		margin-top: 14px;
+		padding-top: 12px;
+		border-top: 1px solid var(--border);
+	}
+	.probe .row {
+		margin-top: 6px;
 	}
 	.owner {
 		margin: 12px 0;

@@ -52,6 +52,7 @@ final class Kernel
         $router->get('/v1/setup/status', $setup('status'));
         $router->post('/v1/setup/install', $setup('install'));
         $router->post('/v1/setup/admin', $setup('createAdmin'));
+        $router->post('/v1/setup/admin/reset', $setup('resetAdminTotp'));
 
         // Collector trigger for the hosting task planner: 404 unless CRON_KEY is set.
         $cron = fn (Request $r) => (new CronController($this->config, $this->db, $this->dbDir()))->collect($r);
