@@ -36,6 +36,15 @@ final class CronTest extends TestCase
         self::assertSame(404, $this->call([], ['key' => 'short'])->status);
     }
 
+    public function testUrlKeyGetsAMessageNotALoginPopup(): void
+    {
+        putenv('CRON_KEY=' . self::KEY);
+        $r = $this->call([], ['key' => 'wrong']);
+        self::assertSame(401, $r->status);
+        self::assertArrayNotHasKey('WWW-Authenticate', $r->headers);
+        self::assertSame('invalid_key', json_decode($r->body, true)['error']['code']);
+    }
+
     public function testWrongKeyIsRefusedBothWays(): void
     {
         putenv('CRON_KEY=' . self::KEY);
