@@ -1,4 +1,4 @@
-# 🛡️ Risk Studio
+# 🔥 NOROSHI
 
 > A GRC risk catalogue and a deterministic threat intelligence feed, open and built for cybersecurity professionals.
 
@@ -7,7 +7,7 @@
 
 **v5 is a full rebuild, in progress on the `v5` branch.** The v4 application stays online from `main` until v5 replaces it. Its code is kept in [`legacy/`](legacy/) as the visual reference.
 
-## What is Risk Studio?
+## What is NOROSHI?
 
 Two products under one interface:
 
@@ -34,7 +34,15 @@ Details: [docs/architecture.md](docs/architecture.md).
 - [x] **Phase 4, collector**: CISA KEV, ENISA EUVD, CERT-FR, Have I Been Pwned, ransomware.live; FIRST EPSS and NVD enrichment; rule-based classification, scoring and links to the catalogue, all traceable ([rules](db/rules/README.md))
 - [x] **Phase 5, administration**: password + TOTP login, database sessions with CSRF protection, moderation queues, community proposals and risks, source management and collector health, statistics, audit log, CRA self-assessment
 - [x] **Phase 6, deployment**: release package, SSH deployment from GitHub Actions with smoke tests and rollback, CycloneDX SBOM, dependency audits and Dependabot, security policy v3 and security.txt ([deployment guide](docs/deploy-infomaniak.md))
-- [ ] **V2**: user environment profile (sectors, technologies, frameworks) to filter the feed
+- [x] **Phase 7, feed and alerts**: separate Vulnerabilities and Threats views (CCB, ZATAZ), Data Leaks with severity from the exposed data (Bonjour la fuite), server-side source diagnostics, generic RSS and Atom sources with preview, editorial alerts card, panel and admin tab
+
+### Next steps
+
+1. [ ] **Automatic vendor alerts**: official status pages (Microsoft 365 and Azure, Google Workspace and Google Cloud, AWS, Cloudflare) publish alerts without validation, since the vendor is the authority. Strict threshold: major incidents only, as declared by the vendor, mapped by rules in `db/rules/`. Alerts open, update and close on their own; expiry stays as a safety net. One switch per source in the admin, manual override always possible, every decision audited, source shown on the badge.
+2. [ ] **Stabilisation**: observe real data for a few days, tune the rules, admin health board per source (last run, volume, errors).
+3. [ ] **Cyber risk synthesis**: weekly rule-based digest of what is new, critical and trending.
+4. [ ] **V2**: user environment profile (sectors, IT/OT, frameworks, watched vendors and products) to filter the feed.
+5. [ ] **Distribution**: exportable weekly digest (mail or page).
 
 ## Local development
 

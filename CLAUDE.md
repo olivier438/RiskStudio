@@ -1,4 +1,6 @@
-# Risk Studio | Notes for Claude
+# NOROSHI | Notes for Claude
+
+The product is named **NOROSHI** (formerly Risk Studio). Repository, code identifiers and URLs keep their historical names.
 
 ## Product constraints (decided, do not reopen)
 
