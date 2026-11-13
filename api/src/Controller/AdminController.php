@@ -13,6 +13,7 @@ use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
 use RiskStudio\Repository\AdminRepository;
+use RiskStudio\Repository\AlertRepository;
 use RiskStudio\Repository\ValidationException;
 use RiskStudio\Security\AdminAuth;
 
@@ -28,6 +29,7 @@ final class AdminController
         private readonly AdminRepository $repo,
         /** db/rules, for the classification preview of a feed being added. */
         private readonly string $rulesDir = '',
+        private readonly ?AlertRepository $alerts = null,
     ) {
     }
 
@@ -187,6 +189,51 @@ final class AdminController
         $this->auth->audit($session['admin']['id'], 'source.probe', self::probeSummary($report), 'source', $code);
 
         return self::private(['data' => $report]);
+    }
+
+    // ------------------------------------------------------------- editorial alerts
+
+    public function alerts(Request $request): Response
+    {
+        $this->session($request);
+
+        return self::private(['data' => $this->alertRepo()->recent()]);
+    }
+
+    public function createAlert(Request $request): Response
+    {
+        $session = $this->session($request);
+        $alert = AlertRepository::input($request->json());
+        $id = $this->alertRepo()->create($alert, (int) $session['admin']['id']);
+        $this->auth->audit($session['admin']['id'], 'alert.create', $alert, 'alert', (string) $id);
+
+        return self::private(['ok' => true, 'id' => $id, 'data' => $this->alertRepo()->recent()]);
+    }
+
+    public function editAlert(Request $request): Response
+    {
+        $session = $this->session($request);
+        $id = self::id($request);
+        $alert = AlertRepository::input($request->json());
+        $previous = $this->alertRepo()->update($id, $alert);
+        $this->auth->audit($session['admin']['id'], 'alert.edit', ['previous' => $previous, 'new' => $alert], 'alert', (string) $id);
+
+        return self::private(['ok' => true, 'data' => $this->alertRepo()->recent()]);
+    }
+
+    public function closeAlert(Request $request): Response
+    {
+        $session = $this->session($request);
+        $id = self::id($request);
+        $previous = $this->alertRepo()->close($id);
+        $this->auth->audit($session['admin']['id'], 'alert.close', ['previous' => $previous], 'alert', (string) $id);
+
+        return self::private(['ok' => true, 'data' => $this->alertRepo()->recent()]);
+    }
+
+    private function alertRepo(): AlertRepository
+    {
+        return $this->alerts ?? throw new \LogicException('Alert repository not configured.');
     }
 
     /** Reads a feed being added and shows how its entries would be classified. Stores nothing. */

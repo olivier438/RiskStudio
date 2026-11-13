@@ -9,6 +9,7 @@ use RiskStudio\Database;
 use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
+use RiskStudio\Repository\AlertRepository;
 use RiskStudio\Repository\FeedFilter;
 use RiskStudio\Repository\IntelRepository;
 use RiskStudio\Repository\LeakRepository;
@@ -128,6 +129,13 @@ final class PublicController
         $result = (new LeakRepository($this->db->connection(Database::READ)))->search($filter);
 
         return $this->page($request, $result, $filter);
+    }
+
+    /** Editorial alerts active right now. Short cache: an alert must show up quickly. */
+    public function alerts(Request $request): Response
+    {
+        return Response::json(['data' => (new AlertRepository($this->db->connection(Database::READ)))->active()])
+            ->withETag($request);
     }
 
     /** @param array{items: list<array<string, mixed>>, total: int} $result */

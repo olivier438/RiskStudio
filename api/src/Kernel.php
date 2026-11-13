@@ -14,6 +14,7 @@ use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
 use RiskStudio\Http\Router;
 use RiskStudio\Repository\AdminRepository;
+use RiskStudio\Repository\AlertRepository;
 use RiskStudio\Repository\ValidationException;
 use RiskStudio\Security\AdminAuth;
 use RiskStudio\Security\RateLimiter;
@@ -45,6 +46,7 @@ final class Kernel
         $router->get('/v1/intel', $public->intel(...));
         $router->get('/v1/intel/{id}', $public->intelItem(...));
         $router->get('/v1/leaks', $public->leaks(...));
+        $router->get('/v1/alerts', $public->alerts(...));
         $router->post('/v1/proposals', fn (Request $r) => $this->proposals()->create($r));
 
         // Web installer (FTP-only hosting): 404 unless SETUP_TOKEN is set.
@@ -83,6 +85,10 @@ final class Kernel
         $router->post('/v1/admin/sources/{code}/delete', $admin('deleteSource'));
         $router->post('/v1/admin/probe', $admin('probeUrl'));
         $router->get('/v1/admin/statistics', $admin('statistics'));
+        $router->get('/v1/admin/alerts', $admin('alerts'));
+        $router->post('/v1/admin/alerts', $admin('createAlert'));
+        $router->add('PUT', '/v1/admin/alerts/{id}', $admin('editAlert'));
+        $router->post('/v1/admin/alerts/{id}/close', $admin('closeAlert'));
         $router->get('/v1/admin/audit', $admin('audit'));
 
         return $router;
@@ -109,6 +115,7 @@ final class Kernel
                 new AdminAuth($pdo, new RateLimiter($pdo, $this->secret()), $secure),
                 new AdminRepository($pdo),
                 $this->dbDir() . '/rules',
+                new AlertRepository($pdo),
             );
         }
 

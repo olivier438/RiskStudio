@@ -100,6 +100,19 @@ export interface Leak {
 	updated_at: string | null;
 }
 
+/** Editorial alert written by the administrator (a global outage, a mass campaign). */
+export interface Alert {
+	id: number;
+	kind: 'outage' | 'attack' | 'vulnerability' | 'other';
+	level: 'info' | 'warning' | 'critical';
+	title: string;
+	summary: string | null;
+	url: string | null;
+	starts_at: string;
+	ends_at: string | null;
+	updated_at: string;
+}
+
 export interface Stats {
 	risks: { total: number };
 	intel: {
@@ -112,6 +125,7 @@ export interface Stats {
 		latest_published_at: string | null;
 	};
 	leaks: { total: number; latest_id: number | null };
+	alerts: { active: number; critical: number; fingerprint: string };
 	last_update: string | null;
 }
 
@@ -279,6 +293,7 @@ export const api = {
 	intel: (query: FeedQuery = {}, f?: typeof fetch) =>
 		request<Page<IntelItem>>(`/intel${toQueryString(query)}`, f),
 	leaks: (query: FeedQuery = {}, f?: typeof fetch) => request<Page<Leak>>(`/leaks${toQueryString(query)}`, f),
+	alerts: (f?: typeof fetch) => request<{ data: Alert[] }>('/alerts', f),
 	controls: (framework: string, f?: typeof fetch) =>
 		request<{ framework: string; controls: Control[] }>(
 			`/frameworks/${encodeURIComponent(framework)}/controls`,

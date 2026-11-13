@@ -5,6 +5,13 @@
 </script>
 
 <Modal bind:open title="📋 Changelog">
+	<h3>v5.4 : Alertes <span class="date">Novembre 2026</span></h3>
+	<p>
+		Nouvelle carte <strong>Alertes</strong> : ce qui compte maintenant, au-delà des flux (une panne mondiale, une
+		campagne massive). Le bandeau s'ouvre en haut de chaque vue et se ferme d'un clic ; chaque alerte expire
+		d'elle-même.
+	</p>
+
 	<h3>v5.3 : sources sans développement <span class="date">Novembre 2026</span></h3>
 	<p>
 		L'administration peut ajouter n'importe quel flux RSS ou Atom : vue alimentée, pays par défaut, mots-clés à

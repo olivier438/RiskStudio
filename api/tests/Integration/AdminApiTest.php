@@ -113,6 +113,47 @@ final class AdminApiTest extends TestCase
         }
     }
 
+    public function testEditorialAlertsLifecycle(): void
+    {
+        $s = $this->login();
+        $h = ['cookie' => $s['cookie'], 'x-csrf-token' => $s['csrf']];
+        $body = ['kind' => 'outage', 'level' => 'critical', 'title' => 'phpunit Panne mondiale Exemple 365',
+            'summary' => 'Messagerie indisponible.', 'url' => 'https://status.example.org/', 'ends_at' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 3600)];
+        $public = fn (): array => array_column(self::json($this->call('GET', '/v1/alerts'))['data'], 'title');
+        try {
+            self::assertSame(403, $this->call('POST', '/v1/admin/alerts', $body, ['cookie' => $s['cookie']])->status, 'CSRF');
+            $bad = $this->call('POST', '/v1/admin/alerts', ['kind' => 'x', 'level' => 'x', 'title' => 'a', 'url' => 'http://x'] + $body, $h);
+            self::assertSame(422, $bad->status);
+            self::assertSame(['kind', 'level', 'title', 'url'], array_keys(self::json($bad)['error']['fields']));
+            self::assertSame(422, $this->call('POST', '/v1/admin/alerts', ['ends_at' => '2000-01-01T00:00:00Z'] + $body, $h)->status, 'end before start');
+
+            $created = $this->call('POST', '/v1/admin/alerts', $body, $h);
+            self::assertSame(200, $created->status, $created->body);
+            $id = self::json($created)['id'];
+            self::assertContains($body['title'], $public());
+            $stats = self::json($this->call('GET', '/v1/stats'))['alerts'];
+            self::assertGreaterThanOrEqual(1, $stats['active']);
+            self::assertGreaterThanOrEqual(1, $stats['critical']);
+
+            $future = $this->call('POST', '/v1/admin/alerts', ['title' => 'phpunit Futur', 'starts_at' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 86400), 'ends_at' => ''] + $body, $h);
+            self::assertSame(200, $future->status, $future->body);
+            self::assertNotContains('phpunit Futur', $public(), 'not before its start');
+
+            $edited = $this->call('PUT', "/v1/admin/alerts/{$id}", ['level' => 'warning', 'title' => 'phpunit Panne résolue en partie'] + $body, $h);
+            self::assertSame(200, $edited->status, $edited->body);
+            self::assertContains('phpunit Panne résolue en partie', $public());
+
+            self::assertSame(200, $this->call('POST', "/v1/admin/alerts/{$id}/close", [], $h)->status);
+            self::assertNotContains('phpunit Panne résolue en partie', $public(), 'closed alerts leave the page');
+            $history = self::json($this->call('GET', '/v1/admin/alerts', null, ['cookie' => $s['cookie']]))['data'];
+            $closed = array_values(array_filter($history, fn ($a) => $a['id'] === $id))[0];
+            self::assertSame(['archived', false], [$closed['status'], $closed['active']], 'kept in the history');
+            self::assertSame(404, $this->call('POST', '/v1/admin/alerts/999999999/close', [], $h)->status);
+        } finally {
+            self::$pdo->exec("DELETE FROM alerts WHERE title LIKE 'phpunit %'");
+        }
+    }
+
     private static function cleanup(): void
     {
         self::$pdo->exec("DELETE FROM risks WHERE origin = 'community' AND code LIKE 'R-COM-%'

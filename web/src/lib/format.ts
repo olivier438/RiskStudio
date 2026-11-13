@@ -50,6 +50,19 @@ export const CONFIDENCE_LABEL: Record<string, string> = {
 	untrusted: 'Revendication peu fiable'
 };
 
+export const ALERT_KIND: Record<string, { icon: string; label: string }> = {
+	outage: { icon: '🔌', label: 'Panne' },
+	attack: { icon: '⚔️', label: 'Attaque' },
+	vulnerability: { icon: '🧩', label: 'Vulnérabilité' },
+	other: { icon: '📢', label: 'Information' }
+};
+
+export const ALERT_LEVEL_LABEL: Record<string, string> = {
+	info: 'Info',
+	warning: 'Attention',
+	critical: 'Critique'
+};
+
 export const LEAK_TYPE_LABEL: Record<string, string> = {
 	ransomware: 'Ransomware',
 	breach: 'Fuite de données',

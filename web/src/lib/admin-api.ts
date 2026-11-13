@@ -146,6 +146,32 @@ export interface ProbeReport {
 	location?: string | null;
 }
 
+export interface AdminAlert {
+	id: number;
+	kind: 'outage' | 'attack' | 'vulnerability' | 'other';
+	level: 'info' | 'warning' | 'critical';
+	title: string;
+	summary: string | null;
+	url: string | null;
+	starts_at: string;
+	ends_at: string | null;
+	status: 'published' | 'archived';
+	active: boolean;
+	created_at: string;
+}
+
+export interface AlertInput {
+	kind: AdminAlert['kind'];
+	level: AdminAlert['level'];
+	title: string;
+	summary: string;
+	url: string;
+	/** ISO 8601, empty: now. */
+	starts_at: string;
+	/** ISO 8601, empty: no end. */
+	ends_at: string;
+}
+
 export interface AdminRisk {
 	code: string;
 	title: string;
@@ -232,6 +258,10 @@ export const adminApi = {
 	editSource: (code: string, s: CustomSourceInput) =>
 		mutate<{ data: AdminSource[] }>('PUT', `/sources/${encodeURIComponent(code)}`, s),
 	deleteSource: (code: string) => mutate<{ data: AdminSource[] }>('POST', `/sources/${encodeURIComponent(code)}/delete`, {}),
+	alerts: () => getPrivate<{ data: AdminAlert[] }>('/admin/alerts'),
+	createAlert: (a: AlertInput) => mutate<{ id: number; data: AdminAlert[] }>('POST', '/alerts', a),
+	editAlert: (id: number, a: AlertInput) => mutate<{ data: AdminAlert[] }>('PUT', `/alerts/${id}`, a),
+	closeAlert: (id: number) => mutate<{ data: AdminAlert[] }>('POST', `/alerts/${id}/close`, {}),
 	statistics: () => getPrivate<Statistics>('/admin/statistics'),
 	audit: () => getPrivate<{ data: AuditEntry[] }>('/admin/audit?limit=200')
 };

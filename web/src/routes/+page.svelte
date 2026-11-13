@@ -2,8 +2,9 @@
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { replaceState } from '$app/navigation';
-	import { api, ApiError, type IntelItem, type Leak, type Page, type Reference, type Risk, type Stats } from '#lib/api.js';
+	import { api, ApiError, type Alert, type IntelItem, type Leak, type Page, type Reference, type Risk, type Stats } from '#lib/api.js';
 	import AboutModal from '#lib/components/AboutModal.svelte';
+	import AlertsPanel from '#lib/components/AlertsPanel.svelte';
 	import Banner from '#lib/components/Banner.svelte';
 	import ChangelogModal from '#lib/components/ChangelogModal.svelte';
 	import GrcTable from '#lib/components/GrcTable.svelte';
@@ -62,6 +63,39 @@
 	let editMode = $state(false);
 	let aboutOpen = $state(false);
 	let changelogOpen = $state(false);
+	let alerts = $state<Alert[]>([]);
+	let alertsOpen = $state(false);
+	let alertsFingerprint: string | null = null;
+
+	// The panel opens by itself when the alerts change, unless the visitor
+	// already closed this very set of alerts during the session.
+	const DISMISSED_KEY = 'noroshi.alerts.dismissed';
+	function dismissedFingerprint(): string | null {
+		try {
+			return sessionStorage.getItem(DISMISSED_KEY);
+		} catch {
+			return null;
+		}
+	}
+	function closeAlerts(): void {
+		alertsOpen = false;
+		try {
+			if (alertsFingerprint) sessionStorage.setItem(DISMISSED_KEY, alertsFingerprint);
+		} catch {
+			/* storage unavailable: the panel simply reopens next time */
+		}
+	}
+	async function refreshAlerts(fingerprint: string, active: number): Promise<void> {
+		if (fingerprint === alertsFingerprint) return;
+		alertsFingerprint = fingerprint;
+		try {
+			alerts = (await api.alerts()).data;
+		} catch {
+			return;
+		}
+		if (active > 0 && dismissedFingerprint() !== fingerprint) alertsOpen = true;
+		if (active === 0) alertsOpen = false;
+	}
 
 	const grcSelection = new Selection<Risk>();
 	const intelSelection = new Selection<IntelItem>();
@@ -159,6 +193,7 @@
 			const s = await api.stats();
 			live = true;
 			stats = s;
+			refreshAlerts(s.alerts.fingerprint, s.alerts.active);
 			if (initial) {
 				lastIntelId = s.intel.latest_id;
 				lastIntelAt = s.intel.latest_published_at;
@@ -354,12 +389,27 @@
 			<h3>Total</h3>
 			<p>{stats ? count(stats.risks.total + stats.intel.total + stats.leaks.total) : '-'}</p>
 		</div>
+		<button
+			class="stat-card alerts"
+			class:has-alerts={(stats?.alerts.active ?? 0) > 0}
+			class:has-critical={(stats?.alerts.critical ?? 0) > 0}
+			aria-expanded={alertsOpen}
+			onclick={() => (alertsOpen ? closeAlerts() : (alertsOpen = true))}
+			title="Afficher les alertes en cours"
+		>
+			<h3>🚨 Alertes</h3>
+			<p>{count(stats?.alerts.active)}</p>
+		</button>
 		<div class="stat-card grc"><h3>GRC</h3><p>{count(stats?.risks.total)}</p></div>
 		<div class="stat-card cyber"><h3>Vulnérabilités</h3><p>{count(stats?.intel.vulnerabilities)}</p></div>
 		<div class="stat-card threats"><h3>Menaces</h3><p>{count(stats?.intel.threats)}</p></div>
 		<div class="stat-card leaks"><h3>Data Leaks</h3><p>{count(stats?.leaks.total)}</p></div>
 		<div class="stat-card updated"><h3>Dernier update</h3><p class="date">{dateAndTime(stats?.last_update)}</p></div>
 	</section>
+
+	{#if alertsOpen}
+		<AlertsPanel {alerts} onclose={closeAlerts} />
+	{/if}
 
 	{#if editMode && view.mode === 'grc'}
 		<div class="edit-banner no-print">
@@ -556,7 +606,7 @@
 	}
 	.dashboard {
 		display: grid;
-		grid-template-columns: repeat(6, 1fr);
+		grid-template-columns: repeat(7, 1fr);
 		gap: 15px;
 		margin-bottom: 25px;
 	}
@@ -575,6 +625,33 @@
 	}
 	.stat-card.threats {
 		border-top-color: var(--threats);
+	}
+	button.stat-card {
+		text-align: left;
+		font: inherit;
+		color: inherit;
+		border: none;
+		border-top: 4px solid #94a3b8;
+		cursor: pointer;
+	}
+	button.stat-card:hover {
+		box-shadow: var(--shadow-md, 0 4px 12px rgba(15, 23, 42, 0.12));
+	}
+	.mode-grc .stat-card.alerts,
+	.mode-cyber .stat-card.alerts,
+	.mode-threats .stat-card.alerts,
+	.mode-leaks .stat-card.alerts {
+		border-top-color: #94a3b8;
+	}
+	.app .stat-card.alerts.has-alerts {
+		border-top-color: #ea580c;
+	}
+	.app .stat-card.alerts.has-critical {
+		border-top-color: #dc2626;
+		background: #fef2f2;
+	}
+	.stat-card.has-critical p {
+		color: #dc2626;
 	}
 	.stat-card.updated {
 		border-top-color: var(--ok);
@@ -634,7 +711,6 @@
 		.dashboard {
 			grid-template-columns: repeat(2, 1fr);
 		}
-		.stat-card.total,
 		.stat-card.updated {
 			grid-column: span 2;
 		}

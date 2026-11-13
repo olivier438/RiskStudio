@@ -42,7 +42,11 @@ final class StatsRepository
             'SELECT COUNT(*) AS total, MAX(id) AS latest_id, MAX(updated_at) AS updated_at FROM v_public_leaks'
         )->fetch();
 
-        $updated = array_filter([$risks['updated_at'], $intel['updated_at'], $leaks['updated_at']]);
+        $alerts = $this->pdo->query(
+            "SELECT COUNT(*) AS active, SUM(level = 'critical') AS critical, MAX(updated_at) AS updated_at FROM v_public_alerts"
+        )->fetch();
+
+        $updated = array_filter([$risks['updated_at'], $intel['updated_at'], $leaks['updated_at'], $alerts['updated_at']]);
 
         return [
             'risks' => ['total' => (int) $risks['total']],
@@ -58,6 +62,12 @@ final class StatsRepository
             'leaks' => [
                 'total' => (int) $leaks['total'],
                 'latest_id' => $leaks['latest_id'] === null ? null : (int) $leaks['latest_id'],
+            ],
+            'alerts' => [
+                'active' => (int) $alerts['active'],
+                'critical' => (int) $alerts['critical'],
+                // Changes whenever an alert is added, edited or ends: the page reloads them.
+                'fingerprint' => $alerts['active'] . '|' . ($alerts['updated_at'] ?? ''),
             ],
             'last_update' => $updated === [] ? null : Dates::iso(max($updated)),
         ];

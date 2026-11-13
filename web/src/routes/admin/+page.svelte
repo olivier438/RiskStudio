@@ -8,11 +8,13 @@
 	import QueueTab from '#lib/admin/QueueTab.svelte';
 	import RisksTab from '#lib/admin/RisksTab.svelte';
 	import SourcesTab from '#lib/admin/SourcesTab.svelte';
+	import AlertsTab from '#lib/admin/AlertsTab.svelte';
 	import StatsTab from '#lib/admin/StatsTab.svelte';
 
-	type Tab = 'queue' | 'risks' | 'sources' | 'stats' | 'audit' | 'cra';
+	type Tab = 'queue' | 'alerts' | 'risks' | 'sources' | 'stats' | 'audit' | 'cra';
 	const TABS: { id: Tab; label: string }[] = [
 		{ id: 'queue', label: '📥 À valider' },
+		{ id: 'alerts', label: '🚨 Alertes' },
 		{ id: 'risks', label: '📋 Risques' },
 		{ id: 'sources', label: '📡 Sources' },
 		{ id: 'stats', label: '📊 Statistiques' },
@@ -84,6 +86,8 @@
 		<main class="content">
 			{#if tab === 'queue'}
 				<QueueTab {categoryName} {sectorName} oncounts={(c) => (counts = c)} />
+			{:else if tab === 'alerts'}
+				<AlertsTab />
 			{:else if tab === 'risks' && reference}
 				<RisksTab {reference} />
 			{:else if tab === 'sources'}
