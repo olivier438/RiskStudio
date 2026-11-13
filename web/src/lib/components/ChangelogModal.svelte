@@ -5,6 +5,14 @@
 </script>
 
 <Modal bind:open title="📋 Changelog">
+	<h3>v5.2 : Vulnérabilités et Menaces <span class="date">Novembre 2026</span></h3>
+	<p>
+		La vue Cyberrisques portait mal son nom : elle devient <strong>Vulnérabilités</strong> (CVE, avis de
+		sécurité). Nouvelle vue <strong>Menaces</strong> : incidents et campagnes, avec le pays, le secteur visé,
+		l'environnement IT ou OT et les risques du catalogue concernés. Sources : CCB (Belgique), CERT-FR et
+		ZATAZ, classées par des règles traçables.
+	</p>
+
 	<h3>v5.1 : fuites françaises et gravité <span class="date">Novembre 2026</span></h3>
 	<p>
 		Nouvelle source <strong>Bonjour la fuite</strong> : les fuites touchant des organisations françaises, presque au

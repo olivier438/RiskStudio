@@ -11,6 +11,7 @@
 	--it-color: #3b82f6;
 	--cyber: #dc2626;
 	--leaks: #7c3aed;
+	--threats: #ea580c;
 	--ok: #10b981;
 	--excel: #107c10;
 	--bg: #f8fafc;
@@ -520,6 +521,9 @@ body {
 }
 .mode-leaks {
 	--row-accent: var(--leaks);
+}
+.mode-threats {
+	--row-accent: var(--threats);
 }
 .risk-table tbody tr.row-fold.unfolded td {
 	background: #f8fafc;

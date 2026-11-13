@@ -10,6 +10,7 @@
 	import IntelTable from '#lib/components/IntelTable.svelte';
 	import LeakTable from '#lib/components/LeakTable.svelte';
 	import Pagination from '#lib/components/Pagination.svelte';
+	import ThreatTable from '#lib/components/ThreatTable.svelte';
 	import PrintSheet from '#lib/components/PrintSheet.svelte';
 	import Toolbar from '#lib/components/Toolbar.svelte';
 	import { download, exportName, toCsv } from '#lib/export.js';
@@ -18,9 +19,11 @@
 		emptyCyber,
 		emptyGrc,
 		emptyLeaks,
+		emptyThreats,
 		fromUrl,
 		grcQuery,
 		leakQuery,
+		threatQuery,
 		toSearch,
 		type Mode,
 		type ViewState
@@ -34,15 +37,24 @@
 
 	const MODES: { id: Mode; label: string; title: string }[] = [
 		{ id: 'grc', label: '🛡️ GRC', title: 'Catalogue GRC' },
-		{ id: 'cyber', label: '⚡ Cyberrisques', title: 'Cyberrisques' },
+		{ id: 'cyber', label: '🧩 Vulnérabilités', title: 'Vulnérabilités' },
+		{ id: 'threats', label: '⚡ Menaces', title: 'Menaces' },
 		{ id: 'leaks', label: '💧 Data Leaks', title: 'Data Leaks' }
 	];
 
-	let view = $state<ViewState>({ mode: 'grc', page: 1, grc: emptyGrc(), cyber: emptyCyber(), leaks: emptyLeaks() });
+	let view = $state<ViewState>({
+		mode: 'grc',
+		page: 1,
+		grc: emptyGrc(),
+		cyber: emptyCyber(),
+		threats: emptyThreats(),
+		leaks: emptyLeaks()
+	});
 	let reference = $state<Reference | null>(null);
 	let stats = $state<Stats | null>(null);
 	let risks = $state<Page<Risk> | null>(null);
 	let intel = $state<Page<IntelItem> | null>(null);
+	let threats = $state<Page<IntelItem> | null>(null);
 	let leaks = $state<Page<Leak> | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
@@ -53,13 +65,14 @@
 
 	const grcSelection = new Selection<Risk>();
 	const intelSelection = new Selection<IntelItem>();
+	const threatSelection = new Selection<IntelItem>();
 	const leakSelection = new Selection<Leak>();
 	const edits = new SvelteMap<string, RiskEdits>();
 
 	const selectedCount = $derived(
-		view.mode === 'grc' ? grcSelection.size : view.mode === 'cyber' ? intelSelection.size : leakSelection.size
+		{ grc: grcSelection, cyber: intelSelection, threats: threatSelection, leaks: leakSelection }[view.mode].size
 	);
-	const current = $derived(view.mode === 'grc' ? risks : view.mode === 'cyber' ? intel : leaks);
+	const current = $derived({ grc: risks, cyber: intel, threats, leaks }[view.mode]);
 	const modeTitle = $derived(MODES.find((m) => m.id === view.mode)?.title ?? '');
 
 	const sectorName = (code: string) => reference?.sectors.find((s) => s.code === code)?.name_fr ?? code;
@@ -78,6 +91,7 @@
 		try {
 			if (view.mode === 'grc') risks = await api.risks(grcQuery(view.grc, view.page, PER_PAGE), f);
 			else if (view.mode === 'cyber') intel = await api.intel(cyberQuery(view.cyber, view.page, PER_PAGE), f);
+			else if (view.mode === 'threats') threats = await api.intel(threatQuery(view.threats, view.page, PER_PAGE), f);
 			else leaks = await api.leaks(leakQuery(view.leaks, view.page, PER_PAGE), f);
 			error = null;
 		} catch (e) {
@@ -104,6 +118,7 @@
 	function resetFilters(): void {
 		if (view.mode === 'grc') view.grc = emptyGrc();
 		else if (view.mode === 'cyber') view.cyber = emptyCyber();
+		else if (view.mode === 'threats') view.threats = emptyThreats();
 		else view.leaks = emptyLeaks();
 		filtersChanged(false);
 	}
@@ -121,7 +136,7 @@
 		view.page = 1;
 		syncUrl();
 		// Clicking is a user gesture: the only moment browsers allow asking.
-		if (mode === 'cyber') requestNotifications();
+		if (mode === 'cyber' || mode === 'threats') requestNotifications();
 		load();
 	}
 
@@ -155,7 +170,7 @@
 				lastIntelId = s.intel.latest_id;
 				lastIntelAt = s.intel.latest_published_at;
 				announce(fresh.data);
-				if (view.mode === 'cyber' && view.page === 1) load();
+				if ((view.mode === 'cyber' || view.mode === 'threats') && view.page === 1) load();
 			}
 			if (s.leaks.latest_id !== null && s.leaks.latest_id !== lastLeakId) {
 				lastLeakId = s.leaks.latest_id;
@@ -229,9 +244,21 @@
 					})
 				)
 			);
+		} else if (view.mode === 'threats') {
+			download(
+				exportName('menaces'),
+				toCsv(
+					['Publication', 'Type', 'Titre', 'Résumé', 'Source', 'Gravité', 'Environnement', 'Pays', 'Secteurs', 'Catégories', 'Risques liés', 'URL', 'Règles appliquées'],
+					threatSelection.values().map((i) => [
+						i.source_published_at ?? i.published_at, i.type, i.title, i.summary, i.source.name, i.severity, i.environment,
+						i.countries.join(', '), i.sectors.map(sectorName).join(', '), i.categories.map(categoryName).join(', '),
+						i.risks.map((k) => k.code).join(', '), i.url, i.rule_trace?.rules?.join(' | ')
+					])
+				)
+			);
 		} else if (view.mode === 'cyber') {
 			download(
-				exportName('veille'),
+				exportName('vulnerabilites'),
 				toCsv(
 					['Identifiant', 'Publication', 'Titre', 'Source', 'Type', 'Critique', 'Sévérité', 'Score', 'CVE', 'CVSS', 'EPSS', 'KEV', 'Échéance KEV', 'Produits', 'Catégories', 'Risques liés', 'URL', 'Règles appliquées'],
 					intelSelection.values().map((i) => [
@@ -258,7 +285,7 @@
 </script>
 
 <svelte:head>
-	<title>NOROSHI | {view.mode === 'grc' ? 'Catalogue GRC' : view.mode === 'cyber' ? 'Cyberrisques' : 'Data Leaks'}</title>
+	<title>NOROSHI | {modeTitle}</title>
 	<meta
 		name="description"
 		content="Catalogue de risques GRC et veille cyber sans IA, mappés sur ISO 27001, NIS2, DORA, CRA, CyFun et NIST CSF."
@@ -279,7 +306,7 @@
 			<div>
 				<h2 class="view-title">
 					{modeTitle}
-					{#if stats && stats.intel.critical_recent > 0}
+					{#if stats && stats.intel.critical_recent > 0 && view.mode !== 'threats'}
 						<button
 							class="critical-badge"
 							onclick={() => switchMode('cyber')}
@@ -306,6 +333,7 @@
 						class="mode-btn"
 						class:active-grc={view.mode === 'grc' && m.id === 'grc'}
 						class:active-cyber={view.mode === 'cyber' && m.id === 'cyber'}
+						class:active-threats={view.mode === 'threats' && m.id === 'threats'}
 						class:active-leaks={view.mode === 'leaks' && m.id === 'leaks'}
 						role="tab"
 						aria-selected={view.mode === m.id}
@@ -327,7 +355,8 @@
 			<p>{stats ? count(stats.risks.total + stats.intel.total + stats.leaks.total) : '-'}</p>
 		</div>
 		<div class="stat-card grc"><h3>GRC</h3><p>{count(stats?.risks.total)}</p></div>
-		<div class="stat-card cyber"><h3>Cyber</h3><p>{count(stats?.intel.total)}</p></div>
+		<div class="stat-card cyber"><h3>Vulnérabilités</h3><p>{count(stats?.intel.vulnerabilities)}</p></div>
+		<div class="stat-card threats"><h3>Menaces</h3><p>{count(stats?.intel.threats)}</p></div>
 		<div class="stat-card leaks"><h3>Data Leaks</h3><p>{count(stats?.leaks.total)}</p></div>
 		<div class="stat-card updated"><h3>Dernier update</h3><p class="date">{dateAndTime(stats?.last_update)}</p></div>
 	</section>
@@ -345,6 +374,7 @@
 			{reference}
 			bind:grc={view.grc}
 			bind:cyber={view.cyber}
+			bind:threats={view.threats}
 			bind:leaks={view.leaks}
 			onchange={filtersChanged}
 			onreset={resetFilters}
@@ -359,7 +389,8 @@
 		{:else if current.data.length === 0}
 			<div class="no-results">
 				{#if view.mode === 'grc'}🔍 Aucun risque ne correspond à vos critères.
-				{:else if view.mode === 'cyber'}🔍 Aucune alerte ne correspond à vos critères.
+				{:else if view.mode === 'cyber'}🔍 Aucune vulnérabilité ne correspond à vos critères.
+				{:else if view.mode === 'threats'}🔍 Aucune menace ne correspond à vos critères.
 				{:else}🔍 Aucune fuite ne correspond à vos critères.{/if}
 			</div>
 		{:else}
@@ -368,6 +399,8 @@
 					<GrcTable items={risks.data} selection={grcSelection} {sectorName} {editMode} {edits} />
 				{:else if view.mode === 'cyber' && intel}
 					<IntelTable items={intel.data} selection={intelSelection} {categoryName} onrisk={openRisk} />
+				{:else if view.mode === 'threats' && threats}
+					<ThreatTable items={threats.data} selection={threatSelection} {categoryName} {sectorName} onrisk={openRisk} />
 				{:else if view.mode === 'leaks' && leaks}
 					<LeakTable items={leaks.data} selection={leakSelection} {sectorName} />
 				{/if}
@@ -385,7 +418,7 @@
 	<PrintSheet
 		mode={view.mode}
 		risks={grcSelection.values()}
-		intel={intelSelection.values()}
+		intel={view.mode === 'threats' ? threatSelection.values() : intelSelection.values()}
 		leaks={leakSelection.values()}
 		{edits}
 	/>
@@ -431,6 +464,9 @@
 	}
 	.mode-leaks .view-title {
 		color: var(--leaks);
+	}
+	.mode-threats .view-title {
+		color: var(--threats);
 	}
 	.critical-badge {
 		font-size: 11px;
@@ -508,6 +544,11 @@
 		color: white;
 		box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
 	}
+	.mode-btn.active-threats {
+		background: var(--threats);
+		color: white;
+		box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+	}
 	.mode-btn.active-leaks {
 		background: var(--leaks);
 		color: white;
@@ -515,7 +556,7 @@
 	}
 	.dashboard {
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		grid-template-columns: repeat(6, 1fr);
 		gap: 15px;
 		margin-bottom: 25px;
 	}
@@ -532,6 +573,9 @@
 	.stat-card.leaks {
 		border-top-color: var(--leaks);
 	}
+	.stat-card.threats {
+		border-top-color: var(--threats);
+	}
 	.stat-card.updated {
 		border-top-color: var(--ok);
 	}
@@ -540,6 +584,9 @@
 	}
 	.mode-leaks .stat-card {
 		border-top-color: var(--leaks);
+	}
+	.mode-threats .stat-card {
+		border-top-color: var(--threats);
 	}
 	.stat-card h3 {
 		margin: 0;
@@ -569,10 +616,25 @@
 		opacity: 0.6;
 		transition: opacity 0.2s;
 	}
+	@media (max-width: 600px) {
+		.actions,
+		.mode-toggle {
+			width: 100%;
+		}
+		/* Four views do not fit on one line of a phone: two by two. */
+		.mode-toggle {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+		}
+		.mode-btn {
+			padding: 8px 6px;
+		}
+	}
 	@media (max-width: 900px) {
 		.dashboard {
 			grid-template-columns: repeat(2, 1fr);
 		}
+		.stat-card.total,
 		.stat-card.updated {
 			grid-column: span 2;
 		}

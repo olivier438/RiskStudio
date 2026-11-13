@@ -51,7 +51,7 @@ export interface IntelItem {
 	id: number;
 	source: Source;
 	external_id: string;
-	type: 'vulnerability' | 'advisory' | 'exploitation' | 'campaign';
+	type: 'vulnerability' | 'advisory' | 'exploitation' | 'campaign' | 'incident';
 	title: string;
 	summary: string | null;
 	url: string | null;
@@ -68,6 +68,8 @@ export interface IntelItem {
 	products: { vendor: string; product: string; environment: string }[];
 	categories: string[];
 	sectors: string[];
+	/** Countries concerned (threats only). */
+	countries: string[];
 	/** Catalogue risks this item materialises. */
 	risks: { code: string; title: string; rule: string }[];
 	/** Rules that classified the item: the "why", no AI involved. */
@@ -102,6 +104,8 @@ export interface Stats {
 	risks: { total: number };
 	intel: {
 		total: number;
+		vulnerabilities: number;
+		threats: number;
 		critical_recent: number;
 		critical_window_days: number;
 		latest_id: number | null;
@@ -120,6 +124,7 @@ export interface FeedQuery {
 	category?: string;
 	sector?: string;
 	type?: Leak['type'];
+	kind?: 'vulnerability' | 'threat';
 	country?: string;
 	since?: string;
 	page?: number;

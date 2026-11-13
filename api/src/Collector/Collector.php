@@ -6,12 +6,14 @@ namespace RiskStudio\Collector;
 
 use PDO;
 use RiskStudio\Collector\Source\BonjourLaFuite;
+use RiskStudio\Collector\Source\Ccb;
 use RiskStudio\Collector\Source\CertFr;
 use RiskStudio\Collector\Source\CisaKev;
 use RiskStudio\Collector\Source\Euvd;
 use RiskStudio\Collector\Source\Hibp;
 use RiskStudio\Collector\Source\RansomwareLive;
 use RiskStudio\Collector\Source\Source;
+use RiskStudio\Collector\Source\Zataz;
 
 /**
  * One collector run, started by a scheduled task (every 15 minutes):
@@ -92,6 +94,8 @@ final class Collector
             'HIBP' => new Hibp(),
             'RANSOMWARE_LIVE' => new RansomwareLive($leakCountries),
             BonjourLaFuite::CODE => new BonjourLaFuite(),
+            Ccb::CODE => new Ccb(),
+            Zataz::CODE => new Zataz(),
             default => null,
         };
     }

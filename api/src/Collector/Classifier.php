@@ -17,6 +17,8 @@ namespace RiskStudio\Collector;
 final class Classifier
 {
     private const SEVERITY_BASE = ['critical' => 54, 'high' => 42, 'medium' => 30, 'low' => 12];
+    /** Item types shown as threats (the others are vulnerabilities). */
+    public const THREAT_TYPES = ['campaign', 'incident'];
 
     public function __construct(private readonly Rules $rules)
     {
@@ -114,7 +116,40 @@ final class Classifier
             $sectors = [...$sectors, ...$e['sectors']];
             $trace[] = "{$e['kind']}." . str_replace(' ', '_', $e['pattern']) . "->{$e['environment']}";
         }
+        // ---- context from the text (db/rules/threat_context.csv): the OT environment
+        // for every item, country, sector and severity for threats only
+        $countries = $f->countries;
+        $threat = in_array($f->type, self::THREAT_TYPES, true);
+        $plain = Rules::normalise($f->title . ' ' . ($f->summary ?? ''));
+        foreach ($this->rules->threatContext as $t) {
+            if ($t['kind'] === 'environment' && Rules::matches($plain, $t['pattern']) && $environment === 'IT') {
+                $environment = $t['value'];
+                $trace[] = 'context.' . str_replace(' ', '_', $t['pattern']) . "->{$t['value']}";
+            }
+        }
+        if ($threat) {
+            foreach ($this->rules->threatContext as $t) {
+                if ($t['kind'] === 'environment' || !Rules::matches($plain, $t['pattern'])) {
+                    continue;
+                }
+                $rule = 'threat.' . str_replace(' ', '_', $t['pattern']) . "->{$t['value']}";
+                $applied = match ($t['kind']) {
+                    'country' => !in_array($t['value'], $countries, true) && ($countries[] = $t['value']),
+                    'sector' => !in_array($t['value'], $sectors, true) && ($sectors[] = $t['value']),
+                    'severity' => self::rank($t['value']) > self::rank($severity ?? '') && ($severity = $t['value']) !== null,
+                    default => false,
+                };
+                if ($applied) {
+                    $trace[] = $rule;
+                }
+            }
+            if ($f->cvss === null) {
+                $parts['base'] = (float) (self::SEVERITY_BASE[$severity ?? 'medium'] ?? 30);
+                $score = (int) min(100, round(array_sum($parts)));
+            }
+        }
         $sectors = array_values(array_unique($sectors));
+        $countries = array_values(array_unique(array_filter($countries, static fn ($c): bool => is_string($c) && preg_match('/^[A-Z]{2}$/', $c) === 1)));
         if ($environment !== 'IT' && !in_array('OT', $categories, true)) {
             $categories[] = 'OT';
         }
@@ -145,6 +180,7 @@ final class Classifier
             'environment' => $environment,
             'categories' => $categories,
             'sectors' => $sectors,
+            'countries' => $countries,
             'risks' => array_values($risks),
             'trace' => ['rules' => array_values(array_unique($trace)), 'score' => $parts, 'rules_version' => $this->rules->version],
         ];

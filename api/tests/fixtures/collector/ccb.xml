@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>CCB Advisories</title>
+    <link>https://ccb.belgium.be/advisories</link>
+    <item>
+      <title>Warning: Critical authentication bypass in Exemple Gateway, Patch Immediately!</title>
+      <link>https://ccb.belgium.be/advisories/warning-critical-authentication-bypass-exemple-gateway</link>
+      <description>CCB Advisories</description>
+      <pubDate>Mon, 12 Jan 2099 16:59:30 +0100</pubDate>
+    </item>
+    <item>
+      <title>Warning: Multiple Belgian organisations compromised through SMS sign-in</title>
+      <link>https://ccb.belgium.be/advisories/warning-multiple-belgian-organisations-compromised-sms</link>
+      <description>CCB Advisories</description>
+      <pubDate>Sun, 11 Jan 2099 15:02:07 +0100</pubDate>
+    </item>
+    <item>
+      <title>Warning: Security incidents across Europe targeting remote controllers of refrigeration installations</title>
+      <link>https://ccb.belgium.be/advisories/warning-security-incidents-refrigeration</link>
+      <description>CCB Advisories</description>
+      <pubDate>Sat, 10 Jan 2099 17:00:15 +0100</pubDate>
+    </item>
+    <item>
+      <title>Warning: Old advisory</title>
+      <link>https://ccb.belgium.be/advisories/old</link>
+      <pubDate>Wed, 01 Jan 2098 10:00:00 +0100</pubDate>
+    </item>
+  </channel>
+</rss>

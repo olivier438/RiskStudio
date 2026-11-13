@@ -19,7 +19,12 @@ Classification is a pure function of the stored facts and of these files: the sa
 | `environment.csv` | Vendor or product (whole word, case insensitive) → `OT` or `BOTH`, plus sectors. The CERT-FR `scada` flag always gives `OT`. |
 | `risk_links.csv` | Condition → catalogue risk. Conditions: `kev`, `kev_ransomware`, `env` (`OT` matches OT and BOTH), `cwe`, `product` (whole word in vendor + product), `text` (whole word in title + summary). |
 | `ransomware_sectors.csv` | ransomware.live `activity` → sector. |
+| `threat_context.csv` | Text (whole word) → `environment` (OT, every item), `country`, `sector`, `severity` (threats only: campaigns and incidents). Severity only raises. |
 | `leak_data.csv` | Exposed data class (whole word, French or English wording) → leak severity. For each class the longest matching pattern decides (`carte de fidélité` beats `numéro de carte`), then the most serious class wins. |
+
+## Views
+
+Item types `vulnerability`, `advisory` and `exploitation` are shown in **Vulnérabilités**; `campaign` and `incident` in **Menaces** (`kind` filter of `/v1/intel`).
 
 ## Severity
 
@@ -59,7 +64,8 @@ Capped at 100. The detail of each component is stored in `rule_trace.score`.
 | CERT-FR | Alerts, advisories, CTI reports (news skipped) | Direct (authoritative) |
 | Have I Been Pwned | Verified breaches (sensitive, spam, fabricated excluded) | Direct (authoritative) |
 | ransomware.live | Ransomware claims, filtered by country | Pending review (claims are unverified). Answers 404 to the production hosting: disabled there |
+| CCB | Belgian warnings: vulnerability advisories (Vulnérabilités view) and incidents (Menaces view, country BE) | Direct (authoritative) |
+| ZATAZ | French press: incidents and claims, attack categories only | Pending review |
 | Bonjour la fuite | Leaks affecting French organisations (RSS, about ten latest entries) | Direct when confirmed (🟢), pending review when claimed (🟠 🔴) |
-| CCB | Belgian advisories | Disabled: the site rejects data-centre requests, to test from the production hosting |
 
 The same CVE reported by several vulnerability feeds is merged into one item; a pending item becomes published when an authoritative source confirms it. A rejected item is never republished. Enrichment: FIRST EPSS for every CVE, NVD for CVSS, CWE and product (5 lookups per run without key, completed over the next runs).

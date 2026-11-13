@@ -32,6 +32,7 @@ GRANT SELECT ON `__DB__`.v_public_intel_products   TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.v_public_intel_categories TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.v_public_intel_sectors    TO 'rs_read'@'localhost';
 GRANT SELECT ON `__DB__`.v_public_intel_risks      TO 'rs_read'@'localhost';
+GRANT SELECT ON `__DB__`.v_public_intel_countries  TO 'rs_read'@'localhost';
 GRANT INSERT (kind, payload, submitter_name, submitter_email, client_fingerprint)
   ON `__DB__`.proposals TO 'rs_read'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON `__DB__`.rate_limits TO 'rs_read'@'localhost';

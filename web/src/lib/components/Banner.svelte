@@ -37,6 +37,9 @@
 	.banner.mode-cyber {
 		border-bottom-color: var(--cyber);
 	}
+	.banner.mode-threats {
+		border-bottom-color: var(--threats);
+	}
 	.banner.mode-leaks {
 		border-bottom-color: var(--leaks);
 	}

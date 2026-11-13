@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { Reference } from '#lib/api.js';
-	import type { CyberFilters, GrcFilters, LeakFilters, Mode } from '#lib/filters.js';
+	import type { CyberFilters, GrcFilters, LeakFilters, Mode, ThreatFilters } from '#lib/filters.js';
 
 	let {
 		mode,
 		reference,
 		grc = $bindable(),
 		cyber = $bindable(),
+		threats = $bindable(),
 		leaks = $bindable(),
 		onchange,
 		onreset
@@ -15,6 +16,7 @@
 		reference: Reference;
 		grc: GrcFilters;
 		cyber: CyberFilters;
+		threats: ThreatFilters;
 		leaks: LeakFilters;
 		/** Called after any change; `debounce` is true while typing in the search box. */
 		onchange: (debounce: boolean) => void;
@@ -24,6 +26,7 @@
 	const PLACEHOLDER: Record<Mode, string> = {
 		grc: '🔍 Chercher par mot-clé, menace, code de risque...',
 		cyber: '🔍 Chercher par mot-clé, CVE, éditeur, produit...',
+		threats: '🔍 Chercher par mot-clé, groupe, organisation...',
 		leaks: '🔍 Chercher par organisation ou groupe...'
 	};
 
@@ -120,6 +123,43 @@
 			{#each reference.categories as c (c.code)}<option value={c.code}>{c.name_fr}</option>{/each}
 		</select>
 		<select bind:value={cyber.source} onchange={changed} aria-label="Source">
+			<option value="">Toutes les sources</option>
+			{#each reference.sources as s (s.code)}<option value={s.code}>{s.name}</option>{/each}
+		</select>
+	{:else if mode === 'threats'}
+		<input
+			class="search-input"
+			type="search"
+			placeholder={PLACEHOLDER.threats}
+			aria-label="Recherche"
+			maxlength="120"
+			bind:value={threats.q}
+			oninput={() => onchange(true)}
+		/>
+		<select bind:value={threats.country} onchange={changed} aria-label="Pays">
+			<option value="">Tous les pays</option>
+			{#each LEAK_COUNTRIES as c (c)}<option value={c}>{c}</option>{/each}
+		</select>
+		<select bind:value={threats.env} onchange={changed} aria-label="Environnement">
+			<option value="">Tous les environnements</option>
+			<option value="IT">💻 Environnement IT</option>
+			<option value="OT">⚙️ Environnement OT</option>
+		</select>
+		<select bind:value={threats.severity_min} onchange={changed} aria-label="Gravité minimum">
+			<option value="">Toutes les gravités</option>
+			<option value="critical">Critique</option>
+			<option value="high">Élevée et plus</option>
+			<option value="medium">Moyenne et plus</option>
+		</select>
+		<select bind:value={threats.sector} onchange={changed} aria-label="Secteur">
+			<option value="">Tous les secteurs</option>
+			{#each reference.sectors as s (s.code)}<option value={s.code}>{s.name_fr}</option>{/each}
+		</select>
+		<select bind:value={threats.category} onchange={changed} aria-label="Catégorie">
+			<option value="">Toutes les catégories</option>
+			{#each reference.categories as c (c.code)}<option value={c.code}>{c.name_fr}</option>{/each}
+		</select>
+		<select bind:value={threats.source} onchange={changed} aria-label="Source">
 			<option value="">Toutes les sources</option>
 			{#each reference.sources as s (s.code)}<option value={s.code}>{s.name}</option>{/each}
 		</select>

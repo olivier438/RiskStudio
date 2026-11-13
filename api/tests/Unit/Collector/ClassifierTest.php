@@ -137,4 +137,33 @@ final class ClassifierTest extends TestCase
             self::assertContains($rule['severity'], ['low', 'medium', 'high', 'critical'], $rule['pattern']);
         }
     }
+
+    public function testThreatContextFromText(): void
+    {
+        $fridges = new Facts('z-1', 'incident', 'Cyberattaque des frigos', summary: 'Des supermarchés en Belgique ont été compromis.', sources: ['ZATAZ']);
+        $c = self::$classifier->classify($fridges);
+
+        self::assertSame(['BE'], $c['countries']);
+        self::assertContains('FOOD', $c['sectors']);
+        self::assertSame('OT', $c['environment']);
+        self::assertSame('high', $c['severity'], '"compromis" raises the severity');
+        self::assertSame(42, (int) $c['trace']['score']['base'], 'the score follows the raised severity');
+        self::assertContains('threat.belgique->BE', $c['trace']['rules']);
+        self::assertContains('R-OT-04', array_column($c['risks'], 'code'));
+
+        $phishing = self::$classifier->classify(new Facts('z-2', 'campaign', 'Campagne de phishing visant des hôpitaux français'));
+        self::assertSame(['FR'], $phishing['countries']);
+        self::assertSame(['HEALTH'], $phishing['sectors']);
+        self::assertContains('R-RH-01', array_column($phishing['risks'], 'code'));
+    }
+
+    public function testOnlyTheEnvironmentRuleAppliesToVulnerabilities(): void
+    {
+        $c = self::$classifier->classify(new Facts('CVE-2099-1', 'advisory', 'Vulnérabilité compromis dans un automate utilisé en Belgique'));
+
+        self::assertSame([], $c['countries'], 'no country for a vulnerability');
+        self::assertNull($c['severity'], 'no severity raise for a vulnerability');
+        self::assertSame('OT', $c['environment'], 'an industrial product is OT whatever the item type');
+        self::assertContains('context.automate->OT', $c['trace']['rules']);
+    }
 }

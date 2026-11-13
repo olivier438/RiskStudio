@@ -11,6 +11,8 @@ final class IntelRepository
 {
     /** An item is "critical" when it is known to be exploited or rated critical. */
     public const CRITICAL_SQL = "(i.kev = 1 OR i.severity = 'critical')";
+    /** Threats view: campaigns and incidents (Classifier::THREAT_TYPES). The rest are vulnerabilities. */
+    public const THREAT_SQL = "i.item_type IN ('campaign', 'incident')";
 
     public function __construct(private readonly PDO $pdo)
     {
@@ -84,6 +86,13 @@ final class IntelRepository
                        OR NOT EXISTS (SELECT 1 FROM v_public_intel_sectors s2 WHERE s2.item_id = i.id))';
             $params[] = $f->sector;
         }
+        if ($f->kind !== null) {
+            $sql[] = $f->kind === 'threat' ? self::THREAT_SQL : 'NOT ' . self::THREAT_SQL;
+        }
+        if ($f->country !== null) {
+            $sql[] = 'EXISTS (SELECT 1 FROM v_public_intel_countries c WHERE c.item_id = i.id AND c.country = ?)';
+            $params[] = $f->country;
+        }
         if ($f->since !== null) {
             $sql[] = 'i.published_at > ?';
             $params[] = $f->since;
@@ -120,8 +129,9 @@ final class IntelRepository
         $categories = $collect("SELECT item_id, category_code FROM v_public_intel_categories WHERE item_id IN ({$in})");
         $sectors = $collect("SELECT item_id, sector_code FROM v_public_intel_sectors WHERE item_id IN ({$in})");
         $risks = $collect("SELECT item_id, risk_code, risk_title, rule FROM v_public_intel_risks WHERE item_id IN ({$in}) ORDER BY risk_code");
+        $countries = $collect("SELECT item_id, country FROM v_public_intel_countries WHERE item_id IN ({$in}) ORDER BY country");
 
-        return array_map(static function (array $r) use ($cves, $products, $categories, $sectors, $risks): array {
+        return array_map(static function (array $r) use ($cves, $products, $categories, $sectors, $risks, $countries): array {
             $id = (int) $r['id'];
             $trace = $r['rule_trace'] === null ? null : json_decode((string) $r['rule_trace'], true);
 
@@ -151,6 +161,7 @@ final class IntelRepository
                 ),
                 'categories' => array_column($categories[$id] ?? [], 'category_code'),
                 'sectors' => array_column($sectors[$id] ?? [], 'sector_code'),
+                'countries' => array_column($countries[$id] ?? [], 'country'),
                 'risks' => array_map(
                     static fn (array $k): array => ['code' => $k['risk_code'], 'title' => $k['risk_title'], 'rule' => $k['rule']],
                     $risks[$id] ?? [],

@@ -12,6 +12,8 @@ final class FeedFilter
 {
     public const SEVERITIES = ['low', 'medium', 'high', 'critical'];
     public const LEAK_TYPES = ['ransomware', 'breach', 'exposure'];
+    /** Intel families: one view each. */
+    public const KINDS = ['vulnerability', 'threat'];
 
     public function __construct(
         public readonly ?string $search = null,
@@ -24,6 +26,7 @@ final class FeedFilter
         public readonly ?string $leakType = null,
         public readonly ?string $country = null,
         public readonly ?string $since = null,
+        public readonly ?string $kind = null,
         public readonly int $page = 1,
         public readonly int $perPage = 50,
     ) {
@@ -54,6 +57,11 @@ final class FeedFilter
             throw HttpException::badRequest('type must be ransomware, breach or exposure.');
         }
 
+        $kind = $request->query('kind');
+        if ($kind !== null && !in_array($kind, self::KINDS, true)) {
+            throw HttpException::badRequest('kind must be vulnerability or threat.');
+        }
+
         $country = $request->query('country');
         if ($country !== null) {
             if (!preg_match('/^[A-Za-z]{2}$/', $country)) {
@@ -73,6 +81,7 @@ final class FeedFilter
             leakType: $leakType,
             country: $country,
             since: Dates::fromQuery($request->query('since'), 'since'),
+            kind: $kind,
             page: $request->queryInt('page', 1, 1, 10_000),
             perPage: $request->queryInt('per_page', 50, 1, 200),
         );

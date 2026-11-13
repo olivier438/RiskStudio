@@ -8,11 +8,13 @@ use PHPUnit\Framework\TestCase;
 use RiskStudio\Collector\Enricher;
 use RiskStudio\Collector\Facts;
 use RiskStudio\Collector\Source\BonjourLaFuite;
+use RiskStudio\Collector\Source\Ccb;
 use RiskStudio\Collector\Source\CertFr;
 use RiskStudio\Collector\Source\CisaKev;
 use RiskStudio\Collector\Source\Euvd;
 use RiskStudio\Collector\Source\Hibp;
 use RiskStudio\Collector\Source\RansomwareLive;
+use RiskStudio\Collector\Source\Zataz;
 
 /** Source parsers on frozen sample payloads: no network involved. */
 final class SourcesTest extends TestCase
@@ -166,6 +168,33 @@ final class SourcesTest extends TestCase
         $result = (new BonjourLaFuite())->parse($xml, [], self::since());
 
         self::assertStringNotContainsString('root:', json_encode(array_map(fn ($l) => $l->toArray(), $result['leaks'])));
+    }
+
+    public function testCcbTellsAdvisoriesFromIncidents(): void
+    {
+        $result = (new Ccb())->parse(self::fixture('ccb.xml'), [], self::since());
+
+        self::assertCount(3, $result['intel'], 'entries older than the window are skipped');
+        [$patch, $sms, $fridges] = $result['intel'];
+        self::assertSame(['advisory', 'incident', 'incident'], [$patch->type, $sms->type, $fridges->type]);
+        self::assertSame('Critical authentication bypass in Exemple Gateway, Patch Immediately!', $patch->title, '"Warning:" is dropped');
+        self::assertSame(['critical', 'high'], [$patch->severityHint, $sms->severityHint]);
+        self::assertSame([], $patch->countries);
+        self::assertSame(['BE'], $sms->countries, 'a CCB incident warning concerns Belgium');
+        self::assertSame('warning-multiple-belgian-organisations-compromised-sms', $sms->externalId);
+        self::assertSame('2099-01-12 15:59:30', $result['cursor']['pub_date']);
+    }
+
+    public function testZatazKeepsAttacksOnly(): void
+    {
+        $result = (new Zataz())->parse(self::fixture('zataz.xml'), [], self::since());
+
+        self::assertCount(1, $result['intel'], 'sanctions and links outside the site are skipped');
+        $item = $result['intel'][0];
+        self::assertSame('incident', $item->type);
+        self::assertSame('Cyberattaque des frigos d’une enseigne Exemple', $item->title);
+        self::assertStringStartsWith('Des supermarchés en Belgique', (string) $item->summary);
+        self::assertSame('cyberattaque-frigos-exemple', $item->externalId);
     }
 
     public function testNvdPrefersThePrimaryScoreAndReadsCweAndCpe(): void

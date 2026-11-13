@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>ZATAZ</title>
+    <link>https://www.zataz.com</link>
+    <item>
+      <title>Cyberattaque des frigos d&#8217;une enseigne Exemple</title>
+      <link>https://www.zataz.com/cyberattaque-frigos-exemple/</link>
+      <pubDate>Mon, 12 Jan 2099 16:28:21 +0000</pubDate>
+      <category><![CDATA[Actualités]]></category>
+      <category><![CDATA[Piratage]]></category>
+      <description><![CDATA[<p>Des supermarchés en Belgique et en France ont vu leurs installations frigorifiques compromis.</p>]]></description>
+    </item>
+    <item>
+      <title>La CNIL sanctionne une collectivité Exemple</title>
+      <link>https://www.zataz.com/cnil-sanction-exemple/</link>
+      <pubDate>Sun, 11 Jan 2099 21:50:33 +0000</pubDate>
+      <category><![CDATA[Justice]]></category>
+      <category><![CDATA[RGPD]]></category>
+      <description><![CDATA[Sanction RGPD.]]></description>
+    </item>
+    <item>
+      <title>Rebond vers un site externe</title>
+      <link>https://evil.example.org/zataz</link>
+      <pubDate>Sun, 11 Jan 2099 10:00:00 +0000</pubDate>
+      <category><![CDATA[Piratage]]></category>
+    </item>
+  </channel>
+</rss>

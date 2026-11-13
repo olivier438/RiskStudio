@@ -7,3 +7,12 @@ usurpation d'identité;IAM;
 atteinte à la confidentialité des données;DATA;
 atteinte à l'intégrité des données;DATA;
 déni de service;INFRA;
+rançongiciel;BCM;Threats: ransomware hits continuity first
+ransomware;BCM;
+hameçonnage;HR;
+phishing;HR;
+ingénierie sociale;HR;
+social engineering;HR;
+vol de données;DATA;
+fuite de données;DATA;
+data breach;DATA;

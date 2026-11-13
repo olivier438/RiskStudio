@@ -20,7 +20,8 @@
 
 	const TITLE: Record<Mode, string> = {
 		grc: 'Sélection de risques GRC',
-		cyber: 'Sélection d’alertes cyber',
+		cyber: 'Sélection de vulnérabilités',
+		threats: 'Sélection de menaces',
 		leaks: 'Sélection de fuites de données'
 	};
 
@@ -50,7 +51,7 @@
 				</p>
 			</article>
 		{/each}
-	{:else if mode === 'cyber'}
+	{:else if mode === 'cyber' || mode === 'threats'}
 		{#each intel as it (it.id)}
 			<article>
 				<h2>
@@ -60,6 +61,7 @@
 				{#if it.summary}<p>{it.summary}</p>{/if}
 				<p class="refs">
 					{it.cves.join(', ') || it.external_id}
+					{#if it.countries.length}· {it.countries.join(', ')}{/if}
 					{#if it.cvss}· CVSS {it.cvss.score}{/if}
 					{#if it.kev}· KEV{/if}
 					{#if it.risks.length}· Risques liés : {it.risks.map((k) => k.code).join(', ')}{/if}

@@ -31,3 +31,15 @@ product;secure access;R-ACC-01;Remote access entry point
 product;active directory;R-IAM-10;Directory compromise
 text;kerberos;R-IAM-10;Directory compromise
 text;supply chain;R-SUP-03;Software supply chain
+text;phishing;R-RH-01;Threat: phishing campaign
+text;hameçonnage;R-RH-01;Threat: phishing campaign
+text;vishing;R-HUM-02;Threat: phone social engineering
+text;ransomware;R-IT-29;Threat: ransomware, backups must survive
+text;rançongiciel;R-IT-29;Threat: ransomware, backups must survive
+text;sms;R-IAM-17;Threat: SMS based authentication abuse
+text;ddos;R-EXT-05;Threat: hacktivist DDoS
+text;hacktivistes;R-EXT-05;
+text;hacktivists;R-EXT-05;
+text;télémaintenance;R-SUP-04;Threat: remote maintenance abuse
+text;remote access;R-OT-01;Threat: remote access to equipment
+text;accès distant;R-OT-01;

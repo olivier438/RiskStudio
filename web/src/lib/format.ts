@@ -60,7 +60,8 @@ export const INTEL_TYPE_LABEL: Record<string, string> = {
 	vulnerability: 'Vulnérabilité',
 	advisory: 'Avis de sécurité',
 	exploitation: 'Exploitation active',
-	campaign: 'Campagne'
+	campaign: 'Campagne',
+	incident: 'Incident'
 };
 
 export function cvssClass(score: number): string {

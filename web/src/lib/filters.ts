@@ -4,8 +4,9 @@
  */
 import type { FeedQuery, RiskQuery } from './api.js';
 
-export type Mode = 'grc' | 'cyber' | 'leaks';
-export const MODES: Mode[] = ['grc', 'cyber', 'leaks'];
+/** `cyber` is the vulnerabilities view (id kept so that shared links still work). */
+export type Mode = 'grc' | 'cyber' | 'threats' | 'leaks';
+export const MODES: Mode[] = ['grc', 'cyber', 'threats', 'leaks'];
 
 export interface GrcFilters {
 	q: string;
@@ -27,6 +28,16 @@ export interface CyberFilters {
 	sector: string;
 }
 
+export interface ThreatFilters {
+	q: string;
+	env: '' | 'IT' | 'OT';
+	severity_min: '' | 'medium' | 'high' | 'critical';
+	country: string;
+	sector: string;
+	category: string;
+	source: string;
+}
+
 export interface LeakFilters {
 	q: string;
 	type: '' | 'ransomware' | 'breach' | 'exposure';
@@ -40,6 +51,7 @@ export interface ViewState {
 	page: number;
 	grc: GrcFilters;
 	cyber: CyberFilters;
+	threats: ThreatFilters;
 	leaks: LeakFilters;
 }
 
@@ -61,6 +73,15 @@ export const emptyCyber = (): CyberFilters => ({
 	category: '',
 	sector: ''
 });
+export const emptyThreats = (): ThreatFilters => ({
+	q: '',
+	env: '',
+	severity_min: '',
+	country: '',
+	sector: '',
+	category: '',
+	source: ''
+});
 export const emptyLeaks = (): LeakFilters => ({ q: '', type: '', country: '', sector: '', source: '' });
 
 function pick<T extends object>(params: URLSearchParams, empty: T): T {
@@ -81,6 +102,7 @@ export function fromUrl(url: URL): ViewState {
 		page,
 		grc: mode === 'grc' ? pick(p, emptyGrc()) : emptyGrc(),
 		cyber: mode === 'cyber' ? pick(p, emptyCyber()) : emptyCyber(),
+		threats: mode === 'threats' ? pick(p, emptyThreats()) : emptyThreats(),
 		leaks: mode === 'leaks' ? pick(p, emptyLeaks()) : emptyLeaks()
 	};
 }
@@ -121,6 +143,22 @@ export function cyberQuery(f: CyberFilters, page: number, perPage: number): Feed
 		source: f.source || undefined,
 		category: f.category || undefined,
 		sector: f.sector || undefined,
+		kind: 'vulnerability',
+		page,
+		per_page: perPage
+	};
+}
+
+export function threatQuery(f: ThreatFilters, page: number, perPage: number): FeedQuery {
+	return {
+		q: f.q || undefined,
+		env: f.env || undefined,
+		severity_min: f.severity_min || undefined,
+		country: f.country || undefined,
+		sector: f.sector || undefined,
+		category: f.category || undefined,
+		source: f.source || undefined,
+		kind: 'threat',
 		page,
 		per_page: perPage
 	};

@@ -29,7 +29,8 @@ final class StatsRepository
         $intel = $this->pdo->prepare(
             'SELECT COUNT(*) AS total, MAX(id) AS latest_id, MAX(published_at) AS latest_published_at,
                     MAX(updated_at) AS updated_at,
-                    SUM(CASE WHEN ' . IntelRepository::CRITICAL_SQL . '
+                    SUM(CASE WHEN ' . IntelRepository::THREAT_SQL . ' THEN 1 ELSE 0 END) AS threats,
+                    SUM(CASE WHEN ' . IntelRepository::CRITICAL_SQL . ' AND NOT ' . IntelRepository::THREAT_SQL . '
                              AND COALESCE(i.source_published_at, i.published_at) >= UTC_TIMESTAMP() - INTERVAL ? DAY
                         THEN 1 ELSE 0 END) AS critical_recent
              FROM v_public_intel i'
@@ -47,6 +48,8 @@ final class StatsRepository
             'risks' => ['total' => (int) $risks['total']],
             'intel' => [
                 'total' => (int) $intel['total'],
+                'vulnerabilities' => (int) $intel['total'] - (int) $intel['threats'],
+                'threats' => (int) $intel['threats'],
                 'critical_recent' => (int) $intel['critical_recent'],
                 'critical_window_days' => self::CRITICAL_WINDOW_DAYS,
                 'latest_id' => $intel['latest_id'] === null ? null : (int) $intel['latest_id'],

@@ -22,13 +22,15 @@ final class Rules
     public array $ransomwareSectors = [];
     /** @var list<array{pattern: string, severity: string}> exposed data class => leak severity */
     public array $leakData = [];
+    /** @var list<array{kind: string, pattern: string, value: string}> threat text => country, sector, environment, severity */
+    public array $threatContext = [];
     public string $version = '';
 
     public static function load(string $dir): self
     {
         $rules = new self();
         $hash = hash_init('sha256');
-        foreach (['cwe_categories', 'environment', 'keywords', 'risk_links', 'ransomware_sectors', 'leak_data'] as $name) {
+        foreach (['cwe_categories', 'environment', 'keywords', 'risk_links', 'ransomware_sectors', 'leak_data', 'threat_context'] as $name) {
             $path = "{$dir}/{$name}.csv";
             if (!is_readable($path)) {
                 throw new \RuntimeException("Missing rules file {$path}");
@@ -47,6 +49,7 @@ final class Rules
                     'risk_links' => $rules->riskLinks[] = ['condition' => $r['condition'], 'value' => $r['value'], 'risk' => $r['risk_code']],
                     'ransomware_sectors' => $rules->ransomwareSectors[mb_strtolower($r['activity'])] = $r['sector'],
                     'leak_data' => $rules->leakData[] = ['pattern' => self::normalise($r['pattern']), 'severity' => $r['severity']],
+                    'threat_context' => $rules->threatContext[] = ['kind' => $r['kind'], 'pattern' => self::normalise($r['pattern']), 'value' => $r['value']],
                 };
             }
         }

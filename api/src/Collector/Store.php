@@ -272,6 +272,7 @@ final class Store
             $this->pdo->prepare('INSERT IGNORE INTO intel_sectors (item_id, sector_id) SELECT ?, id FROM sectors WHERE code = ?')
                 ->execute([$id, $code]);
         }
+        $this->replace('intel_countries', $id, 'country', $c['countries']);
         $this->pdo->prepare('DELETE FROM intel_risks WHERE item_id = ?')->execute([$id]);
         foreach ($c['risks'] as $risk) {
             $this->pdo->prepare('INSERT IGNORE INTO intel_risks (item_id, risk_id, rule) SELECT ?, id, ? FROM risks WHERE code = ?')

@@ -124,9 +124,8 @@ veille. L'onglet Sources de l'administration montre la santé de chaque
 source. Le bouton « Tester » interroge une source depuis le serveur, sans
 rien enregistrer, et dit si elle fonctionne, si le site refuse l'hébergeur
 ou si le format a changé. « Tester une adresse », en bas de l'onglet, fait
-de même pour une source candidate. La source CCB reste désactivée : le
-site du CCB refuse les centres de données et son lecteur n'existe pas
-encore. Testez son adresse avant d'aller plus loin.
+de même pour une source candidate. Si une source échoue à chaque passage
+(ransomware.live, par exemple), désactivez-la dans cet onglet.
 
 
 METTRE À JOUR PLUS TARD

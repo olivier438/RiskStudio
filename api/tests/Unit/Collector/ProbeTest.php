@@ -49,6 +49,6 @@ final class ProbeTest extends TestCase
 
     public function testUnknownSourceHasNoParser(): void
     {
-        self::assertSame('no_parser', (new Probe())->source('CCB', 'https://ccb.belgium.be/advisories')['verdict']);
+        self::assertSame('no_parser', (new Probe())->source('NOPE', 'https://example.org/feed')['verdict']);
     }
 }

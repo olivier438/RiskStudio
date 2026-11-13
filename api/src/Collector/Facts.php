@@ -34,6 +34,8 @@ final class Facts
         public ?string $severityHint = null,
         public array $keywords = [],
         public array $sources = [],
+        /** Countries stated by the source (a CCB warning concerns Belgium). @var list<string> */
+        public array $countries = [],
     ) {
     }
 
@@ -64,6 +66,7 @@ final class Facts
         $this->severityHint ??= $other->severityHint;
         $this->keywords = self::union($this->keywords, $other->keywords);
         $this->sources = self::union($this->sources, $other->sources);
+        $this->countries = self::union($this->countries, $other->countries);
     }
 
     /** @return array<string, mixed> */
