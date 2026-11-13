@@ -2,6 +2,7 @@
 	import type { IntelItem } from '#lib/api.js';
 	import { cvssClass, INTEL_TYPE_LABEL, percent, safeUrl, SEVERITY_LABEL, shortDate } from '#lib/format.js';
 	import type { Selection } from '#lib/selection.svelte.js';
+	import { Expander } from '#lib/expand.svelte.js';
 	import EnvTag from './EnvTag.svelte';
 
 	let {
@@ -17,6 +18,7 @@
 		onrisk: (code: string) => void;
 	} = $props();
 
+	const expander = new Expander();
 	const allSelected = $derived(items.length > 0 && items.every((i) => selection.has(String(i.id))));
 </script>
 
@@ -43,7 +45,16 @@
 		<tbody>
 			{#each items as it (it.id)}
 				{@const url = safeUrl(it.url)}
-				<tr class:selected-row={selection.has(String(it.id))} class:row-critical={it.critical}>
+				{@const open = expander.isOpen(String(it.id))}
+				<!-- The whole row is a convenience target; the "Détails" button is the accessible control. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+				<tr
+					class="row-fold"
+					class:unfolded={open}
+					class:selected-row={selection.has(String(it.id))}
+					class:row-critical={it.critical}
+					onclick={(ev) => expander.onRowClick(ev, String(it.id))}
+				>
 					<td class="no-print">
 						<input
 							type="checkbox"
@@ -65,9 +76,12 @@
 						<span class="kind">{INTEL_TYPE_LABEL[it.type] ?? it.type}</span>
 						<div class="item-source">📡 {it.source.name}</div>
 						<div class="item-title">{it.title}</div>
-						{#if it.summary}<div class="item-text clamp" title={it.summary}>{it.summary}</div>{/if}
-						{#if it.risks.length}
-							<div class="linked">
+						{#if it.summary}<div class="item-text" class:clamp-2={!open}>{it.summary}</div>{/if}
+						{#if !open && it.risks.length}
+							<div class="more-hint">↳ {it.risks.length} risque{it.risks.length > 1 ? 's' : ''} du catalogue lié{it.risks.length > 1 ? 's' : ''}</div>
+						{/if}
+						{#if open && it.risks.length}
+							<div class="linked fold-details">
 								{#each it.risks as k (k.code)}
 									<button class="risk-link no-print" onclick={() => onrisk(k.code)} title="Ouvrir dans le catalogue GRC"
 										>↳ {k.code} {k.title}</button
@@ -76,12 +90,16 @@
 								{/each}
 							</div>
 						{/if}
-						{#if it.rule_trace?.rules?.length}
-							<details class="why">
+						{#if open && it.rule_trace?.rules?.length}
+							<details class="why fold-details">
 								<summary title="Règles qui ont classé cette alerte">Pourquoi ?</summary>
 								{#each it.rule_trace.rules as rule (rule)}<code class="rule">{rule}</code>{/each}
 							</details>
 						{/if}
+						<button class="fold-toggle no-print" aria-expanded={open} onclick={() => expander.toggle(String(it.id))}>
+							<span class="chevron">▸</span>
+							{open ? 'Moins de détails' : 'Détails'}
+						</button>
 					</td>
 					<td>
 						{#each it.categories as c (c)}<div class="small"><b>{categoryName(c)}</b></div>{/each}
@@ -91,11 +109,16 @@
 					<td class="small">
 						{#each it.cves as cve (cve)}<div class="cve">{cve}</div>{/each}
 						{#if it.cvss}<span class="cvss-badge {cvssClass(it.cvss.score)}">CVSS {it.cvss.score.toFixed(1)}</span>{/if}
-						{#if it.epss}<div class="muted" title="Probabilité d'exploitation à 30 jours (FIRST EPSS)">
-								EPSS {percent(it.epss.score)}
-							</div>{/if}
 						{#if it.kev_due_date}<div class="due">Échéance KEV : {shortDate(it.kev_due_date)}</div>{/if}
-						{#if url}<div><a class="link" href={url} target="_blank" rel="noopener noreferrer">🔗 Source</a></div>{/if}
+						{#if open}
+							<div class="fold-details">
+								{#if it.epss}<div class="muted" title="Probabilité d'exploitation à 30 jours (FIRST EPSS)">
+										EPSS {percent(it.epss.score)}
+									</div>{/if}
+								{#if it.cvss?.vector}<div class="vector" title="Vecteur CVSS">{it.cvss.vector}</div>{/if}
+								{#if url}<div><a class="link" href={url} target="_blank" rel="noopener noreferrer">🔗 Source</a></div>{/if}
+							</div>
+						{/if}
 					</td>
 					<td class="col-ind">
 						{#if it.critical}<div><span class="badge-critical">🔥 CRITIQUE</span></div>{/if}
@@ -109,12 +132,11 @@
 </div>
 
 <style>
-	.clamp {
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
+	.vector {
+		font-size: 9px;
+		color: #94a3b8;
+		word-break: break-all;
+		margin: 2px 0;
 	}
 	.kind {
 		font-size: 10px;

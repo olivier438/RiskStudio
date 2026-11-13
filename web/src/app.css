@@ -493,3 +493,170 @@ body {
 		max-width: 100%;
 	}
 }
+
+/* =============================================================================
+   Unfoldable rows: compact by default, details on click (or on the
+   "Détails" button, for keyboards and screen readers).
+   ========================================================================== */
+.risk-table tbody tr.row-fold {
+	cursor: pointer;
+	transition:
+		background-color 0.15s,
+		box-shadow 0.15s;
+}
+.risk-table tbody tr.row-fold td {
+	transition: background-color 0.15s;
+}
+.risk-table tbody tr.row-fold:hover td {
+	background: #f1f5f9;
+}
+/* Coloured edge on the left of the hovered or unfolded row. */
+.risk-table tbody tr.row-fold:hover td:first-child,
+.risk-table tbody tr.row-fold.unfolded td:first-child {
+	box-shadow: inset 4px 0 0 var(--row-accent, var(--primary));
+}
+.mode-cyber {
+	--row-accent: var(--cyber);
+}
+.mode-leaks {
+	--row-accent: var(--leaks);
+}
+.risk-table tbody tr.row-fold.unfolded td {
+	background: #f8fafc;
+}
+.risk-table tbody tr.row-fold.selected-row td {
+	background: #eff6ff;
+}
+.clamp-2 {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.fold-toggle {
+	margin-top: 6px;
+	background: none;
+	border: none;
+	padding: 2px 0;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--row-accent, var(--primary));
+	cursor: pointer;
+}
+.fold-toggle:hover {
+	text-decoration: underline;
+}
+.fold-toggle .chevron {
+	display: inline-block;
+	transition: transform 0.2s;
+}
+.fold-toggle[aria-expanded='true'] .chevron {
+	transform: rotate(90deg);
+}
+.fold-details {
+	animation: unfold 0.2s ease-out;
+}
+@keyframes unfold {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+.more-hint {
+	font-size: 10px;
+	color: #94a3b8;
+	margin-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+	.fold-details,
+	.fold-toggle .chevron,
+	.risk-table tbody tr.row-fold td {
+		animation: none;
+		transition: none;
+	}
+}
+@media print {
+	.fold-toggle,
+	.more-hint {
+		display: none;
+	}
+}
+
+/* =============================================================================
+   Phones: each row becomes a card, every column readable without scrolling
+   sideways. Same markup, CSS only.
+   ========================================================================== */
+@media (max-width: 760px) {
+	.risk-table thead {
+		display: none;
+	}
+	.risk-table,
+	.risk-table tbody,
+	.risk-table tr,
+	.risk-table td {
+		display: block;
+		width: auto;
+	}
+	.risk-table tbody tr {
+		position: relative;
+		padding: 12px 14px 12px 46px;
+		border-bottom: 1px solid var(--border);
+	}
+	.risk-table tbody tr:last-child {
+		border-bottom: none;
+	}
+	.risk-table td,
+	.risk-table tr:hover td,
+	.risk-table tbody tr.row-fold:hover td,
+	.risk-table tbody tr.row-fold.unfolded td,
+	.selected-row td {
+		padding: 3px 0;
+		border: none;
+		background: transparent;
+		box-shadow: none !important;
+	}
+	/* Selection box in the left margin of the card. */
+	.risk-table td:first-child {
+		position: absolute;
+		left: 14px;
+		top: 14px;
+		padding: 0;
+	}
+	/* Date and score side by side on the first line. */
+	.risk-table .col-date,
+	.risk-table .col-score {
+		display: inline-block;
+		width: auto;
+		margin-right: 12px;
+		text-align: left;
+		vertical-align: baseline;
+	}
+	.risk-table .col-main {
+		width: auto;
+	}
+	.risk-table .col-ind {
+		width: auto;
+		text-align: left;
+	}
+	/* Hover and unfolded states move from the cells to the card. */
+	.risk-table tbody tr.row-fold:hover,
+	.risk-table tbody tr.row-fold.unfolded {
+		background: #f8fafc;
+		box-shadow: inset 4px 0 0 var(--row-accent, var(--primary));
+	}
+	.risk-table tbody tr.selected-row {
+		background: #eff6ff;
+	}
+	.row-critical {
+		background: rgba(220, 38, 38, 0.06);
+	}
+	.table-wrapper {
+		overflow-x: visible;
+	}
+}

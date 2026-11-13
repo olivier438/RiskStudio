@@ -2,6 +2,7 @@
 	import type { Leak } from '#lib/api.js';
 	import { count, LEAK_TYPE_LABEL, safeUrl, shortDate } from '#lib/format.js';
 	import type { Selection } from '#lib/selection.svelte.js';
+	import { Expander } from '#lib/expand.svelte.js';
 
 	let {
 		items,
@@ -9,6 +10,7 @@
 		sectorName
 	}: { items: Leak[]; selection: Selection<Leak>; sectorName: (code: string) => string } = $props();
 
+	const expander = new Expander();
 	const allSelected = $derived(items.length > 0 && items.every((l) => selection.has(String(l.id))));
 	const regionNames = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['fr'], { type: 'region' }) : null;
 
@@ -45,7 +47,15 @@
 		<tbody>
 			{#each items as l (l.id)}
 				{@const url = safeUrl(l.url)}
-				<tr class:selected-row={selection.has(String(l.id))}>
+				{@const open = expander.isOpen(String(l.id))}
+				<!-- The whole row is a convenience target; the "Détails" button is the accessible control. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+				<tr
+					class="row-fold"
+					class:unfolded={open}
+					class:selected-row={selection.has(String(l.id))}
+					onclick={(ev) => expander.onRowClick(ev, String(l.id))}
+				>
 					<td class="no-print">
 						<input
 							type="checkbox"
@@ -61,14 +71,27 @@
 						<div class="item-source">📡 {l.source.name}</div>
 						<div class="item-title">{l.organisation}</div>
 						{#if l.actor}<div class="item-text">Groupe revendiquant : <b>{l.actor}</b></div>{/if}
-						{#if url}<div><a class="link" href={url} target="_blank" rel="noopener noreferrer">🔗 Source</a></div>{/if}
+						{#if open && url}<div class="fold-details"><a class="link" href={url} target="_blank" rel="noopener noreferrer">🔗 Source</a></div>{/if}
+						<button class="fold-toggle no-print" aria-expanded={open} onclick={() => expander.toggle(String(l.id))}>
+							<span class="chevron">▸</span>
+							{open ? 'Moins de détails' : 'Détails'}
+						</button>
 					</td>
 					<td>
 						<div class="small"><b>{country(l.country)}</b></div>
 						{#if l.sector}<span class="sector-tag">{sectorName(l.sector)}</span>{/if}
 					</td>
 					<td class="small">
-						{#each l.data_classes as d (d)}<div>{d}</div>{:else}<div class="muted unknown">type inconnu</div>{/each}
+						{#if open}
+							<div class="fold-details">
+								{#each l.data_classes as d (d)}<div>{d}</div>{:else}<div class="muted unknown">type inconnu</div>{/each}
+							</div>
+						{:else if l.data_classes.length}
+							<div>{l.data_classes[0]}</div>
+							{#if l.data_classes.length > 1}<div class="more-hint">+ {l.data_classes.length - 1} autre{l.data_classes.length > 2 ? 's' : ''} type{l.data_classes.length > 2 ? 's' : ''}</div>{/if}
+						{:else}
+							<div class="muted unknown">type inconnu</div>
+						{/if}
 						<div class="records">
 							{#if l.records_count !== null}<b>{count(l.records_count)}</b> <span class="muted">records</span>{:else}<span
 									class="muted unknown">nombre inconnu</span
