@@ -32,6 +32,6 @@ export async function requestNotifications(): Promise<NotificationPermission | '
 
 export function notify(title: string, body: string): void {
 	if (notificationsSupported() && Notification.permission === 'granted') {
-		new Notification(title, { body, icon: '/rs.jpg' });
+		new Notification(title, { body, icon: '/logo.jpg' });
 	}
 }

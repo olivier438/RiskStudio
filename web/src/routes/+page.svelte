@@ -273,7 +273,7 @@
 <div class="app mode-{view.mode}">
 	<header class="app-header no-print">
 		<div class="app-title">
-			<img src="/rs.jpg" alt="NOROSHI" class="logo" width="72" height="72" />
+			<img src="/logo.jpg" alt="NOROSHI" class="logo" width="72" height="72" />
 			<div>
 				<h1>
 					🛡️ NOROSHI <span class="version">{modeTitle}</span>
