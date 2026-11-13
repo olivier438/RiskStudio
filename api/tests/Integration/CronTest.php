@@ -42,7 +42,10 @@ final class CronTest extends TestCase
         $basic = $this->call(['authorization' => 'Basic ' . base64_encode('cron:wrong')]);
         self::assertSame(401, $basic->status);
         self::assertStringContainsString('Basic', $basic->headers['WWW-Authenticate']);
+        self::assertSame('invalid_key', json_decode($basic->body, true)['error']['code']);
         self::assertSame(401, $this->call([], ['key' => 'wrong'])->status);
-        self::assertSame(401, $this->call()->status);
+        $none = $this->call();
+        self::assertSame(401, $none->status);
+        self::assertSame('no_credentials', json_decode($none->body, true)['error']['code'], 'stripped header is told apart');
     }
 }

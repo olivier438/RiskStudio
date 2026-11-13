@@ -36,9 +36,15 @@ final class CronController
         }
         if (!hash_equals($key, self::presentedKey($request))) {
             usleep(random_int(800_000, 1_200_000));
+            // Tell "nothing reached PHP" apart from "wrong key": on shared
+            // hosting the web server may strip the Authorization header.
+            $received = $request->header('authorization') !== null || $request->query('key') !== null;
 
-            return Response::error(401, 'unauthorized', 'Invalid key.')
-                ->withHeader('WWW-Authenticate', 'Basic realm="NOROSHI collector"');
+            return Response::error(
+                401,
+                $received ? 'invalid_key' : 'no_credentials',
+                $received ? 'Clé incorrecte.' : 'Aucun identifiant reçu par le serveur PHP.',
+            )->withHeader('WWW-Authenticate', 'Basic realm="NOROSHI collector"');
         }
 
         // The planner may close the connection before the end: keep going.

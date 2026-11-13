@@ -1,5 +1,6 @@
 # Risk Studio v5 API: every request goes to the front controller.
 Options -Indexes
+
 DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
@@ -8,6 +9,7 @@ DirectoryIndex index.php
     # a child .htaccess does not inherit rewrite rules otherwise.
     RewriteOptions InheritBefore
     # Pass the Authorization header to PHP under FastCGI (collector trigger).
+    RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [QSA,L]
