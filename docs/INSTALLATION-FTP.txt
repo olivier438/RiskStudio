@@ -1,4 +1,4 @@
-RISK STUDIO v5 : INSTALLATION PAR FTP SUR INFOMANIAK
+NOROSHI v5 : INSTALLATION PAR FTP SUR INFOMANIAK
 =====================================================
 
 Ce dossier contient deux dossiers à envoyer :

@@ -28,7 +28,7 @@
 
 <div class="login-screen">
 	<form class="login-card" onsubmit={submit}>
-		<h1>🛡️ Risk Studio</h1>
+		<h1>🛡️ NOROSHI</h1>
 		<p>Administration. Mot de passe et code d'authentification requis.</p>
 		<div class="field">
 			<label for="email">E-mail</label>

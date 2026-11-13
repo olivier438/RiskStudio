@@ -1,4 +1,4 @@
-# Security Policy | Risk Studio
+# Security Policy | NOROSHI
 
 **One Circle IT Solutions srl** | [security@onecircle.be](mailto:security@onecircle.be)
 
@@ -70,4 +70,4 @@ Reporting obligations apply since 11 September 2026. Notifications go through th
 | Low-severity advisory on `deepmerge` (build tooling only, not shipped) | Tracked by Dependabot |
 | The `Server` header is set by the hosting platform | Out of our control on shared hosting |
 
-*Security policy version 3.0, November 2026, Risk Studio v5.*
+*Security policy version 3.0, November 2026, NOROSHI v5.*

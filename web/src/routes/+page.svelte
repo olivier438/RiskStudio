@@ -176,7 +176,7 @@
 					: `🔥 ${critical.length} nouvelles alertes CRITIQUES`,
 				'critical'
 			);
-			for (const c of critical.slice(0, 3)) notify('Risk Studio : alerte critique', c.title);
+			for (const c of critical.slice(0, 3)) notify('NOROSHI : alerte critique', c.title);
 		} else {
 			toasts.show(
 				items.length === 1 ? `⚡ Nouvelle alerte cyber : ${items[0].title}` : `⚡ ${items.length} nouvelles alertes cyber`,
@@ -257,7 +257,7 @@
 </script>
 
 <svelte:head>
-	<title>Risk Studio | {view.mode === 'grc' ? 'Catalogue GRC' : view.mode === 'cyber' ? 'Veille cyber' : 'Data Leaks'}</title>
+	<title>NOROSHI | {view.mode === 'grc' ? 'Catalogue GRC' : view.mode === 'cyber' ? 'Veille cyber' : 'Data Leaks'}</title>
 	<meta
 		name="description"
 		content="Catalogue de risques GRC et veille cyber sans IA, mappés sur ISO 27001, NIS2, DORA, CRA, CyFun et NIST CSF."
@@ -273,10 +273,10 @@
 <div class="app mode-{view.mode}">
 	<header class="app-header no-print">
 		<div class="app-title">
-			<img src="/rs.jpg" alt="Risk Studio" class="logo" width="72" height="72" />
+			<img src="/rs.jpg" alt="NOROSHI" class="logo" width="72" height="72" />
 			<div>
 				<h1>
-					🛡️ Risk Studio <span class="version">{modeTitle}</span>
+					🛡️ NOROSHI <span class="version">{modeTitle}</span>
 					{#if stats && stats.intel.critical_recent > 0}
 						<button
 							class="critical-badge"
@@ -290,7 +290,7 @@
 				<div class="meta-info">
 					Base : <b>{stats ? dateAndTime(stats.last_update) : 'Chargement...'}</b>
 					{#if live}<span class="live"><span class="live-dot"></span>LIVE</span>{/if}<br />
-					<button class="about-link" onclick={() => (aboutOpen = true)}>ℹ️ À propos de Risk Studio</button>
+					<button class="about-link" onclick={() => (aboutOpen = true)}>ℹ️ À propos de NOROSHI</button>
 					·
 					<button class="about-link" onclick={() => (changelogOpen = true)}>📋 Changelog</button>
 				</div>

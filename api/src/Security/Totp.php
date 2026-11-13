@@ -53,7 +53,7 @@ final class Totp
         return null;
     }
 
-    public static function uri(string $secret, string $account, string $issuer = 'Risk Studio'): string
+    public static function uri(string $secret, string $account, string $issuer = 'NOROSHI'): string
     {
         return sprintf(
             'otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30',

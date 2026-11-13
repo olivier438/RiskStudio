@@ -33,7 +33,7 @@
 
 <!-- Printed instead of the interactive table: every selected item, all pages. -->
 <section class="print-only sheet">
-	<h1>🛡️ Risk Studio : {TITLE[mode]}</h1>
+	<h1>🛡️ NOROSHI : {TITLE[mode]}</h1>
 	<p class="meta">Export du {dateAndTime(new Date().toISOString())}</p>
 
 	{#if mode === 'grc'}

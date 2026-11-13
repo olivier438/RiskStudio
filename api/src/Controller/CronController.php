@@ -38,7 +38,7 @@ final class CronController
             usleep(random_int(800_000, 1_200_000));
 
             return Response::error(401, 'unauthorized', 'Invalid key.')
-                ->withHeader('WWW-Authenticate', 'Basic realm="Risk Studio collector"');
+                ->withHeader('WWW-Authenticate', 'Basic realm="NOROSHI collector"');
         }
 
         // The planner may close the connection before the end: keep going.

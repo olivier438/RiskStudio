@@ -10,7 +10,7 @@ namespace RiskStudio\Collector;
  */
 class Http
 {
-    public const USER_AGENT = 'RiskStudio-Collector/5.0 (+https://github.com/olivier438/RiskStudio)';
+    public const USER_AGENT = 'Noroshi-Collector/5.0 (+https://www.noroshi.be)';
     private const MAX_BYTES = 8 * 1024 * 1024;
 
     public function __construct(private readonly int $timeoutSeconds = 20)

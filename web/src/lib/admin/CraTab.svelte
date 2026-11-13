@@ -24,7 +24,7 @@
 <section class="intro">
 	<h2>🔒 Cyber Resilience Act (Règlement UE 2024/2847)</h2>
 	<p>
-		Auto-évaluation de Risk Studio lui-même. Les obligations de signalement de l'Art. 14 s'appliquent depuis le
+		Auto-évaluation de NOROSHI lui-même. Les obligations de signalement de l'Art. 14 s'appliquent depuis le
 		<b>11 septembre 2026</b>, l'ensemble du règlement à partir du <b>11 décembre 2027</b>. Un logiciel libre fourni
 		hors activité commerciale peut sortir du champ : la grille reste une bonne pratique.
 	</p>

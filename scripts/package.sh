@@ -85,18 +85,18 @@ tar -C "$OUT" -czf "$ROOT/dist/riskstudio-${VERSION}.tar.gz" app www
 
 # ---- FTP bundle: site/ + riskstudio-app/ + French installation guide -----------
 # Built with Python's zipfile so that dot files (.htaccess, .env.example) are kept.
-ZIP="$ROOT/dist/RiskStudio-${VERSION}-ftp.zip"
+ZIP="$ROOT/dist/NOROSHI-${VERSION}-ftp.zip"
 python3 - "$OUT" "$ROOT/docs/INSTALLATION-FTP.txt" "$ZIP" <<'PYZIP'
 import os, sys, zipfile
 out, guide, target = sys.argv[1:4]
 with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as z:
-    z.write(guide, 'RiskStudio/INSTALLATION.txt')
+    z.write(guide, 'NOROSHI/INSTALLATION.txt')
     for src, dst in (('www', 'site'), ('app', 'riskstudio-app')):
         base = os.path.join(out, src)
         for folder, _, files in os.walk(base):
             for name in files:
                 path = os.path.join(folder, name)
-                z.write(path, os.path.join('RiskStudio', dst, os.path.relpath(path, base)))
+                z.write(path, os.path.join('NOROSHI', dst, os.path.relpath(path, base)))
 PYZIP
 
 echo "Done: dist/release/{app,www}, dist/riskstudio-${VERSION}.tar.gz and $(basename "$ZIP")"

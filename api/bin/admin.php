@@ -74,7 +74,7 @@ function printTotp(string $email, string $secret): void
     fwrite(STDOUT, <<<TXT
 
     Add this key to an authenticator app (Aegis, 2FAS, Microsoft or Google Authenticator...):
-      Account : Risk Studio ({$email})
+      Account : NOROSHI ({$email})
       Key     : {$groups}
       Type    : time-based, 6 digits, 30 seconds
     Or open this URI with the app:

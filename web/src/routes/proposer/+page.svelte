@@ -73,7 +73,7 @@
 				error = e.message;
 				fields = e.fields;
 			} else {
-				error = 'Impossible de joindre Risk Studio. Réessayez dans un instant.';
+				error = 'Impossible de joindre NOROSHI. Réessayez dans un instant.';
 			}
 		} finally {
 			sending = false;
@@ -82,8 +82,8 @@
 </script>
 
 <svelte:head>
-	<title>Risk Studio | Proposer un risque</title>
-	<meta name="description" content="Proposez un nouveau risque ou une correction au catalogue Risk Studio." />
+	<title>NOROSHI | Proposer un risque</title>
+	<meta name="description" content="Proposez un nouveau risque ou une correction au catalogue NOROSHI." />
 </svelte:head>
 
 <div class="page">

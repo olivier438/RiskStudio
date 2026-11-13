@@ -4,10 +4,10 @@
 	let { open = $bindable(false) }: { open: boolean } = $props();
 </script>
 
-<Modal bind:open title="🛡️ Risk Studio">
-	<h3>Ce qu'est Risk Studio</h3>
+<Modal bind:open title="🛡️ NOROSHI">
+	<h3>Ce qu'est NOROSHI</h3>
 	<p>
-		Risk Studio réunit deux outils pour les professionnels de la cybersécurité : un <strong
+		NOROSHI réunit deux outils pour les professionnels de la cybersécurité : un <strong
 			>catalogue de risques GRC</strong
 		>, structuré et mappé sur les référentiels du terrain, et une <strong>veille cyber</strong> alimentée par
 		des sources d'autorité. Gratuit, ouvert, sans abonnement.
@@ -16,7 +16,7 @@
 	<h3>Pourquoi on l'a construit</h3>
 	<p>
 		Chaque nouvelle mission repart de zéro. Les catalogues de risques sont soit verrouillés derrière des
-		paywalls, soit trop génériques, soit périmés. Risk Studio est né d'une conviction simple : les
+		paywalls, soit trop génériques, soit périmés. NOROSHI est né d'une conviction simple : les
 		professionnels GRC méritent un outil commun, aligné sur les vrais référentiels.
 	</p>
 
@@ -31,7 +31,7 @@
 
 	<h3>Une veille sans intelligence artificielle</h3>
 	<p>
-		Risk Studio n'utilise <strong>aucune IA</strong>. La veille s'appuie sur des sources déjà structurées
+		NOROSHI n'utilise <strong>aucune IA</strong>. La veille s'appuie sur des sources déjà structurées
 		(CISA KEV, NVD, FIRST EPSS, ENISA EUVD, CERT nationaux) et sur des <strong>règles explicites</strong> :
 		correspondance CWE vers catégorie, produit vers environnement IT/OT, score calculé à partir du CVSS, de
 		l'EPSS et de l'exploitation connue.
@@ -65,13 +65,13 @@
 	<h3>Architecture</h3>
 	<p>
 		Frontend statique (SvelteKit), API PHP et base MariaDB, hébergés en Europe. Aucun CDN, aucun traceur,
-		aucune police externe : votre navigateur ne parle qu'à Risk Studio. La base n'est jamais exposée : l'API
+		aucune police externe : votre navigateur ne parle qu'à NOROSHI. La base n'est jamais exposée : l'API
 		publique ne lit que le contenu publié, avec un utilisateur en lecture seule.
 	</p>
 
 	{#snippet footer()}
 		<span>Construit par <strong>One Circle IT Solutions</strong> · Licence CC BY-SA 4.0</span>
-		<a href="https://github.com/olivier438/RiskStudio" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+		<span>noroshi.be</span>
 	{/snippet}
 </Modal>
 

@@ -69,12 +69,12 @@
 </script>
 
 <svelte:head>
-	<title>Risk Studio | Installation</title>
+	<title>NOROSHI | Installation</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="page">
-	<h1>🛡️ Installation de Risk Studio</h1>
+	<h1>🛡️ Installation de NOROSHI</h1>
 	<p class="muted">
 		Cet assistant fonctionne seulement tant que <code>SETUP_TOKEN</code> est présent dans le fichier
 		<code>.env</code> du serveur. Retirez-le une fois l'installation terminée.

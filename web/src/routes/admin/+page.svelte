@@ -50,7 +50,7 @@
 </script>
 
 <svelte:head>
-	<title>Risk Studio | Administration</title>
+	<title>NOROSHI | Administration</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
@@ -66,7 +66,7 @@
 		/>
 	{:else}
 		<header class="topbar">
-			<div class="brand">🛡️ Risk Studio <span>Administration</span></div>
+			<div class="brand">🛡️ NOROSHI <span>Administration</span></div>
 			<div class="user">
 				<a href="/" target="_blank" rel="noopener">Voir le site ↗</a>
 				<span>{admin.display_name}</span>
