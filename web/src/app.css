@@ -27,6 +27,11 @@
 	box-sizing: border-box;
 }
 
+/* Full-bleed banner uses 100vw, which includes the scrollbar: never scroll sideways. */
+html {
+	overflow-x: clip;
+}
+
 body {
 	font-family: 'Segoe UI', system-ui, sans-serif;
 	background: var(--bg);

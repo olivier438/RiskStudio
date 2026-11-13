@@ -4,6 +4,7 @@
 	import { replaceState } from '$app/navigation';
 	import { api, ApiError, type IntelItem, type Leak, type Page, type Reference, type Risk, type Stats } from '#lib/api.js';
 	import AboutModal from '#lib/components/AboutModal.svelte';
+	import Banner from '#lib/components/Banner.svelte';
 	import ChangelogModal from '#lib/components/ChangelogModal.svelte';
 	import GrcTable from '#lib/components/GrcTable.svelte';
 	import IntelTable from '#lib/components/IntelTable.svelte';
@@ -32,8 +33,8 @@
 	const POLL_MS = 60_000;
 
 	const MODES: { id: Mode; label: string; title: string }[] = [
-		{ id: 'grc', label: '🛡️ GRC', title: 'v5' },
-		{ id: 'cyber', label: '⚡ Cyberrisques', title: 'Cyber' },
+		{ id: 'grc', label: '🛡️ GRC', title: 'Catalogue GRC' },
+		{ id: 'cyber', label: '⚡ Cyberrisques', title: 'Veille cyber' },
 		{ id: 'leaks', label: '💧 Data Leaks', title: 'Data Leaks' }
 	];
 
@@ -271,12 +272,13 @@
 {/if}
 
 <div class="app mode-{view.mode}">
+	<Banner mode={view.mode} />
 	<header class="app-header no-print">
 		<div class="app-title">
 			<img src="/logo.jpg" alt="NOROSHI" class="logo" width="72" height="72" />
 			<div>
-				<h1>
-					🛡️ NOROSHI <span class="version">{modeTitle}</span>
+				<h2 class="view-title">
+					{modeTitle}
 					{#if stats && stats.intel.critical_recent > 0}
 						<button
 							class="critical-badge"
@@ -286,7 +288,7 @@
 							🔥 <b>{stats.intel.critical_recent}</b> critique{stats.intel.critical_recent > 1 ? 's' : ''}
 						</button>
 					{/if}
-				</h1>
+				</h2>
 				<div class="meta-info">
 					Base : <b>{stats ? dateAndTime(stats.last_update) : 'Chargement...'}</b>
 					{#if live}<span class="live"><span class="live-dot"></span>LIVE</span>{/if}<br />
@@ -414,7 +416,7 @@
 		object-fit: contain;
 		border-radius: 10px;
 	}
-	h1 {
+	.view-title {
 		margin: 0;
 		font-size: 24px;
 		color: var(--primary);
@@ -424,10 +426,10 @@
 		gap: 10px;
 		flex-wrap: wrap;
 	}
-	.mode-cyber h1 {
+	.mode-cyber .view-title {
 		color: var(--cyber);
 	}
-	.mode-leaks h1 {
+	.mode-leaks .view-title {
 		color: var(--leaks);
 	}
 	.critical-badge {
