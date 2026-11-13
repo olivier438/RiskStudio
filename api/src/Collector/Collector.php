@@ -10,6 +10,7 @@ use RiskStudio\Collector\Source\Ccb;
 use RiskStudio\Collector\Source\CertFr;
 use RiskStudio\Collector\Source\CisaKev;
 use RiskStudio\Collector\Source\Euvd;
+use RiskStudio\Collector\Source\GenericFeed;
 use RiskStudio\Collector\Source\Hibp;
 use RiskStudio\Collector\Source\RansomwareLive;
 use RiskStudio\Collector\Source\Source;
@@ -84,8 +85,18 @@ final class Collector
         }
     }
 
-    public static function sourceFor(string $code, array $leakCountries = []): ?Source
+    /**
+     * Built-in sources by code; any other source with a stored config is a
+     * feed added from the administration (GenericFeed).
+     */
+    public static function sourceFor(string $code, array $leakCountries = [], ?string $config = null): ?Source
     {
+        if ($config !== null && $config !== '' && !self::isBuiltIn($code)) {
+            $data = json_decode($config, true);
+
+            return is_array($data) ? new GenericFeed($code, SourceConfig::fromArray($data)) : null;
+        }
+
         return match ($code) {
             CisaKev::CODE => new CisaKev(),
             'EUVD_EXPLOITED' => new Euvd('EUVD_EXPLOITED', true),
@@ -98,6 +109,12 @@ final class Collector
             Zataz::CODE => new Zataz(),
             default => null,
         };
+    }
+
+    public static function isBuiltIn(string $code): bool
+    {
+        return in_array($code, ['CISA_KEV', 'EUVD_EXPLOITED', 'EUVD_CRITICAL', 'CERT_FR', 'HIBP', 'RANSOMWARE_LIVE',
+            BonjourLaFuite::CODE, Ccb::CODE, Zataz::CODE], true);
     }
 
     /** @return list<array<string, mixed>> */
@@ -124,10 +141,13 @@ final class Collector
         $problems = [];
 
         try {
-            $impl = self::sourceFor($code, $this->leakCountries) ?? throw new \RuntimeException("No implementation for source {$code}");
+            $config = isset($source['config']) ? (string) $source['config'] : null;
+            $impl = self::sourceFor($code, $this->leakCountries, $config) ?? throw new \RuntimeException("No implementation for source {$code}");
+            // Addresses typed in the administration only ever reach the public Internet.
+            $http = $impl instanceof GenericFeed ? new Http(20, true) : $this->http;
             $cursor = json_decode((string) ($source['cursor_state'] ?? ''), true) ?: [];
             $since = new \DateTimeImmutable("-{$this->backfillDays} days", new \DateTimeZone('UTC'));
-            $result = $impl->fetch($this->http, (string) $source['url'], $cursor, $since);
+            $result = $impl->fetch($http, (string) $source['url'], $cursor, $since);
 
             $problems = $this->enricher->enrich($result['intel']);
             foreach ($result['intel'] as $facts) {

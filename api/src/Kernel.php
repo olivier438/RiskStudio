@@ -74,8 +74,13 @@ final class Kernel
         $router->get('/v1/admin/risks/{code}', $admin('risk'));
         $router->add('PUT', '/v1/admin/risks/{code}', $admin('updateRisk'));
         $router->get('/v1/admin/sources', $admin('sources'));
+        // Literal paths before {code}: the first matching route wins.
+        $router->post('/v1/admin/sources/preview', $admin('previewSource'));
         $router->post('/v1/admin/sources/{code}', $admin('updateSource'));
         $router->post('/v1/admin/sources/{code}/probe', $admin('probeSource'));
+        $router->post('/v1/admin/sources', $admin('createSource'));
+        $router->add('PUT', '/v1/admin/sources/{code}', $admin('editSource'));
+        $router->post('/v1/admin/sources/{code}/delete', $admin('deleteSource'));
         $router->post('/v1/admin/probe', $admin('probeUrl'));
         $router->get('/v1/admin/statistics', $admin('statistics'));
         $router->get('/v1/admin/audit', $admin('audit'));
@@ -103,6 +108,7 @@ final class Kernel
             $this->admin = new AdminController(
                 new AdminAuth($pdo, new RateLimiter($pdo, $this->secret()), $secure),
                 new AdminRepository($pdo),
+                $this->dbDir() . '/rules',
             );
         }
 

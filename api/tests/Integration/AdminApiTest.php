@@ -71,6 +71,48 @@ final class AdminApiTest extends TestCase
         self::assertStringContainsString('"verdict":"refused"', (string) $audit);
     }
 
+    public function testCustomSourceLifecycle(): void
+    {
+        $s = $this->login();
+        $h = ['cookie' => $s['cookie'], 'x-csrf-token' => $s['csrf']];
+        // An IP literal: no DNS lookup, tests never use the network.
+        $body = ['name' => 'Veille Exemple', 'url' => 'https://93.184.215.14/feed.xml', 'family' => 'threat', 'country' => 'BE',
+            'include' => 'phishing, ransomware', 'poll_minutes' => 60];
+        try {
+            self::assertSame(403, $this->call('POST', '/v1/admin/sources', $body, ['cookie' => $s['cookie']])->status, 'CSRF');
+            $private = $this->call('POST', '/v1/admin/sources', ['url' => 'https://10.0.0.8/feed'] + $body, $h);
+            self::assertSame(422, $private->status);
+            self::assertArrayHasKey('url', self::json($private)['error']['fields']);
+            self::assertSame(422, $this->call('POST', '/v1/admin/sources', ['family' => 'nope', 'poll_minutes' => 5] + $body, $h)->status);
+
+            $created = $this->call('POST', '/v1/admin/sources', $body, $h);
+            self::assertSame(200, $created->status, $created->body);
+            self::assertSame('RSS_VEILLE_EXEMPLE', self::json($created)['code']);
+            self::assertSame('RSS_VEILLE_EXEMPLE_2', self::json($this->call('POST', '/v1/admin/sources', $body, $h))['code'], 'codes stay unique');
+            $row = self::$pdo->query("SELECT custom, enabled, authoritative, config FROM sources WHERE code = 'RSS_VEILLE_EXEMPLE'")->fetch();
+            self::assertSame(['custom' => 1, 'enabled' => 1, 'authoritative' => 0], array_map('intval', array_slice($row, 0, 3)), 'pending review by default');
+            self::assertSame(['family' => 'threat', 'country' => 'BE', 'include' => ['phishing', 'ransomware'], 'exclude' => []], json_decode($row['config'], true));
+
+            $edited = $this->call('PUT', '/v1/admin/sources/RSS_VEILLE_EXEMPLE', ['name' => 'Veille renommée', 'family' => 'vulnerability'] + $body, $h);
+            self::assertSame(200, $edited->status, $edited->body);
+            self::assertSame('Veille renommée', self::$pdo->query("SELECT name FROM sources WHERE code = 'RSS_VEILLE_EXEMPLE'")->fetchColumn());
+            self::assertSame(404, $this->call('PUT', '/v1/admin/sources/CISA_KEV', $body, $h)->status, 'built-in sources are not editable');
+            self::assertSame(404, $this->call('POST', '/v1/admin/sources/CISA_KEV/delete', [], $h)->status, 'nor deletable');
+
+            $preview = $this->call('POST', '/v1/admin/sources/preview', ['url' => 'https://127.0.0.1/feed'] + $body, $h);
+            self::assertSame(200, $preview->status, $preview->body);
+            self::assertFalse(self::json($preview)['data']['ok'], 'private addresses are never fetched');
+
+            self::assertSame(200, $this->call('POST', '/v1/admin/sources/RSS_VEILLE_EXEMPLE/delete', [], $h)->status);
+            self::assertFalse(self::$pdo->query("SELECT 1 FROM sources WHERE code = 'RSS_VEILLE_EXEMPLE'")->fetchColumn());
+            $audit = self::$pdo->query("SELECT GROUP_CONCAT(action) FROM audit_log WHERE entity_id = 'RSS_VEILLE_EXEMPLE'")->fetchColumn();
+            self::assertStringContainsString('source.create', (string) $audit);
+            self::assertStringContainsString('source.delete', (string) $audit);
+        } finally {
+            self::$pdo->exec("DELETE FROM sources WHERE code LIKE 'RSS\\_VEILLE\\_EXEMPLE%'");
+        }
+    }
+
     private static function cleanup(): void
     {
         self::$pdo->exec("DELETE FROM risks WHERE origin = 'community' AND code LIKE 'R-COM-%'

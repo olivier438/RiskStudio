@@ -5,6 +5,13 @@
 </script>
 
 <Modal bind:open title="📋 Changelog">
+	<h3>v5.3 : sources sans développement <span class="date">Novembre 2026</span></h3>
+	<p>
+		L'administration peut ajouter n'importe quel flux RSS ou Atom : vue alimentée, pays par défaut, mots-clés à
+		garder ou écarter. Un aperçu montre le classement avant l'enregistrement. Les entrées suivent les mêmes règles
+		traçables que les sources intégrées.
+	</p>
+
 	<h3>v5.2 : Vulnérabilités et Menaces <span class="date">Novembre 2026</span></h3>
 	<p>
 		La vue Cyberrisques portait mal son nom : elle devient <strong>Vulnérabilités</strong> (CVE, avis de

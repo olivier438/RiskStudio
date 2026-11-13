@@ -21,10 +21,10 @@ final class Probe
     private const MAX_BYTES = 2 * 1024 * 1024;
 
     /** @return array<string, mixed> */
-    public function source(string $code, string $url): array
+    public function source(string $code, string $url, ?string $config = null): array
     {
-        $http = new ProbeHttp(self::TIMEOUT, 3);
-        $impl = Collector::sourceFor($code);
+        $impl = Collector::sourceFor($code, [], $config);
+        $http = new ProbeHttp(self::TIMEOUT, 3, $impl instanceof Source\GenericFeed);
         $report = ['code' => $code, 'url' => $url, 'ok' => false, 'items' => null, 'sample' => [], 'error' => null];
         if ($impl === null) {
             return $report + ['requests' => [], 'verdict' => 'no_parser', 'message' => 'Aucun lecteur n’existe encore pour cette source : rien à tester.'];
@@ -48,20 +48,10 @@ final class Probe
     /** @return array<string, mixed> */
     public function url(string $url): array
     {
-        $parts = parse_url($url);
-        if ($parts === false || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host']) || isset($parts['user']) || isset($parts['pass'])
-            || (isset($parts['port']) && $parts['port'] !== 443) || strlen($url) > 500) {
-            return self::refused($url, 'Adresse refusée : HTTPS uniquement, port 443, sans identifiants, 500 caractères au maximum.');
-        }
-        $host = strtolower(trim($parts['host'], '[]'));
-        $ips = self::resolve($host);
-        if ($ips === []) {
-            return self::refused($url, "Le nom {$host} ne se résout pas depuis ce serveur.", 'unreachable');
-        }
-        foreach ($ips as $ip) {
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                return self::refused($url, 'Adresse refusée : elle mène à un réseau privé ou réservé.');
-            }
+        try {
+            $address = PublicAddress::check($url);
+        } catch (\InvalidArgumentException $e) {
+            return self::refused($url, $e->getMessage(), str_contains($e->getMessage(), 'ne se résout pas') ? 'unreachable' : 'refused');
         }
 
         $started = microtime(true);
@@ -72,7 +62,7 @@ final class Probe
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
             // Pinned to the checked address: no DNS rebinding between check and request.
-            CURLOPT_RESOLVE => [$host . ':443:' . (str_contains($ips[0], ':') ? "[{$ips[0]}]" : $ips[0])],
+            CURLOPT_RESOLVE => [$address['resolve']],
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => self::TIMEOUT,
             CURLOPT_USERAGENT => Http::USER_AGENT,
@@ -106,6 +96,44 @@ final class Probe
 
         return ['url' => $url, 'ok' => $request['status'] === 200, 'location' => $location, 'requests' => [$request]]
             + self::verdict($request, false, null, $request['error'], false, $location);
+    }
+
+    /**
+     * Preview of a feed being added: reads it from this server and shows how
+     * the first entries would be classified. Nothing is stored.
+     *
+     * @return array<string, mixed>
+     */
+    public function preview(string $url, SourceConfig $config, Classifier $classifier): array
+    {
+        $http = new ProbeHttp(self::TIMEOUT, 1, true);
+        $feed = new Source\GenericFeed('PREVIEW', $config);
+        try {
+            $result = $feed->fetch($http, $url, [], new \DateTimeImmutable('-30 days', new \DateTimeZone('UTC')));
+        } catch (\Throwable $e) {
+            $error = mb_substr($e->getMessage(), 0, 300);
+
+            return ['ok' => false, 'url' => $url, 'seen' => 0, 'kept' => 0, 'items' => [], 'requests' => $http->log]
+                + self::verdict($http->log[0] ?? null, false, null, $error, true);
+        }
+        $items = [];
+        foreach (array_slice($result['intel'], 0, 10) as $f) {
+            $c = $classifier->classify($f);
+            $items[] = [
+                'title' => $f->title, 'date' => $f->publishedAt, 'url' => $f->url, 'type' => $f->type,
+                'severity' => $c['severity'], 'environment' => $c['environment'], 'countries' => $c['countries'],
+                'sectors' => $c['sectors'], 'categories' => $c['categories'], 'risks' => array_column($c['risks'], 'code'),
+                'rules' => $c['trace']['rules'],
+            ];
+        }
+        $kept = count($result['intel']);
+        $message = $feed->seen === 0
+            ? 'Flux lu, mais vide.'
+            : sprintf('%d entrée%s dans le flux, %d gardée%s sur les 30 derniers jours après les filtres.',
+                $feed->seen, $feed->seen > 1 ? 's' : '', $kept, $kept > 1 ? 's' : '');
+
+        return ['ok' => true, 'url' => $url, 'seen' => $feed->seen, 'kept' => $kept, 'items' => $items, 'requests' => $http->log,
+            'verdict' => 'works', 'message' => $message];
     }
 
     /** Guesses the format from the first bytes: json, rss, atom, xml, html or other. */
@@ -156,22 +184,6 @@ final class Probe
         }
 
         return ['verdict' => 'error', 'message' => "Réponse {$status}." . ($error ? " Détail : {$error}" : '')];
-    }
-
-    /** @return list<string> */
-    private static function resolve(string $host): array
-    {
-        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-            return [$host];
-        }
-        $ips = gethostbynamel($host) ?: [];
-        foreach (@dns_get_record($host, DNS_AAAA) ?: [] as $record) {
-            if (isset($record['ipv6'])) {
-                $ips[] = $record['ipv6'];
-            }
-        }
-
-        return array_values(array_unique($ips));
     }
 
     /** @return array<string, mixed> */

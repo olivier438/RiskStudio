@@ -264,7 +264,8 @@ final class AdminRepository
     public function sources(): array
     {
         $rows = $this->pdo->query(
-            "SELECT s.id, s.code, s.name, s.kind, s.url, s.authoritative, s.enabled, s.poll_minutes, s.last_run_at, s.last_success_at,
+            "SELECT s.id, s.code, s.name, s.kind, s.url, s.authoritative, s.enabled, s.poll_minutes, s.custom, s.config,
+                    s.last_run_at, s.last_success_at,
                     (SELECT r.status FROM collector_runs r WHERE r.source_id = s.id ORDER BY r.id DESC LIMIT 1) AS last_status,
                     (SELECT r.error FROM collector_runs r WHERE r.source_id = s.id ORDER BY r.id DESC LIMIT 1) AS last_error,
                     (SELECT COALESCE(SUM(r.items_new), 0) FROM collector_runs r WHERE r.source_id = s.id
@@ -279,10 +280,116 @@ final class AdminRepository
             'code' => $r['code'], 'name' => $r['name'], 'kind' => $r['kind'], 'url' => $r['url'],
             'authoritative' => (bool) $r['authoritative'], 'enabled' => (bool) $r['enabled'],
             'poll_minutes' => (int) $r['poll_minutes'],
+            'custom' => (bool) $r['custom'],
+            'config' => $r['config'] === null ? null : json_decode((string) $r['config'], true),
             'last_run_at' => Dates::iso($r['last_run_at']), 'last_success_at' => Dates::iso($r['last_success_at']),
             'last_status' => $r['last_status'], 'last_error' => $r['last_error'],
             'new_24h' => (int) $r['new_24h'], 'failures_24h' => (int) $r['failures_24h'],
         ], $rows);
+    }
+
+    /**
+     * Name, address and polling interval of a custom source, validated.
+     *
+     * @param array<string, mixed> $body
+     * @return array{name: string, url: string, poll_minutes: int, authoritative: bool}
+     * @throws ValidationException
+     */
+    public static function customSourceInput(array $body): array
+    {
+        $errors = [];
+        $name = trim(is_string($body['name'] ?? null) ? $body['name'] : '');
+        if ($name === '' || mb_strlen($name) > 60) {
+            $errors['name'] = 'Nom requis, 60 caractères au maximum.';
+        }
+        $url = trim(is_string($body['url'] ?? null) ? $body['url'] : '');
+        if (!str_starts_with($url, 'https://') || strlen($url) > 500 || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            $errors['url'] = 'Adresse HTTPS du flux RSS ou Atom, 500 caractères au maximum.';
+        }
+        $poll = $body['poll_minutes'] ?? 60;
+        if (!is_int($poll) || $poll < 15 || $poll > 1440) {
+            $errors['poll_minutes'] = 'Fréquence entre 15 et 1440 minutes.';
+        }
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        return ['name' => $name, 'url' => $url, 'poll_minutes' => (int) $poll, 'authoritative' => ($body['authoritative'] ?? false) === true];
+    }
+
+    /** @param array{name: string, url: string, poll_minutes: int, authoritative: bool} $s @param array<string, mixed> $config @return string the new code */
+    public function createCustomSource(array $s, array $config): string
+    {
+        $base = 'RSS_' . substr(trim((string) preg_replace('/[^A-Z0-9]+/', '_', strtoupper(self::ascii($s['name']))), '_'), 0, 24);
+        $code = $base;
+        for ($i = 2; $this->sourceExists($code); $i++) {
+            $code = substr($base, 0, 28) . '_' . $i;
+        }
+        $this->pdo->prepare(
+            "INSERT INTO sources (code, name, kind, url, authoritative, enabled, poll_minutes, custom, config)
+             VALUES (?, ?, 'rss', ?, ?, 1, ?, 1, ?)"
+        )->execute([$code, $s['name'], $s['url'], (int) $s['authoritative'], $s['poll_minutes'], json_encode($config, JSON_UNESCAPED_UNICODE)]);
+
+        return $code;
+    }
+
+    /** @param array{name: string, url: string, poll_minutes: int, authoritative: bool} $s @param array<string, mixed> $config @return array<string, mixed> previous values */
+    public function updateCustomSource(string $code, array $s, array $config): array
+    {
+        $previous = $this->customSource($code);
+        // A new address restarts the reading window (cursor of the old feed).
+        $this->pdo->prepare(
+            'UPDATE sources SET name = ?, url = ?, authoritative = ?, poll_minutes = ?, config = ?,
+                    cursor_state = IF(url = ?, cursor_state, NULL) WHERE code = ? AND custom = 1'
+        )->execute([$s['name'], $s['url'], (int) $s['authoritative'], $s['poll_minutes'], json_encode($config, JSON_UNESCAPED_UNICODE), $s['url'], $code]);
+
+        return $previous;
+    }
+
+    /** Deletes a custom source that never stored anything; otherwise it can only be disabled. @return array<string, mixed> */
+    public function deleteCustomSource(string $code): array
+    {
+        $previous = $this->customSource($code);
+        $stmt = $this->pdo->prepare(
+            'SELECT (SELECT COUNT(*) FROM intel_items i WHERE i.source_id = s.id) + (SELECT COUNT(*) FROM leaks l WHERE l.source_id = s.id)
+                    + (SELECT COUNT(*) FROM intel_item_sources x WHERE x.source_id = s.id)
+             FROM sources s WHERE s.code = ?'
+        );
+        $stmt->execute([$code]);
+        if ((int) $stmt->fetchColumn() > 0) {
+            throw new HttpException(409, 'source_in_use', 'Cette source a déjà alimenté NOROSHI : désactivez-la plutôt que de la supprimer.');
+        }
+        $this->pdo->prepare('DELETE FROM sources WHERE code = ? AND custom = 1')->execute([$code]);
+
+        return $previous;
+    }
+
+    /** @return array<string, mixed> */
+    private function customSource(string $code): array
+    {
+        $stmt = $this->pdo->prepare('SELECT name, url, authoritative, poll_minutes, config FROM sources WHERE code = ? AND custom = 1');
+        $stmt->execute([$code]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            throw HttpException::notFound('Unknown custom source.');
+        }
+
+        return $row;
+    }
+
+    private function sourceExists(string $code): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT 1 FROM sources WHERE code = ?');
+        $stmt->execute([$code]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private static function ascii(string $text): string
+    {
+        $ascii = function_exists('iconv') ? @iconv('UTF-8', 'ASCII//TRANSLIT', $text) : false;
+
+        return $ascii === false ? $text : $ascii;
     }
 
     /** @param array<string, mixed> $changes @return array<string, mixed> previous values */

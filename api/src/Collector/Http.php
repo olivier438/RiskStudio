@@ -13,15 +13,57 @@ class Http
     public const USER_AGENT = 'Noroshi-Collector/5.0 (+https://www.noroshi.be)';
     private const MAX_BYTES = 8 * 1024 * 1024;
 
-    public function __construct(private readonly int $timeoutSeconds = 20)
+    /**
+     * @param bool $publicOnly for addresses typed by an administrator (custom
+     *   sources): every hop must pass PublicAddress, requests are pinned to the
+     *   checked IP and redirects are followed one by one, each checked again.
+     */
+    public function __construct(private readonly int $timeoutSeconds = 20, private readonly bool $publicOnly = false)
     {
     }
 
     /**
      * @param array<string, string> $headers
-     * @return array{status: int, body: string, content_type: string}
+     * @return array{status: int, body: string, content_type: string, location: ?string}
      */
     public function get(string $url, array $headers = []): array
+    {
+        if (!$this->publicOnly) {
+            return $this->request($url, $headers, null);
+        }
+        for ($hop = 0; $hop <= 3; $hop++) {
+            try {
+                $address = PublicAddress::check($url);
+            } catch (\InvalidArgumentException $e) {
+                throw new \RuntimeException($e->getMessage() . " ({$url})");
+            }
+            $response = $this->request($url, $headers, $address['resolve']);
+            if (!in_array($response['status'], [301, 302, 303, 307, 308], true) || $response['location'] === null) {
+                return $response;
+            }
+            $url = self::absolute($url, $response['location']);
+        }
+
+        throw new \RuntimeException("Too many redirects: {$url}");
+    }
+
+    /** Resolves a Location header against the URL that sent it. */
+    private static function absolute(string $base, string $location): string
+    {
+        if (preg_match('#^https?://#i', $location)) {
+            return $location;
+        }
+        $p = parse_url($base);
+        $origin = 'https://' . ($p['host'] ?? '');
+
+        return str_starts_with($location, '/') ? $origin . $location : $origin . rtrim(dirname($p['path'] ?? '/'), '/') . '/' . $location;
+    }
+
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, body: string, content_type: string, location: ?string}
+     */
+    private function request(string $url, array $headers, ?string $resolve): array
     {
         if (!str_starts_with($url, 'https://')) {
             throw new \InvalidArgumentException("Only HTTPS URLs are fetched: {$url}");
@@ -33,8 +75,9 @@ class Http
 
         $ch = curl_init($url);
         $body = '';
+        $location = null;
         curl_setopt_array($ch, [
-            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_FOLLOWLOCATION => $resolve === null,
             CURLOPT_MAXREDIRS => 3,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTPS,
@@ -44,12 +87,22 @@ class Http
             CURLOPT_HTTPHEADER => $lines,
             CURLOPT_ENCODING => '',
             CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HEADERFUNCTION => static function ($ch, string $line) use (&$location): int {
+                if (stripos($line, 'location:') === 0) {
+                    $location = trim(substr($line, 9));
+                }
+
+                return strlen($line);
+            },
             CURLOPT_WRITEFUNCTION => static function ($ch, string $chunk) use (&$body): int {
                 $body .= $chunk;
 
                 return strlen($body) > self::MAX_BYTES ? 0 : strlen($chunk);
             },
         ]);
+        if ($resolve !== null) {
+            curl_setopt($ch, CURLOPT_RESOLVE, [$resolve]);
+        }
         $ok = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $type = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
@@ -60,7 +113,7 @@ class Http
             throw new \RuntimeException(strlen($body) > self::MAX_BYTES ? "Response too large: {$url}" : "HTTP error on {$url}: {$error}");
         }
 
-        return ['status' => $status, 'body' => $body, 'content_type' => $type];
+        return ['status' => $status, 'body' => $body, 'content_type' => $type, 'location' => $location];
     }
 
     /** @param array<string, string> $headers @return array<mixed> */

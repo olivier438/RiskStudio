@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Exemple CERT</title>
+  <entry>
+    <title type="html">Ransomware : &lt;b&gt;une commune&lt;/b&gt; paralysée</title>
+    <link rel="alternate" href="https://cert.example.org/ransomware-commune"/>
+    <link rel="enclosure" href="https://cert.example.org/file.pdf"/>
+    <id>urn:uuid:exemple-1</id>
+    <published>2099-01-12T09:00:00+01:00</published>
+    <category term="ransomware" label="Rançongiciel"/>
+    <summary>Une commune est touchée.</summary>
+  </entry>
+  <entry>
+    <title>Ancienne entrée</title>
+    <link href="https://cert.example.org/old"/>
+    <id>urn:uuid:exemple-0</id>
+    <updated>2098-01-01T00:00:00Z</updated>
+  </entry>
+</feed>

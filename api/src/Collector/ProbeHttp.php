@@ -10,9 +10,9 @@ final class ProbeHttp extends Http
     /** @var list<array{url: string, status: int, content_type: string, bytes: int, ms: int, format: ?string, error: ?string}> */
     public array $log = [];
 
-    public function __construct(int $timeoutSeconds, private readonly int $maxRequests)
+    public function __construct(int $timeoutSeconds, private readonly int $maxRequests, bool $publicOnly = false)
     {
-        parent::__construct($timeoutSeconds);
+        parent::__construct($timeoutSeconds, $publicOnly);
     }
 
     public function get(string $url, array $headers = []): array

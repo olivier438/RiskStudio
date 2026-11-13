@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace RiskStudio\Controller;
 
+use RiskStudio\Collector\Classifier;
 use RiskStudio\Collector\Probe;
+use RiskStudio\Collector\PublicAddress;
+use RiskStudio\Collector\Rules;
+use RiskStudio\Collector\SourceConfig;
 use RiskStudio\Http\HttpException;
 use RiskStudio\Http\Request;
 use RiskStudio\Http\Response;
 use RiskStudio\Repository\AdminRepository;
+use RiskStudio\Repository\ValidationException;
 use RiskStudio\Security\AdminAuth;
 
 /**
@@ -21,6 +26,8 @@ final class AdminController
     public function __construct(
         private readonly AdminAuth $auth,
         private readonly AdminRepository $repo,
+        /** db/rules, for the classification preview of a feed being added. */
+        private readonly string $rulesDir = '',
     ) {
     }
 
@@ -175,10 +182,72 @@ final class AdminController
         $source = array_values(array_filter($this->repo->sources(), static fn (array $s): bool => $s['code'] === $code))[0]
             ?? throw HttpException::notFound('Unknown source.');
         @set_time_limit(90);
-        $report = (new Probe())->source($code, (string) $source['url']);
+        $config = $source['config'] === null ? null : json_encode($source['config'], JSON_UNESCAPED_UNICODE);
+        $report = (new Probe())->source($code, (string) $source['url'], $config);
         $this->auth->audit($session['admin']['id'], 'source.probe', self::probeSummary($report), 'source', $code);
 
         return self::private(['data' => $report]);
+    }
+
+    /** Reads a feed being added and shows how its entries would be classified. Stores nothing. */
+    public function previewSource(Request $request): Response
+    {
+        $session = $this->session($request);
+        $body = $request->json();
+        $source = AdminRepository::customSourceInput(['name' => 'Aperçu'] + $body);
+        $config = SourceConfig::fromInput($body);
+        @set_time_limit(60);
+        $report = (new Probe())->preview($source['url'], $config, new Classifier(Rules::load($this->rulesDir)));
+        $this->auth->audit($session['admin']['id'], 'source.preview', ['url' => $source['url'], 'verdict' => $report['verdict'], 'kept' => $report['kept']], 'url', null);
+
+        return self::private(['data' => $report]);
+    }
+
+    /** Adds an RSS or Atom source, no code needed. */
+    public function createSource(Request $request): Response
+    {
+        $session = $this->session($request);
+        $body = $request->json();
+        $source = AdminRepository::customSourceInput($body);
+        $config = SourceConfig::fromInput($body)->toArray();
+        self::assertPublic($source['url']);
+        $code = $this->repo->createCustomSource($source, $config);
+        $this->auth->audit($session['admin']['id'], 'source.create', $source + ['config' => $config], 'source', $code);
+
+        return self::private(['ok' => true, 'code' => $code, 'data' => $this->repo->sources()]);
+    }
+
+    public function editSource(Request $request): Response
+    {
+        $session = $this->session($request);
+        $code = strtoupper($request->params['code'] ?? '');
+        $body = $request->json();
+        $source = AdminRepository::customSourceInput($body);
+        $config = SourceConfig::fromInput($body)->toArray();
+        self::assertPublic($source['url']);
+        $previous = $this->repo->updateCustomSource($code, $source, $config);
+        $this->auth->audit($session['admin']['id'], 'source.edit', ['previous' => $previous, 'new' => $source + ['config' => $config]], 'source', $code);
+
+        return self::private(['ok' => true, 'data' => $this->repo->sources()]);
+    }
+
+    public function deleteSource(Request $request): Response
+    {
+        $session = $this->session($request);
+        $code = strtoupper($request->params['code'] ?? '');
+        $previous = $this->repo->deleteCustomSource($code);
+        $this->auth->audit($session['admin']['id'], 'source.delete', ['previous' => $previous], 'source', $code);
+
+        return self::private(['ok' => true, 'data' => $this->repo->sources()]);
+    }
+
+    private static function assertPublic(string $url): void
+    {
+        try {
+            PublicAddress::check($url);
+        } catch (\InvalidArgumentException $e) {
+            throw new ValidationException(['url' => $e->getMessage()]);
+        }
     }
 
     /** Tests any public HTTPS address from this server (candidate sources). */

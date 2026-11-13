@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Exemple Veille</title>
+    <link>https://veille.example.org/</link>
+    <item>
+      <title>Campagne de phishing contre des hôpitaux belges</title>
+      <link>https://veille.example.org/phishing-hopitaux</link>
+      <guid>https://veille.example.org/?p=1</guid>
+      <pubDate>Mon, 12 Jan 2099 10:00:00 +0000</pubDate>
+      <category>Menaces</category>
+      <description><![CDATA[<p>Des courriels piégés visent le personnel.</p>]]></description>
+    </item>
+    <item>
+      <title>Correctif pour CVE-2099-4242 dans Exemple Router</title>
+      <link>https://veille.example.org/cve-2099-4242</link>
+      <dc:date>2099-01-11T08:00:00Z</dc:date>
+      <description>Mise à jour disponible.</description>
+    </item>
+    <item>
+      <title>Webinaire sponsorisé : la cybersécurité en 2099</title>
+      <link>https://veille.example.org/webinaire</link>
+      <pubDate>Sun, 11 Jan 2099 07:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Lien en clair</title>
+      <link>http://veille.example.org/http</link>
+      <pubDate>Sun, 11 Jan 2099 07:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -2,6 +2,7 @@
 	import { ApiError } from '#lib/api.js';
 	import { adminApi, type AdminSource, type ProbeReport } from '#lib/admin-api.js';
 	import { dateAndTime } from '#lib/format.js';
+	import SourceForm from './SourceForm.svelte';
 
 	let sources = $state<AdminSource[]>([]);
 	let error = $state<string | null>(null);
@@ -11,6 +12,25 @@
 	let testUrl = $state('');
 	let urlReport = $state<ProbeReport | null>(null);
 	let urlBusy = $state(false);
+	/** null: no form; 'new': adding; otherwise the code of the custom source being edited. */
+	let editing = $state<string | null>(null);
+	let notice = $state<string | null>(null);
+
+	function saved(list: AdminSource[], message: string): void {
+		sources = list;
+		editing = null;
+		notice = message;
+	}
+
+	async function remove(s: AdminSource): Promise<void> {
+		if (!confirm(`Supprimer ${s.name} ? Possible seulement si elle n'a encore rien alimenté.`)) return;
+		try {
+			sources = (await adminApi.deleteSource(s.code)).data;
+			notice = `${s.name} supprimée.`;
+		} catch (e) {
+			error = e instanceof ApiError ? e.message : 'Suppression impossible.';
+		}
+	}
 
 	const VERDICT: Record<string, { icon: string; cls: string }> = {
 		works: { icon: '✅', cls: 'good' },
@@ -108,9 +128,20 @@
 	<b>Tester</b> interroge la source depuis le serveur de production, avec le vrai lecteur, sans rien enregistrer.
 </p>
 
+{#if notice}<div class="a-ok" role="status">{notice}</div>{/if}
+
 <div class="toolbar">
+	<button class="ghost" disabled={editing !== null} onclick={() => ((editing = 'new'), (notice = null))}>➕ Ajouter une source</button>
 	<button class="ghost" disabled={probingAll} onclick={probeAll}>{probingAll ? 'Tests en cours…' : '🩺 Tout tester'}</button>
 </div>
+
+{#if editing === 'new'}
+	<SourceForm onsaved={saved} oncancel={() => (editing = null)} />
+{:else if editing}
+	{#key editing}
+		<SourceForm source={sources.find((x) => x.code === editing)} onsaved={saved} oncancel={() => (editing = null)} />
+	{/key}
+{/if}
 
 <table class="a-table">
 	<thead>
@@ -124,7 +155,17 @@
 		{#each sources as s (s.code)}
 			{@const h = health(s)}
 			<tr>
-				<td><b>{s.name}</b><br /><code class="a-muted">{s.code}</code></td>
+				<td>
+					<b>{s.name}</b>{#if s.custom}<span class="custom" title="Ajoutée depuis l'administration">perso</span>{/if}<br /><code
+						class="a-muted">{s.code}</code
+					>
+					{#if s.custom}
+						<div class="row-actions">
+							<button class="link" onclick={() => ((editing = s.code), (notice = null))}>Modifier</button>
+							<button class="link danger" onclick={() => remove(s)}>Supprimer</button>
+						</div>
+					{/if}
+				</td>
 				<td>
 					<span class="health {h.cls}">{h.label}</span>
 					{#if s.last_error}<div class="error-detail" title={s.last_error}>{s.last_error}</div>{/if}
@@ -178,6 +219,35 @@
 <style>
 	.toolbar {
 		margin: 0 0 12px;
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+	.custom {
+		font-size: 10px;
+		font-weight: bold;
+		margin-left: 6px;
+		padding: 1px 6px;
+		border-radius: 8px;
+		background: var(--a-surface2);
+		color: var(--a-warning);
+	}
+	.row-actions {
+		margin-top: 4px;
+		display: flex;
+		gap: 10px;
+	}
+	button.link {
+		background: none;
+		border: none;
+		padding: 0;
+		font-size: 11px;
+		font-weight: normal;
+		color: var(--a-muted);
+		text-decoration: underline;
+	}
+	button.link.danger {
+		color: var(--a-error);
 	}
 	button {
 		border: none;

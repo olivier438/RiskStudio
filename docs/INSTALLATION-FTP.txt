@@ -127,6 +127,12 @@ ou si le format a changé. « Tester une adresse », en bas de l'onglet, fait
 de même pour une source candidate. Si une source échoue à chaque passage
 (ransomware.live, par exemple), désactivez-la dans cet onglet.
 
+« Ajouter une source » branche un flux RSS ou Atom sans développement :
+choisissez la vue (Menaces ou Vulnérabilités), un pays par défaut et,
+au besoin, des mots-clés à garder ou à écarter. Cliquez sur « Aperçu »
+avant d'enregistrer : le serveur lit le flux et montre le classement des
+entrées. Par défaut, ce qu'elle rapporte attend votre validation.
+
 
 METTRE À JOUR PLUS TARD
 -----------------------

@@ -80,6 +80,48 @@ export interface AdminSource {
 	last_error: string | null;
 	new_24h: number;
 	failures_24h: number;
+	/** Added from the administration (generic RSS or Atom reader). */
+	custom: boolean;
+	config: SourceSettings | null;
+}
+
+export interface SourceSettings {
+	family: 'vulnerability' | 'threat';
+	country: string | null;
+	include: string[];
+	exclude: string[];
+}
+
+/** What the "Ajouter une source" form sends. Keyword lists are comma-separated. */
+export interface CustomSourceInput {
+	name: string;
+	url: string;
+	family: 'vulnerability' | 'threat';
+	country: string;
+	include: string;
+	exclude: string;
+	poll_minutes: number;
+	authoritative: boolean;
+}
+
+export interface PreviewItem {
+	title: string;
+	date: string | null;
+	url: string | null;
+	type: string;
+	severity: string | null;
+	environment: string;
+	countries: string[];
+	sectors: string[];
+	categories: string[];
+	risks: string[];
+	rules: string[];
+}
+
+export interface PreviewReport extends Omit<ProbeReport, 'items'> {
+	seen: number;
+	kept: number;
+	items: PreviewItem[];
 }
 
 export interface ProbeRequest {
@@ -185,6 +227,11 @@ export const adminApi = {
 		mutate<{ data: AdminSource[] }>('POST', `/sources/${encodeURIComponent(code)}`, changes),
 	probeSource: (code: string) => mutate<{ data: ProbeReport }>('POST', `/sources/${encodeURIComponent(code)}/probe`, {}),
 	probeUrl: (url: string) => mutate<{ data: ProbeReport }>('POST', '/probe', { url }),
+	previewSource: (s: CustomSourceInput) => mutate<{ data: PreviewReport }>('POST', '/sources/preview', s),
+	createSource: (s: CustomSourceInput) => mutate<{ code: string; data: AdminSource[] }>('POST', '/sources', s),
+	editSource: (code: string, s: CustomSourceInput) =>
+		mutate<{ data: AdminSource[] }>('PUT', `/sources/${encodeURIComponent(code)}`, s),
+	deleteSource: (code: string) => mutate<{ data: AdminSource[] }>('POST', `/sources/${encodeURIComponent(code)}/delete`, {}),
 	statistics: () => getPrivate<Statistics>('/admin/statistics'),
 	audit: () => getPrivate<{ data: AuditEntry[] }>('/admin/audit?limit=200')
 };

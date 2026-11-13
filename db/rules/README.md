@@ -68,4 +68,6 @@ Capped at 100. The detail of each component is stored in `rule_trace.score`.
 | ZATAZ | French press: incidents and claims, attack categories only | Pending review |
 | Bonjour la fuite | Leaks affecting French organisations (RSS, about ten latest entries) | Direct when confirmed (🟢), pending review when claimed (🟠 🔴) |
 
+**Custom sources**: any RSS or Atom feed added from the administration (📡 Sources, "Ajouter une source"), read by `GenericFeed`. Settings in `sources.config`: the view it feeds (`threat` gives incidents, `vulnerability` gives advisories), a default country, words to keep and words to exclude (whole words). CVE numbers in the text are extracted. The addresses only ever reach the public Internet (private and reserved addresses refused, each redirect checked again). Pending review unless marked authoritative.
+
 The same CVE reported by several vulnerability feeds is merged into one item; a pending item becomes published when an authoritative source confirms it. A rejected item is never republished. Enrichment: FIRST EPSS for every CVE, NVD for CVSS, CWE and product (5 lookups per run without key, completed over the next runs).
