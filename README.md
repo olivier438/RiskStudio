@@ -41,8 +41,17 @@ Details: [docs/architecture.md](docs/architecture.md).
 1. [ ] **Automatic vendor alerts**: official status pages (Microsoft 365 and Azure, Google Workspace and Google Cloud, AWS, Cloudflare) publish alerts without validation, since the vendor is the authority. Strict threshold: major incidents only, as declared by the vendor, mapped by rules in `db/rules/`. Alerts open, update and close on their own; expiry stays as a safety net. One switch per source in the admin, manual override always possible, every decision audited, source shown on the badge.
 2. [ ] **Stabilisation**: observe real data for a few days, tune the rules, admin health board per source (last run, volume, errors).
 3. [ ] **Cyber risk synthesis**: weekly rule-based digest of what is new, critical and trending.
-4. [ ] **V2**: user environment profile (sectors, IT/OT, frameworks, watched vendors and products) to filter the feed.
-5. [ ] **Distribution**: exportable weekly digest (mail or page).
+4. [ ] **V2, user environment**: profile (sectors, IT/OT, frameworks, watched vendors and products) to filter the feed.
+5. [ ] **V2, compliance-ready threat intelligence**: the paid offer (see positioning below).
+   - **Threat intelligence procedure template**, generated from the user's profile (sources, scope, review frequency), covering ISO/IEC 27001:2022 control 5.7 and NIS2 article 21.
+   - **Decision register**: for each relevant item, the user records a status (not applicable, in progress, handled) and links it to a catalogue risk. This is the evidence that the procedure is applied. It extends the V2 principle (users write only their profile) and needs an explicit architecture decision first.
+   - **Evidence pack** exportable for the auditor over a chosen period: procedure, decision register, statistics.
+   - **Licences** per organisation, with offers for SMEs, public institutions and NIS2 entities, and partners (consultants, MSPs, CISO as a Service).
+6. [ ] **Distribution**: exportable weekly digest (mail or page).
+
+### Positioning
+
+The feed stays free. **Compliance is the paid value**: NOROSHI does not sell threat intelligence alone, it sells threat intelligence that an auditor can verify. A home-made RSS setup answers neither "where is your procedure?" nor "show me that you apply it". NOROSHI answers both, with rule traceability, an audit log, links to catalogue risks and mappings to ISO/IEC 27001, NIS2 and CyFun.
 
 ## Local development
 
